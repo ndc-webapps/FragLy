@@ -264,9 +264,25 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .radar-wrap svg{max-width:260px;}
 
 /* FORM CHART */
-.form-chart-wrap{width:100%;overflow:hidden;}
-.form-chart-wrap svg{width:100%;height:96px;}
-.form-lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.56rem;color:var(--muted);letter-spacing:1px;margin-top:6px;}
+.form-chart-wrap{width:100%;overflow:visible;padding-top:2px;}
+.form-chart-wrap svg{width:100%;height:auto;display:block;overflow:visible;}
+.form-lbl{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;font-family:var(--mono);font-size:.56rem;color:var(--muted);letter-spacing:1px;margin-top:8px;text-transform:uppercase;}
+.form-lbl span:nth-child(2){text-align:center;color:var(--muted2);}
+.form-lbl span:last-child{text-align:right;}
+.form-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:2px 0 14px;}
+.form-stat{background:rgba(255,255,255,.035);border:1px solid var(--bdr);border-radius:var(--r3);padding:9px 10px;min-width:0;}
+.form-stat .k{font-family:var(--mono);font-size:.5rem;color:var(--muted);letter-spacing:1.7px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.form-stat .v{font-family:var(--dp);font-size:1.35rem;font-weight:900;letter-spacing:1px;line-height:1.05;margin-top:3px;color:var(--txt);}
+.form-stat.up .v{color:var(--green);}.form-stat.down .v{color:var(--red);}.form-stat.flat .v{color:var(--blue);}.form-stat.best .v{color:var(--gold);}
+.form-insight{margin-top:12px;font-family:var(--mono);font-size:.6rem;line-height:1.55;letter-spacing:1px;color:var(--muted2);padding:10px 12px;border:1px solid var(--bdr);background:rgba(255,255,255,.03);border-radius:var(--r3);}
+.form-insight.up{border-color:rgba(61,255,160,.18);background:rgba(61,255,160,.055);color:rgba(214,255,235,.78);}
+.form-insight.down{border-color:rgba(255,70,85,.2);background:rgba(255,70,85,.055);color:#FF9AA3;}
+.form-insight.flat{border-color:rgba(75,189,255,.18);background:rgba(75,189,255,.05);color:rgba(210,238,255,.76);}
+@media(max-width:500px){
+  .form-stats{grid-template-columns:repeat(2,1fr);}
+  .form-stat{padding:8px 9px;}
+  .form-stat .v{font-size:1.2rem;}
+}
 
 /* TABLES */
 .ptbl{width:100%;border-collapse:collapse;font-size:.85rem;}
@@ -295,7 +311,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 
 /* MATCH LIST */
 .mlist{display:flex;flex-direction:column;gap:8px;}
-.mr{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.06);border-radius:var(--r2);padding:14px 22px;transition:.2s;position:relative;overflow:hidden;cursor:default;}
+.mr{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.06);border-radius:var(--r2);padding:14px 22px;transition:.2s;position:relative;overflow:hidden;cursor:pointer;}
 .mr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:var(--r3) 0 0 var(--r3);}
 .mr.win::before{background:var(--green);}
 .mr.loss::before{background:var(--red);}
@@ -318,6 +334,90 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .acs-val{font-family:var(--dp);font-size:1.25rem;font-weight:900;letter-spacing:.5px;text-align:center;}
 .acs-val.s{color:var(--gold);}.acs-val.a{color:var(--green);}.acs-val.b{color:var(--blue);}.acs-val.c{color:var(--muted2);}
 .mth{display:grid;grid-template-columns:44px 1fr 80px 110px 120px 96px 86px;gap:14px;padding:6px 22px 12px;font-family:var(--mono);font-size:.56rem;letter-spacing:2px;color:var(--muted);}
+
+
+/* MATCH DETAILS MODAL */
+.match-overlay{position:fixed;inset:0;z-index:1500;background:rgba(3,5,12,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .22s ease;}
+.match-overlay.hidden{display:none;}
+.match-shell{width:min(1280px,96vw);max-height:92vh;overflow:hidden;background:linear-gradient(135deg,rgba(9,15,28,.98),rgba(8,8,18,.98));border:1px solid rgba(255,255,255,.1);border-radius:var(--r);box-shadow:0 40px 140px rgba(0,0,0,.7);position:relative;}
+.match-shell::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--green),var(--blue),var(--red),transparent);}
+.match-head{padding:22px 26px;border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;background:radial-gradient(circle at 50% 0,rgba(61,255,160,.08),transparent 45%),rgba(255,255,255,.015);}
+.match-result{font-family:var(--dp);font-size:clamp(2.8rem,7vw,5rem);font-weight:900;letter-spacing:2px;line-height:.88;}
+.match-result .win{color:var(--green);}.match-result .loss{color:var(--red);}.match-result .draw{color:var(--gold);}.match-result .white{color:var(--txt);}
+.match-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.match-chip{font-family:var(--mono);font-size:.56rem;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;padding:6px 10px;border:1px solid var(--bdr);border-radius:999px;background:rgba(255,255,255,.035);}
+.match-close{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--r3);color:var(--muted2);font-family:var(--mono);font-size:.7rem;letter-spacing:2px;padding:10px 14px;cursor:pointer;transition:.2s;flex-shrink:0;}
+.match-close:hover{color:var(--txt);border-color:rgba(255,70,85,.45);background:rgba(255,70,85,.08);}
+.match-body{max-height:calc(92vh - 136px);overflow:auto;padding:20px 26px 26px;}
+.match-loading{display:flex;align-items:center;justify-content:center;gap:14px;min-height:260px;font-family:var(--mono);font-size:.72rem;letter-spacing:3px;color:var(--red);}
+.match-note{font-family:var(--mono);font-size:.62rem;line-height:1.7;color:var(--gold);padding:11px 14px;border:1px solid rgba(232,184,75,.22);background:rgba(232,184,75,.06);border-radius:var(--r3);margin-bottom:14px;letter-spacing:.8px;}
+.scoreboard{display:flex;flex-direction:column;gap:0;border:1px solid rgba(255,255,255,.08);border-radius:var(--r2);overflow:hidden;background:rgba(255,255,255,.025);}
+.score-team{font-family:var(--mono);font-size:.62rem;letter-spacing:2.5px;color:rgba(255,255,255,.78);padding:10px 14px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+.score-team.blue{background:linear-gradient(90deg,rgba(0,255,210,.42),rgba(0,255,210,.16));}
+.score-team.red{background:linear-gradient(90deg,rgba(255,70,85,.42),rgba(255,70,85,.16));}
+.score-head,.score-row{display:grid;grid-template-columns:minmax(230px,1.55fr) 86px 76px 80px 82px 82px 82px 82px 70px;align-items:center;}
+.score-head{background:rgba(255,255,255,.07);font-family:var(--mono);font-size:.58rem;letter-spacing:2px;color:rgba(255,255,255,.75);text-transform:uppercase;}
+.score-head div,.score-row>div{padding:10px 12px;text-align:center;}
+.score-head div:first-child,.score-row>div:first-child{text-align:left;}
+.score-row{min-height:56px;border-top:1px solid rgba(0,0,0,.32);background:rgba(255,255,255,.025);transition:.18s;}
+.score-row:nth-child(even){background:rgba(255,255,255,.04);}
+.score-row:hover{background:rgba(255,255,255,.075);}
+.score-row.me{background:linear-gradient(90deg,rgba(232,184,75,.22),rgba(232,184,75,.08));box-shadow:inset 3px 0 var(--gold);}
+.score-player{display:flex;align-items:center;gap:10px;min-width:0;}
+.score-agent{width:42px;height:42px;border-radius:6px;object-fit:cover;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);flex-shrink:0;}
+.score-agent-fallback{width:42px;height:42px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.score-name{font-family:var(--dp);font-size:1.05rem;font-weight:800;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.score-name-btn{all:unset;display:inline-block;max-width:100%;font-family:var(--dp);font-size:1.05rem;font-weight:800;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;color:var(--txt);transition:.18s;}
+.score-name-btn:hover{color:var(--green);text-shadow:0 0 14px rgba(61,255,160,.28);}
+.score-name-btn:focus-visible{outline:1px solid var(--green);outline-offset:3px;border-radius:4px;}
+.player-quick-menu{position:fixed;z-index:2200;width:min(260px,calc(100vw - 24px));background:rgba(7,9,18,.98);border:1px solid rgba(61,255,160,.26);border-radius:var(--r2);box-shadow:0 24px 80px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.04) inset;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:12px;animation:fadeUp .18s var(--ease);}
+.player-quick-menu::before{content:'';position:absolute;left:14px;right:14px;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--green),var(--blue),transparent);}
+.pqm-label{font-family:var(--mono);font-size:.52rem;letter-spacing:2.5px;color:var(--green);text-transform:uppercase;margin-bottom:6px;}
+.pqm-id{font-family:var(--dp);font-size:1.1rem;font-weight:800;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:10px;}
+.pqm-id span{color:var(--muted2);font-weight:500;}
+.pqm-actions{display:grid;gap:7px;}
+.pqm-btn{width:100%;border:1px solid var(--bdr);border-radius:var(--r3);background:rgba(255,255,255,.04);color:var(--txt);font-family:var(--mono);font-size:.62rem;letter-spacing:2px;text-align:left;padding:10px 11px;cursor:pointer;transition:.18s;text-transform:uppercase;}
+.pqm-btn:hover{border-color:rgba(61,255,160,.35);background:rgba(61,255,160,.08);color:var(--green);}
+.pqm-btn.primary{background:linear-gradient(135deg,rgba(61,255,160,.18),rgba(75,189,255,.09));border-color:rgba(61,255,160,.35);color:var(--green);}
+.score-sub{font-family:var(--mono);font-size:.56rem;color:rgba(255,255,255,.48);letter-spacing:1.7px;text-transform:uppercase;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.score-num{font-family:var(--mono);font-size:.8rem;color:var(--txt);font-weight:700;}
+.score-acs{font-family:var(--dp);font-size:1.2rem;font-weight:900;color:var(--gold);}
+.score-rank{font-family:var(--mono);font-size:.6rem;letter-spacing:1.2px;color:var(--muted2);}
+.mr .mmap::after{content:' · CLICK FOR DETAILS';font-family:var(--mono);font-size:.48rem;color:var(--muted);letter-spacing:1.5px;margin-left:8px;opacity:.65;}
+.match-error{padding:24px;text-align:center;color:#FF7B87;font-family:var(--mono);font-size:.72rem;line-height:1.8;letter-spacing:1px;border:1px solid rgba(255,70,85,.24);background:rgba(255,70,85,.06);border-radius:var(--r2);}
+@media(max-width:900px){
+  .match-overlay{padding:0;align-items:stretch;justify-content:stretch;}
+  .match-shell{
+    width:100vw;
+    height:var(--app-vh,100dvh);
+    max-height:none;
+    border-radius:0;
+    border-left:0;
+    border-right:0;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .match-head{padding:18px 14px;flex-shrink:0;}
+  .match-body{
+    flex:1;
+    min-height:0;
+    max-height:none;
+    overflow-y:auto;
+    overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    padding:14px 14px max(38px,calc(env(safe-area-inset-bottom) + 28px));
+  }
+  .scoreboard{
+    overflow-x:auto;
+    overflow-y:visible;
+    margin-bottom:18px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .score-head,.score-row{min-width:900px;}
+}
+
 /* STORE */
 .store-panel,.market-panel{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:24px;min-height:150px;backdrop-filter:blur(20px);}
 .store-items{display:flex;gap:12px;flex-wrap:wrap;}
@@ -475,6 +575,22 @@ footer span{color:var(--red);}
     <button style="margin-left:auto;" onclick="toggleWishlist()" class="im-close">✕</button>
   </div>
   <div id="wishListContent"><div class="no-data">Your wishlist is empty.</div></div>
+</div>
+
+<!-- MATCH DETAILS MODAL -->
+<div class="match-overlay hidden" id="matchModal" onclick="if(event.target.id==='matchModal')closeMatchDetails()">
+  <div class="match-shell" role="dialog" aria-modal="true" aria-label="Match details">
+    <div class="match-head">
+      <div>
+        <div class="match-result" id="matchResultTitle"><span class="white">MATCH</span></div>
+        <div class="match-meta" id="matchMetaChips"></div>
+      </div>
+      <button class="match-close" onclick="closeMatchDetails()">CLOSE ✕</button>
+    </div>
+    <div class="match-body" id="matchDetailsBody">
+      <div class="match-loading"><div class="loadring"></div><span>LOADING MATCH DETAILS...</span></div>
+    </div>
+  </div>
 </div>
 
 <!-- NAV -->
@@ -678,8 +794,20 @@ footer span{color:var(--red);}
 /* ═══════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════ */
-const S={stats:null,player:null,matches:[],apiKey:'',matchFilter:'all',conversationHistory:[]};
+const S={stats:null,player:null,region:null,matches:[],apiKey:'',matchFilter:'all',conversationHistory:[],matchCache:{},pendingPlayer:null};
 const LS={get:k=>localStorage.getItem(k)||'',set:(k,v)=>localStorage.setItem(k,v)};
+
+// Mobile browser safe viewport height.
+// This keeps the match-details popup fully scrollable on iOS/Android where 100vh
+// can hide the final player row behind the browser UI or safe-area bar.
+function syncAppVh(){
+  const h=(window.visualViewport?.height||window.innerHeight);
+  document.documentElement.style.setProperty('--app-vh',`${h}px`);
+}
+syncAppVh();
+window.addEventListener('resize',syncAppVh,{passive:true});
+window.addEventListener('orientationchange',syncAppVh,{passive:true});
+if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppVh,{passive:true});
 
 const _BAKED_KEY='HDEV-48f17e5b-60eb-4d15-8389-9e1c25c48973';
 function initKeys(){
@@ -772,7 +900,7 @@ async function fetchStats(){
     setLoad(true,'LOADING RANK & MMR...');
     const mmr=await api(`${BASE}/v2/mmr/${region}/${enc(name)}/${enc(rawTag)}`);
     setLoad(true,'PULLING MATCH HISTORY...');
-    const mData=await api(`${BASE}/v3/matches/${region}/${enc(name)}/${enc(rawTag)}?size=15`);
+    const mData=await api(`${BASE}/v3/matches/${region}/${enc(name)}/${enc(rawTag)}?size=10`);
     const matches=mData?.data||[];
     setLoad(true,'COMPUTING INTELLIGENCE...');
     render(acc.data,mmr?.data,matches,name,rawTag,region);
@@ -837,7 +965,7 @@ function getRankBench(rank){
 }
 
 function render(acc,mmr,matches,name,tag,region){
-  S.matches=matches;S.player={name:acc.name||name,tag:acc.tag||tag};
+  S.matches=matches;S.player={name:acc.name||name,tag:acc.tag||tag};S.region=region;S.matchCache={};
   // Avatar is handled by the render patch wrapper below
   document.getElementById('pName').textContent=acc.name||name;
   document.getElementById('pTag').textContent=`#${acc.tag||tag} · ${region.toUpperCase()}`;
@@ -897,13 +1025,78 @@ function radarChart(metrics){
 
 /* FORM CHART */
 function renderForm(arr){
-  if(!arr||!arr.length){document.getElementById('formChart').innerHTML='';return;}
-  const max=Math.max(...arr,1),min=Math.min(...arr,0),range=max-min||1;
-  const W=300,H=90,pad=8;
-  const pts=arr.map((v,i)=>{const x=pad+(i/(arr.length-1||1))*(W-pad*2);const y=H-pad-(v-min)/range*(H-pad*2);return`${x},${y}`;});
-  const area=`M${pts[0]} `+pts.slice(1).map(p=>`L${p}`).join(' ')+` L${pad+(arr.length-1)/(arr.length-1||1)*(W-pad*2)},${H} L${pad},${H} Z`;
-  document.getElementById('formChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF4655" stop-opacity=".25"/><stop offset="100%" stop-color="#FF4655" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#fg)"/><polyline points="${pts.join(' ')}" fill="none" stroke="#FF4655" stroke-width="1.5" stroke-linejoin="round"/>${arr.map((v,i)=>{const x=pad+(i/(arr.length-1||1))*(W-pad*2);const y=H-pad-(v-min)/range*(H-pad*2);return`<circle cx="${x}" cy="${y}" r="2.2" fill="#FF4655" opacity="0.8"/>`;}).join('')}</svg>`;
-  document.getElementById('formLbl').innerHTML=`<span>OLDER</span><span>RECENT</span>`;
+  const chartEl=document.getElementById('formChart');
+  const lblEl=document.getElementById('formLbl');
+  if(!chartEl||!lblEl)return;
+
+  const clean=(arr||[]).map(v=>Number(v)).filter(v=>Number.isFinite(v));
+  if(!clean.length){
+    chartEl.innerHTML=`<div class="form-insight flat">No ACS form data available yet. Play more matches to generate a readable trend.</div>`;
+    lblEl.innerHTML='';
+    return;
+  }
+
+  const avg=Math.round(clean.reduce((a,b)=>a+b,0)/clean.length);
+  const best=Math.max(...clean);
+  const latest=clean[clean.length-1];
+  const oldest=clean[0];
+  const delta=latest-oldest;
+  const trendCls=delta>15?'up':delta<-15?'down':'flat';
+  const trendWord=trendCls==='up'?'Improving':trendCls==='down'?'Dropping':'Stable';
+  const trendText=delta===0?'0':`${delta>0?'+':''}${Math.round(delta)}`;
+
+  const maxRaw=Math.max(...clean,avg,1);
+  const minRaw=Math.min(...clean,avg,0);
+  const yMax=Math.max(50,Math.ceil((maxRaw+20)/50)*50);
+  const yMin=Math.max(0,Math.floor(Math.max(0,minRaw-20)/50)*50);
+  const range=yMax-yMin||1;
+  const W=360,H=168,padL=42,padR=18,padT=24,padB=38;
+  const innerW=W-padL-padR,innerH=H-padT-padB;
+  const xAt=i=>padL+(i/(clean.length-1||1))*innerW;
+  const yAt=v=>padT+(yMax-v)/range*innerH;
+  const pts=clean.map((v,i)=>`${xAt(i)},${yAt(v)}`);
+  const area=`M${pts[0]} `+pts.slice(1).map(p=>`L${p}`).join(' ')+` L${xAt(clean.length-1)},${H-padB} L${padL},${H-padB} Z`;
+  const ticks=[yMin,Math.round((yMin+yMax)/2),yMax].filter((v,i,a)=>a.indexOf(v)===i);
+  const grid=ticks.map(v=>{
+    const y=yAt(v);
+    return `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="rgba(255,255,255,.06)" stroke-width="1"/>`+
+           `<text x="${padL-8}" y="${y+3}" text-anchor="end" fill="#7070A0" font-size="8" font-family="DM Mono, monospace">${Math.round(v)}</text>`;
+  }).join('');
+  const avgY=yAt(avg);
+  const valueLabels=clean.map((v,i)=>{
+    const x=xAt(i),y=yAt(v);
+    const labelY=Math.max(10,y-9);
+    return `<g><title>Match ${i+1}: ${Math.round(v)} ACS</title><circle cx="${x}" cy="${y}" r="3" fill="#FF4655" stroke="rgba(255,255,255,.65)" stroke-width=".7"/><text x="${x}" y="${labelY}" text-anchor="middle" fill="#ECE8F5" font-size="8.5" font-weight="700" font-family="DM Mono, monospace">${Math.round(v)}</text></g>`;
+  }).join('');
+  const xLabels=clean.map((_,i)=>{
+    if(clean.length>7 && i%2!==0 && i!==clean.length-1)return'';
+    const x=xAt(i);
+    return `<text x="${x}" y="${H-14}" text-anchor="middle" fill="#4E4E72" font-size="7.5" font-family="DM Mono, monospace">M${i+1}</text>`;
+  }).join('');
+
+  chartEl.innerHTML=`
+    <div class="form-stats">
+      <div class="form-stat"><div class="k">Average ACS</div><div class="v">${avg}</div></div>
+      <div class="form-stat best"><div class="k">Best Match</div><div class="v">${best}</div></div>
+      <div class="form-stat ${trendCls}"><div class="k">Latest ACS</div><div class="v">${latest}</div></div>
+      <div class="form-stat ${trendCls}"><div class="k">Trend</div><div class="v">${trendText}</div></div>
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Recent ACS form chart. Average ${avg}, best ${best}, latest ${latest}, trend ${trendText}.">
+      <defs>
+        <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF4655" stop-opacity=".26"/><stop offset="100%" stop-color="#FF4655" stop-opacity="0"/></linearGradient>
+      </defs>
+      ${grid}
+      <line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="rgba(255,255,255,.09)" stroke-width="1"/>
+      <path d="${area}" fill="url(#fg)"/>
+      <line x1="${padL}" y1="${avgY}" x2="${W-padR}" y2="${avgY}" stroke="rgba(232,184,75,.42)" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="${W-padR}" y="${avgY-5}" text-anchor="end" fill="#E8B84B" font-size="8" font-family="DM Mono, monospace" letter-spacing="1">AVG ${avg}</text>
+      <polyline points="${pts.join(' ')}" fill="none" stroke="#FF4655" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${valueLabels}
+      ${xLabels}
+    </svg>
+    <div class="form-insight ${trendCls}">${trendWord}: latest ACS is ${Math.abs(Math.round(delta))} point${Math.abs(Math.round(delta))===1?'':'s'} ${delta>=0?'higher than':'lower than'} the oldest match shown. Each dot is one match ACS.</div>
+  `;
+  lblEl.innerHTML=`<span>Older matches</span><span>ACS per match</span><span>Recent matches</span>`;
 }
 
 /* MAP TABLE — tabbed by mode */
@@ -959,12 +1152,12 @@ function setAgentTabMode(m){_agentTabMode=m==='ALL'?'all':m.toLowerCase();render
 
 /* MATCHES */
 function renderMatches(matches,name,tag){
-  const modes=[...new Set(matches.map(m=>(m.metadata?.mode||'Competitive').toUpperCase()))];
+  const modes=[...new Set(matches.map(m=>(m.metadata?.mode||m.metadata?.queue||'Competitive').toUpperCase()))];
   const f=document.getElementById('mfilters');
   f.innerHTML=['ALL',...modes].map(m=>`<button class="mfilter-btn ${S.matchFilter==='all'&&m==='ALL'||S.matchFilter===m.toLowerCase()?'active':''}" onclick="setMatchFilter('${m}')">${m}</button>`).join('');
-  let filtered=matches;
-  if(S.matchFilter!=='all')filtered=matches.filter(m=>(m.metadata?.mode||'Competitive').toLowerCase()===S.matchFilter.toLowerCase());
-  const rows=filtered.slice(0,12).map(m=>{
+  let filtered=matches.map((m,i)=>({m,i}));
+  if(S.matchFilter!=='all')filtered=filtered.filter(x=>(x.m.metadata?.mode||x.m.metadata?.queue||'Competitive').toLowerCase()===S.matchFilter.toLowerCase());
+  const rows=filtered.slice(0,12).map(({m,i})=>{
     const me=(m.players?.all_players||[]).find(p=>p.name?.toLowerCase()===name.toLowerCase()&&p.tag?.toLowerCase()===tag.toLowerCase());
     if(!me)return'';
     const k=me.stats?.kills||0,d=me.stats?.deaths||0,a=me.stats?.assists||0;
@@ -978,10 +1171,12 @@ function renderMatches(matches,name,tag){
     const myR=myT==='blue'?blW:rdW,opR=myT==='blue'?rdW:blW;
     const map=m.metadata?.map||'?';const mode=(m.metadata?.mode||'Competitive').toUpperCase();
     const agIco=me.assets?.agent?.small||'';
-    return`<div class="mr ${rc}">
+    const mid=getMatchId(m);
+    const date=formatMatchDate(m.metadata?.game_start_patched||m.metadata?.game_start||m.metadata?.started_at||m.metadata?.start_time);
+    return`<div class="mr ${rc}" onclick="openMatchDetails(${i})" title="Open full match details${mid?' · '+mid:''}">
       <div class="mr-top">
         ${agIco?`<img class="ag-ico" src="${agIco}" alt="agent" onerror="this.src=''">`:`<div style="width:36px;height:36px;border-radius:50%;background:var(--surf);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0">🎮</div>`}
-        <div class="minfo"><div class="mmode">${mode}</div><div class="mmap">${map}</div></div>
+        <div class="minfo"><div class="mmode">${mode}${date!=='—'?' · '+escapeHtml(date):''}</div><div class="mmap">${escapeHtml(map)}</div></div>
         <span class="rbadge ${rc}">${won?'WIN':'LOSS'}</span>
       </div>
       <div class="mr-bottom">
@@ -995,6 +1190,369 @@ function renderMatches(matches,name,tag){
   document.getElementById('mlist').innerHTML=rows.length?rows.join(''):`<div style="color:var(--muted);font-family:var(--mono);font-size:.72rem;padding:20px">No matches found for this filter.</div>`;
 }
 function setMatchFilter(type){S.matchFilter=type==='ALL'?'all':type.toLowerCase();renderMatches(S.matches,S.player?.name,S.player?.tag);}
+
+/* REAL MATCH DETAILS MODAL */
+function getMatchId(m){return m?.metadata?.matchid||m?.metadata?.match_id||m?.metadata?.id||m?.matchid||m?.match_id||m?.id||'';}
+function openMatchDetails(index){
+  const cached=S.matches?.[index];
+  if(!cached){showToast('Match not found');return;}
+  const matchId=getMatchId(cached);
+  const modal=document.getElementById('matchModal');
+  modal.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+  document.getElementById('matchResultTitle').innerHTML='<span class="white">MATCH</span>';
+  document.getElementById('matchMetaChips').innerHTML='<span class="match-chip">REAL DATA</span>';
+  document.getElementById('matchDetailsBody').innerHTML='<div class="match-loading"><div class="loadring"></div><span>LOADING MATCH DETAILS...</span></div>';
+  if(matchId&&S.matchCache[matchId]){renderMatchDetails(S.matchCache[matchId],cached,'');return;}
+  if(!matchId){
+    renderMatchDetails(cached,cached,'This match row has no match ID from the matchlist endpoint, so this popup is showing only the real cached matchlist data. No dummy data was generated.');
+    return;
+  }
+  api(`${BASE}/v4/match/${S.region}/${enc(matchId)}`)
+    .then(res=>{
+      const full=res?.data||res;
+      S.matchCache[matchId]=full;
+      renderMatchDetails(full,cached,'');
+    })
+    .catch(err=>{
+      renderMatchDetails(cached,cached,`Could not fetch the v4 full match payload right now (${escapeHtml(err.message||'API error')}). Showing the already fetched real matchlist data only. No dummy data was generated.`);
+    });
+}
+function closeMatchDetails(){
+  closePlayerQuickMenu();
+  document.getElementById('matchModal').classList.add('hidden');
+  document.body.style.overflow='';
+}
+function showPlayerQuickMenu(btn){
+  const name=(btn?.dataset?.name||'').trim();
+  const tag=(btn?.dataset?.tag||'').trim();
+  if(!name||!tag){showToast('This player has no Riot ID tag in the match data');return;}
+  S.pendingPlayer={name,tag};
+  closePlayerQuickMenu();
+  const menu=document.createElement('div');
+  menu.id='playerQuickMenu';
+  menu.className='player-quick-menu';
+  menu.onclick=e=>e.stopPropagation();
+  menu.innerHTML=`
+    <div class="pqm-label">Player Options</div>
+    <div class="pqm-id">${escapeHtml(name)}<span>#${escapeHtml(tag)}</span></div>
+    <div class="pqm-actions">
+      <button class="pqm-btn primary" onclick="viewPendingPlayer()">VIEW PLAYER PROFILE →</button>
+      <button class="pqm-btn" onclick="copyPendingPlayer()">COPY RIOT ID</button>
+    </div>`;
+  document.body.appendChild(menu);
+  const r=btn.getBoundingClientRect();
+  const w=menu.offsetWidth||260,h=menu.offsetHeight||120,pad=12;
+  let left=Math.min(Math.max(pad,r.left),window.innerWidth-w-pad);
+  let top=r.bottom+8;
+  if(top+h>window.innerHeight-pad)top=Math.max(pad,r.top-h-8);
+  menu.style.left=left+'px';
+  menu.style.top=top+'px';
+}
+function closePlayerQuickMenu(){
+  const menu=document.getElementById('playerQuickMenu');
+  if(menu)menu.remove();
+}
+function viewPendingPlayer(){
+  const p=S.pendingPlayer;
+  if(!p?.name||!p?.tag){showToast('No player selected');return;}
+  closePlayerQuickMenu();
+  document.getElementById('nameIn').value=`${p.name}#${p.tag}`;
+  if(S.region)document.getElementById('regIn').value=S.region;
+  closeMatchDetails();
+  showToast(`Opening ${p.name}#${p.tag}`);
+  setTimeout(()=>{
+    document.querySelector('.scard')?.scrollIntoView({behavior:'smooth',block:'center'});
+    fetchStats();
+  },120);
+}
+function copyPendingPlayer(){
+  const p=S.pendingPlayer;
+  if(!p?.name||!p?.tag)return;
+  const id=`${p.name}#${p.tag}`;
+  navigator.clipboard?.writeText(id).then(()=>showToast('Copied '+id)).catch(()=>showToast(id));
+}
+document.addEventListener('click',e=>{if(!e.target.closest('#playerQuickMenu')&&!e.target.closest('.score-name-btn'))closePlayerQuickMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closePlayerQuickMenu();closeMatchDetails();}});
+function pick(obj,paths,fb){
+  // Important: allow callers to intentionally request `undefined` as fallback.
+  // JS default parameters would convert pick(..., undefined) back to '—',
+  // which prevented round-derived First Blood / Plant / Defuse stats from showing.
+  if(arguments.length<3)fb='—';
+  for(const path of paths){
+    const val=path.split('.').reduce((o,k)=>o?.[k],obj);
+    if(val!==undefined&&val!==null&&val!=='')return val;
+  }
+  return fb;
+}
+function num(v,fb=0){
+  const n=Number(v);
+  return Number.isFinite(n)?n:fb;
+}
+function fmtVal(v){return v===undefined||v===null||v===''?'—':escapeHtml(String(v));}
+function formatMatchDate(v){
+  if(!v)return'—';
+  if(typeof v==='string'&&!/^\d+$/.test(v)){
+    const d=new Date(v);
+    if(!Number.isNaN(d.getTime()))return d.toLocaleString([], {month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    return v;
+  }
+  const n=Number(v);if(!Number.isFinite(n))return String(v);
+  const ms=n>1e12?n:n*1000;
+  try{return new Date(ms).toLocaleString([], {month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});}catch(e){return String(v);}
+}
+function formatDuration(v){
+  if(!v)return'—';
+  if(typeof v==='string'&&!/^\d+$/.test(v))return v;
+  let s=Number(v);if(!Number.isFinite(s))return String(v);
+  if(s>100000)s=Math.round(s/1000);
+  const m=Math.floor(s/60),sec=Math.round(s%60);
+  return `${m}m ${String(sec).padStart(2,'0')}s`;
+}
+function normalizeTeam(t){return String(t||'').toLowerCase().includes('red')?'red':String(t||'').toLowerCase().includes('blue')?'blue':String(t||'').toLowerCase();}
+function getPlayers(match){
+  if(Array.isArray(match?.players))return match.players;
+  if(Array.isArray(match?.players?.all_players))return match.players.all_players;
+  const out=[];
+  for(const key of ['blue','red','Blue','Red'])if(Array.isArray(match?.players?.[key]))out.push(...match.players[key]);
+  return out;
+}
+function getTeam(match,team){
+  const want=team.toLowerCase();
+  if(match?.teams?.[want])return match.teams[want];
+  if(match?.teams?.[team])return match.teams[team];
+  if(Array.isArray(match?.teams))return match.teams.find(t=>normalizeTeam(t.team_id||t.id||t.name||t.team)===want)||{};
+  return{};
+}
+function getTeamRounds(match,team){
+  const t=getTeam(match,team);
+  return num(pick(t,['rounds_won','rounds.won','won_rounds','score'],0),0);
+}
+function getTeamWon(match,team){const t=getTeam(match,team);return !!(t.has_won??t.won??t.win??t.is_winner??false);}
+function pName(p){return pick(p,['name','game_name','player_name','username','player.name'],'Unknown');}
+function pTag(p){return pick(p,['tag','tag_line','tagline','player.tag'],'');}
+function pTeam(p){return normalizeTeam(pick(p,['team','team_id','teamId','team.name','player.team'],''));}
+function pAgent(p){return pick(p,['character','agent.name','agent_name','assets.agent.name'],'Unknown');}
+function isUuidLike(v){return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v||''));}
+function mediaUrl(kind,id,file){return isUuidLike(id)?`https://media.valorant-api.com/${kind}/${String(id).toLowerCase()}/${file}`:'';}
+function pAgentImg(p){
+  const direct=pick(p,['assets.agent.small','assets.agent.full','assets.agent.bust','agent.assets.small','agent.assets.full','agent.image','agent.small','agent.display_icon','agent.displayIcon'],undefined);
+  if(direct)return direct;
+  const id=pick(p,['agent.id','character_id','agent_id'],undefined);
+  return mediaUrl('agents',id,'displayicon.png');
+}
+function pRank(p){return pick(p,['currenttier_patched','currenttierpatched','rank.name','competitive_tier_patched','tier.name'],'—');}
+function playerMetric(p,name){return pick(p,[`stats.${name}`,name,`behavior.${name}`,`behaviour.${name}`,`economy.${name}`],undefined);}
+function getKDA(p){return [num(playerMetric(p,'kills')),num(playerMetric(p,'deaths')),num(playerMetric(p,'assists'))];}
+function getScore(p){return num(pick(p,['stats.score','score','stats.combat_score','combat_score'],0),0);}
+function getDamageDealt(p){return num(pick(p,['damage_made','stats.damage.dealt','stats.damage','damage.dealt','damage'],0),0);}
+function getACS(p,rounds){
+  const direct=pick(p,['stats.acs','acs','stats.avg_combat_score','avg_combat_score','average_combat_score'],undefined);
+  if(direct!==undefined&&num(direct)>0)return Math.round(num(direct));
+  const score=getScore(p);
+  if(score>0&&rounds>0)return Math.round(score/rounds);
+  const dmg=getDamageDealt(p);
+  if(dmg>0&&rounds>0)return Math.round(dmg/rounds);
+  return 0;
+}
+function getHS(p){const h=num(playerMetric(p,'headshots')),b=num(playerMetric(p,'bodyshots')),l=num(playerMetric(p,'legshots'));const total=h+b+l;return total>0?Math.round(h/total*100):0;}
+function getEcon(p,rounds){
+  const direct=pick(p,['stats.economy_rating','economy.rating','economy.econ_rating','econ_rating','stats.econ_rating'],undefined);
+  if(direct!==undefined&&num(direct)>0)return Math.round(num(direct));
+  const damage=getDamageDealt(p);
+  let spent=num(pick(p,['economy.spent.overall','economy.spend.overall','economy.spent.total','economy.spent'],0),0);
+  const avgSpent=num(pick(p,['economy.spent.average','economy.spend.average','economy.average_spent'],0),0);
+  if(!spent&&avgSpent&&rounds)spent=avgSpent*rounds;
+  if(spent>0&&damage>=0)return Math.round((damage/spent)*1000);
+  if(direct!==undefined)return Math.round(num(direct));
+  return '—';
+}
+function playerKeyFromParts(puuid,name,tag){
+  if(puuid)return `p:${String(puuid).toLowerCase()}`;
+  const n=String(name||'').toLowerCase(),t=String(tag||'').toLowerCase();
+  return n?`n:${n}#${t}`:'';
+}
+function playerKey(p){return playerKeyFromParts(p?.puuid||p?.player_puuid||p?.id,pName(p),pTag(p));}
+function refKey(ref){
+  if(!ref)return'';
+  const display=ref.display_name||ref.player_display_name||ref.playerDisplayName||ref.name||'';
+  let name=ref.name||ref.game_name||'',tag=ref.tag||ref.tag_line||ref.tagline||'';
+  if(display&&String(display).includes('#')){const parts=String(display).split('#');if(!name)name=parts[0]||'';if(!tag)tag=parts[1]||'';}
+  return playerKeyFromParts(ref.puuid||ref.player_puuid||ref.killer_puuid||ref.assistant_puuid||ref.id,name,tag);
+}
+function enrichPlayers(primaryPlayers,cachedPlayers){
+  const cacheByKey=new Map();
+  cachedPlayers.forEach(cp=>{const k=playerKey(cp);if(k)cacheByKey.set(k,cp);});
+  return primaryPlayers.map(p=>{
+    const c=cacheByKey.get(playerKey(p))||{};
+    return {
+      ...c,
+      ...p,
+      stats:{...(c.stats||{}),...(p.stats||{})},
+      economy:{...(c.economy||{}),...(p.economy||{})},
+      assets:{...(c.assets||{}),...(p.assets||{}),agent:{...((c.assets||{}).agent||{}),...((p.assets||{}).agent||{})}},
+      agent:{...(c.agent||{}),...(p.agent||{})}
+    };
+  });
+}
+function collectRoundKills(round){
+  const kills=[];
+  const pushArr=a=>{if(Array.isArray(a))kills.push(...a);};
+  pushArr(round?.kill_events);pushArr(round?.kills);
+  // v3 stores kill_events under each player_stats row.
+  if(Array.isArray(round?.player_stats))round.player_stats.forEach(ps=>pushArr(ps.kill_events));
+  // v4 stores per-round player lines under stats; some payloads may also include kill_events there.
+  if(Array.isArray(round?.stats))round.stats.forEach(ps=>pushArr(ps.kill_events));
+  const seen=new Set();
+  return kills.filter(k=>{
+    const key=[getKillTime(k),k.killer_puuid,k.killer?.puuid,k.victim_puuid,k.victim?.puuid,k.killer_display_name,k.victim_display_name].join('|');
+    if(seen.has(key))return false;seen.add(key);return true;
+  });
+}
+function getKillTime(k){
+  return num(k?.kill_time_in_round??k?.time_in_round_in_ms??k?.round_time_in_ms??k?.time_in_round_ms??k?.time_in_round,999999999);
+}
+function getKillRound(k){
+  return k?.round??k?.round_id??k?.round_number??k?.roundNum??k?.round_index;
+}
+function killerKey(k){
+  return playerKeyFromParts(
+    k?.killer_puuid||k?.killer?.puuid,
+    k?.killer?.name||(k?.killer_display_name||'').split('#')[0],
+    k?.killer?.tag||(k?.killer_display_name||'').split('#')[1]
+  );
+}
+function getTopLevelKillsByRound(match,cached){
+  // Henrik v4 returns the clean kill feed at data.kills with a `round` number.
+  // Those are more reliable for First Blood than per-round rows on v4.
+  const all=[];
+  if(Array.isArray(match?.kills))all.push(...match.kills);
+  if(Array.isArray(cached?.kills))all.push(...cached.kills);
+  const grouped=new Map();
+  all.forEach(k=>{
+    const r=getKillRound(k);
+    if(r===undefined||r===null)return;
+    const key=String(r);
+    if(!grouped.has(key))grouped.set(key,[]);
+    grouped.get(key).push(k);
+  });
+  return grouped;
+}
+function buildRoundMetrics(match,cached){
+  const sourceRounds=Array.isArray(match?.rounds)&&match.rounds.length?match.rounds:(Array.isArray(cached?.rounds)?cached.rounds:[]);
+  const topKillsByRound=getTopLevelKillsByRound(match,cached);
+  const metrics={hasRoundEvents:sourceRounds.length>0||topKillsByRound.size>0,byKey:new Map()};
+  const ensure=k=>{if(!k)return null;if(!metrics.byKey.has(k))metrics.byKey.set(k,{firstBloods:0,plants:0,defuses:0});return metrics.byKey.get(k);};
+
+  // Plants / defuses come from round.plant / round.defuse on v4, or plant_events / defuse_events on v3.
+  sourceRounds.forEach((round,idx)=>{
+    const plantRef=round?.plant?.player||round?.plant_events?.planted_by||round?.plant_events?.player;
+    const pk=refKey(plantRef);if(pk)ensure(pk).plants++;
+    const defuseRef=round?.defuse?.player||round?.defuse_events?.defused_by||round?.defuse_events?.player;
+    const dk=refKey(defuseRef);if(dk)ensure(dk).defuses++;
+
+    // v3 fallback: first kill may be nested inside each round.
+    let kills=collectRoundKills(round);
+    // v4 fallback: use top-level kills for this round if present.
+    const rid=round?.id??round?.round??round?.round_number??idx+1;
+    if(topKillsByRound.has(String(rid)))kills=[...kills,...topKillsByRound.get(String(rid))];
+    kills=kills.sort((a,b)=>getKillTime(a)-getKillTime(b));
+    if(kills.length){const fk=killerKey(kills[0]);if(fk)ensure(fk).firstBloods++;}
+  });
+
+  // If the match has top-level kills but no round list, still compute first bloods.
+  if(!sourceRounds.length&&topKillsByRound.size){
+    topKillsByRound.forEach(kills=>{
+      kills.sort((a,b)=>getKillTime(a)-getKillTime(b));
+      const fk=killerKey(kills[0]);if(fk)ensure(fk).firstBloods++;
+    });
+  }
+  return metrics;
+}
+function metricValueForPlayer(p,metrics,key,directPaths){
+  const direct=pick(p,directPaths,undefined);
+  if(direct!==undefined)return direct;
+  const row=metrics?.byKey?.get(playerKey(p));
+  if(row&&row[key]!==undefined)return row[key];
+  return metrics?.hasRoundEvents?0:'—';
+}
+function getModeName(md,cachedMd={}){
+  return md.mode||md.queue?.name||md.queue?.id||cachedMd.mode||cachedMd.queue?.name||cachedMd.queue?.id||'Unknown Mode';
+}
+function getMapName(md,cachedMd={}){
+  return md.map?.name||md.map||cachedMd.map?.name||cachedMd.map||'Unknown Map';
+}
+function getRoundCount(match,cached,blueRounds,redRounds){
+  const md=match?.metadata||{},cmd=cached?.metadata||{};
+  const fromMd=num(md.rounds_played||md.rounds?.played||cmd.rounds_played||cmd.rounds?.played,0);
+  const fromTeams=blueRounds+redRounds;
+  if(fromTeams>0)return fromTeams;
+  if(fromMd>0)return fromMd;
+  const rLen=Array.isArray(match?.rounds)?match.rounds.length:(Array.isArray(cached?.rounds)?cached.rounds.length:0);
+  return rLen||24;
+}
+function renderMatchDetails(match,cached,warning=''){
+  const md=match?.metadata||cached?.metadata||{};
+  const cachedMd=cached?.metadata||{};
+  const primaryPlayers=getPlayers(match).length?getPlayers(match):getPlayers(cached);
+  const players=enrichPlayers(primaryPlayers,getPlayers(cached));
+  const blueRounds=getTeamRounds(match,'blue')||getTeamRounds(cached,'blue');
+  const redRounds=getTeamRounds(match,'red')||getTeamRounds(cached,'red');
+  const rounds=getRoundCount(match,cached,blueRounds,redRounds);
+  const me=players.find(p=>pName(p).toLowerCase()===(S.player?.name||'').toLowerCase()&&pTag(p).toLowerCase()===(S.player?.tag||'').toLowerCase());
+  const myTeam=pTeam(me||{});
+  const myWon=myTeam?getTeamWon(match,myTeam)||getTeamWon(cached,myTeam):blueRounds>redRounds;
+  const label=myWon?'VICTORY':'DEFEAT';
+  const scoreText=myTeam==='red'?`${redRounds} <span class="white">${label}</span> ${blueRounds}`:`${blueRounds} <span class="white">${label}</span> ${redRounds}`;
+  document.getElementById('matchResultTitle').innerHTML=`<span class="${myWon?'win':'loss'}">${scoreText}</span>`;
+  const matchId=getMatchId(match)||getMatchId(cached)||'—';
+  const map=getMapName(md,cachedMd);
+  const mode=getModeName(md,cachedMd);
+  const date=formatMatchDate(md.game_start_patched||md.game_start||md.started_at||md.start_time||cachedMd.game_start_patched||cachedMd.game_start||cachedMd.started_at);
+  const duration=formatDuration(md.game_length||md.game_length_in_ms||md.duration||md.duration_in_ms||md.game_length_patched||cachedMd.game_length||cachedMd.game_length_in_ms);
+  const cluster=md.cluster||md.region||S.region?.toUpperCase()||'—';
+  document.getElementById('matchMetaChips').innerHTML=[
+    map,mode,date,`${rounds} ROUNDS`,duration!=='—'?duration:null,cluster,matchId!=='—'?`ID ${String(matchId).slice(0,8)}…`:null
+  ].filter(Boolean).map(x=>`<span class="match-chip">${escapeHtml(String(x))}</span>`).join('');
+  const body=document.getElementById('matchDetailsBody');
+  if(!players.length){body.innerHTML=`<div class="match-error">No player scoreboard data was returned for this match.</div>`;return;}
+  const roundMetrics=buildRoundMetrics(match,cached);
+  const blue=players.filter(p=>pTeam(p)==='blue').sort((a,b)=>getACS(b,rounds)-getACS(a,rounds));
+  const red=players.filter(p=>pTeam(p)==='red').sort((a,b)=>getACS(b,rounds)-getACS(a,rounds));
+  const unknown=players.filter(p=>!['blue','red'].includes(pTeam(p))).sort((a,b)=>getACS(b,rounds)-getACS(a,rounds));
+  const html=[];
+  if(warning)html.push(`<div class="match-note">${warning}</div>`);
+  html.push('<div class="scoreboard">');
+  const header='<div class="score-head"><div>GROUPED BY TEAM</div><div>RANK</div><div>ACS</div><div>K / D / A</div><div>ECON</div><div>FIRST BLOODS</div><div>PLANTS</div><div>DEFUSES</div><div>HS%</div></div>';
+  if(blue.length){html.push(`<div class="score-team blue"><span>BLUE TEAM</span><span>${blueRounds} ROUNDS</span></div>`,header,blue.map(p=>scoreRow(p,rounds,roundMetrics)).join(''));}
+  if(red.length){html.push(`<div class="score-team red"><span>RED TEAM</span><span>${redRounds} ROUNDS</span></div>`,header,red.map(p=>scoreRow(p,rounds,roundMetrics)).join(''));}
+  if(unknown.length){html.push(`<div class="score-team"><span>PLAYERS</span><span>${players.length}</span></div>`,header,unknown.map(p=>scoreRow(p,rounds,roundMetrics)).join(''));}
+  html.push('</div>');
+  body.innerHTML=html.join('');
+}
+function scoreRow(p,rounds,roundMetrics){
+  const [k,d,a]=getKDA(p);
+  const isMe=pName(p).toLowerCase()===(S.player?.name||'').toLowerCase()&&pTag(p).toLowerCase()===(S.player?.tag||'').toLowerCase();
+  const agentImg=pAgentImg(p),agent=pAgent(p),name=pName(p),tag=pTag(p);
+  const firstBloods=metricValueForPlayer(p,roundMetrics,'firstBloods',['stats.first_bloods','first_bloods','stats.first_kills','first_kills']);
+  const plants=metricValueForPlayer(p,roundMetrics,'plants',['stats.plants','plants']);
+  const defuses=metricValueForPlayer(p,roundMetrics,'defuses',['stats.defuses','defuses']);
+  return `<div class="score-row ${isMe?'me':''}">
+    <div class="score-player">
+      ${agentImg?`<img class="score-agent" src="${agentImg}" alt="${escapeHtml(agent)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'score-agent-fallback',textContent:'${escapeHtml(agent).slice(0,1)||'?' }'}))">`:`<div class="score-agent-fallback">${escapeHtml(agent).slice(0,1)||'?'}</div>`}
+      <div style="min-width:0"><button type="button" class="score-name-btn" data-name="${escapeHtml(name)}" data-tag="${escapeHtml(tag)}" onclick="event.stopPropagation();showPlayerQuickMenu(this)" title="Open player options">${escapeHtml(name)}${tag?`<span style="color:var(--muted2);font-weight:500">#${escapeHtml(tag)}</span>`:''}</button><div class="score-sub">${escapeHtml(agent)}${isMe?' · YOU':''}</div></div>
+    </div>
+    <div class="score-rank">${fmtVal(pRank(p))}</div>
+    <div class="score-acs">${getACS(p,rounds)}</div>
+    <div class="score-num">${k}/${d}/${a}</div>
+    <div class="score-num">${fmtVal(getEcon(p,rounds))}</div>
+    <div class="score-num">${fmtVal(firstBloods)}</div>
+    <div class="score-num">${fmtVal(plants)}</div>
+    <div class="score-num">${fmtVal(defuses)}</div>
+    <div class="score-num">${getHS(p)}%</div>
+  </div>`;
+}
+
 
 /* WISHLIST */
 const WLS_KEY='val_wishlist_v3';
