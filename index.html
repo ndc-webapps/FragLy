@@ -414,8 +414,43 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
     overflow-y:visible;
     margin-bottom:18px;
     -webkit-overflow-scrolling:touch;
+    position:relative;
   }
   .score-head,.score-row{min-width:900px;}
+
+  /* Mobile scoreboard upgrade:
+     Keep the player column pinned while swiping right to view K/D/A, ACS, HS%, Econ, FB, plants, defuse, and rank. */
+  .score-head div:first-child,
+  .score-row > div:first-child{
+    position:sticky;
+    left:0;
+    z-index:4;
+    min-width:220px;
+    max-width:220px;
+    background:rgba(13,16,29,.98);
+    border-right:1px solid rgba(255,255,255,.08);
+    box-shadow:12px 0 22px rgba(0,0,0,.38);
+  }
+  .score-head div:first-child{
+    z-index:6;
+    background:rgba(24,27,39,.98);
+  }
+  .score-row:nth-child(even) > div:first-child{
+    background:rgba(17,20,33,.98);
+  }
+  .score-row:hover > div:first-child{
+    background:rgba(24,28,43,.98);
+  }
+  .score-row.me > div:first-child{
+    background:linear-gradient(90deg,rgba(232,184,75,.30),rgba(25,24,29,.98));
+    box-shadow:inset 3px 0 var(--gold),12px 0 22px rgba(0,0,0,.38);
+  }
+  .score-player{
+    max-width:196px;
+  }
+  .score-name-btn,.score-name{
+    max-width:130px;
+  }
 }
 
 /* STORE */
