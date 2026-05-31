@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FragLy — Valorant Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Barlow+Condensed:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════
+   TOKENS
+════════════════════════════════════════ */
+:root{
+  --red:#FF4655;--red2:#FF2D3E;--red-g:rgba(255,70,85,.12);--red-glow:rgba(255,70,85,.35);
+  --gold:#E8B84B;--gold2:#F5D06E;--gold-g:rgba(232,184,75,.1);
+  --green:#3DFFA0;--blue:#4BBDFF;--warn:#FFA94D;
+  --bg:#050509;--bg2:#080812;--surf:#0C0C1C;--surf2:rgba(255,255,255,.028);
+  --bdr:rgba(255,255,255,.07);--bdr-hi:rgba(255,70,85,.4);
+  --txt:#ECE8F5;--muted:#4E4E72;--muted2:#7070A0;
+  --mono:'DM Mono',monospace;--dp:'Barlow Condensed',sans-serif;--body:'Syne',sans-serif;
+  --r:20px;--r2:12px;--r3:6px;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;overflow-x:hidden;}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+::selection{background:var(--red);color:#fff;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(255,70,85,.25);border-radius:4px;}
+
+/* ── CANVAS BG ── */
+#bgc{position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.6;}
+.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.35;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");background-repeat:repeat;background-size:200px 200px;}
+.W{position:relative;z-index:1;max-width:1360px;margin:0 auto;padding:0 28px;}
+
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--bdr);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);background:rgba(5,5,9,.85);position:sticky;top:0;z-index:400;}
+.logo{display:flex;align-items:baseline;gap:2px;font-family:var(--dp);font-size:1.9rem;font-weight:900;letter-spacing:4px;line-height:1;}
+.logo-val{color:var(--txt);}
+.logo-stats{background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red);margin-left:3px;margin-bottom:4px;flex-shrink:0;animation:rdot 2.5s ease infinite;}
+.nav-r{display:flex;align-items:center;gap:10px;}
+.nav-pill{font-family:var(--mono);font-size:.62rem;letter-spacing:2px;padding:6px 14px;border-radius:var(--r3);border:1px solid var(--bdr);color:var(--muted2);cursor:pointer;transition:.2s;background:transparent;text-transform:uppercase;}
+.nav-pill:hover,.nav-pill.active{border-color:rgba(255,70,85,.4);color:var(--txt);background:var(--red-g);}
+.nav-pill.ok{border-color:rgba(61,255,160,.3);color:var(--green);background:rgba(61,255,160,.06);}
+@keyframes rdot{0%,100%{opacity:1;box-shadow:0 0 12px var(--red);}50%{opacity:.4;box-shadow:0 0 4px var(--red);}}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;z-index:600;background:rgba(5,5,9,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;animation:fadeIn .25s ease;}
+.overlay.hidden{display:none;}
+.modal{background:var(--surf);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);width:min(500px,95vw);padding:40px 36px;position:relative;animation:slideUp .35s var(--ease);}
+.modal::before{content:'';position:absolute;inset:0;border-radius:var(--r);background:linear-gradient(135deg,rgba(255,70,85,.06),transparent 50%,rgba(232,184,75,.04));pointer-events:none;}
+.modal-accent{position:absolute;top:0;left:50%;transform:translateX(-50%);width:60%;height:1px;background:linear-gradient(90deg,transparent,var(--red),var(--gold),transparent);}
+.modal-title{font-family:var(--dp);font-size:2.2rem;font-weight:800;letter-spacing:3px;margin-bottom:6px;}
+.modal-sub{font-size:.88rem;color:var(--muted2);line-height:1.65;margin-bottom:28px;}
+.modal-lbl{font-family:var(--mono);font-size:.6rem;letter-spacing:3px;color:var(--red);text-transform:uppercase;margin-bottom:8px;display:block;}
+.modal-inp{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:var(--r3);padding:13px 16px;color:var(--txt);font-family:var(--mono);font-size:.9rem;outline:none;margin-bottom:16px;transition:.25s;}
+.modal-inp:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(255,70,85,.1);}
+.modal-a{font-family:var(--mono);font-size:.68rem;color:var(--red);text-decoration:none;letter-spacing:1px;opacity:.8;}
+.modal-a:hover{opacity:1;}
+.modal-btns{display:flex;gap:10px;margin-top:22px;}
+.btn-p{flex:1;padding:14px;background:linear-gradient(135deg,var(--red),var(--red2));border:none;border-radius:var(--r3);color:#fff;font-family:var(--dp);font-size:1.05rem;font-weight:700;letter-spacing:3px;cursor:pointer;transition:.2s;}
+.btn-p:hover{box-shadow:0 8px 30px rgba(255,70,85,.35);transform:translateY(-1px);}
+.btn-s{padding:14px 22px;background:transparent;border:1px solid var(--bdr);border-radius:var(--r3);color:var(--muted2);font-family:var(--mono);font-size:.68rem;letter-spacing:2px;cursor:pointer;transition:.2s;}
+.btn-s:hover{border-color:rgba(255,255,255,.2);color:var(--txt);}
+
+/* ── HERO ── */
+.hero{min-height:82vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 0 40px;position:relative;overflow:hidden;}
+@media(max-width:860px){
+  .hero{min-height:auto;padding:40px 0 32px;}
+}
+.hero-vign{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 50%,transparent,rgba(5,5,9,.6) 70%,var(--bg) 100%);pointer-events:none;}
+.grid-lines{position:absolute;inset:0;background-image:linear-gradient(rgba(255,70,85,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,70,85,.025) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse 70% 50% at 50% 30%,rgba(255,255,255,.3),transparent 70%);pointer-events:none;}
+.hero-glow{position:absolute;width:600px;height:300px;top:0;left:50%;transform:translateX(-50%);background:radial-gradient(ellipse,rgba(255,70,85,.08),transparent 70%);pointer-events:none;}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:6px;color:var(--muted2);text-transform:uppercase;margin-bottom:22px;display:flex;align-items:center;gap:10px;}
+.eyebrow::before,.eyebrow::after{content:'';width:28px;height:1px;background:var(--bdr-hi);display:block;}
+.htitle{font-family:var(--dp);font-size:clamp(4rem,10vw,8.5rem);line-height:.9;text-align:center;font-weight:900;letter-spacing:2px;margin-bottom:18px;}
+.htitle .l1{display:block;color:var(--txt);letter-spacing:8px;}
+.htitle .l2{display:block;background:linear-gradient(135deg,var(--red) 0%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:12px;}
+.hsub{font-family:var(--mono);font-size:.78rem;color:var(--muted2);letter-spacing:4px;text-align:center;margin-bottom:56px;text-transform:uppercase;}
+
+/* ── SEARCH CARD ── */
+.scard{background:rgba(12,12,28,.92);border:1px solid rgba(255,255,255,.09);border-radius:var(--r);padding:32px;width:min(780px,100%);backdrop-filter:blur(36px);-webkit-backdrop-filter:blur(36px);box-shadow:0 32px 100px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.03) inset;position:relative;overflow:hidden;}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 5%,var(--red) 30%,var(--gold) 70%,transparent 95%);}
+.scard-lbl{font-family:var(--mono);font-size:.6rem;letter-spacing:4px;color:var(--red);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.scard-lbl::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--red-g),transparent);}
+.srow{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.sinput-wrap{flex:1;position:relative;min-width:0;}
+.sinput-wrap .sinput{width:100%;}
+/* Search history dropdown */
+.search-history{
+  display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:rgba(10,10,22,.98);border:1px solid rgba(255,70,85,.3);
+  border-radius:var(--r3);z-index:500;overflow:hidden;
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+  max-height:260px;overflow-y:auto;
+}
+.search-history.open{display:block;}
+.sh-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;cursor:pointer;transition:.15s;
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.sh-item:last-child{border-bottom:none;}
+.sh-item:hover{background:rgba(255,70,85,.08);}
+.sh-avatar{
+  width:32px;height:32px;border-radius:50%;object-fit:cover;
+  border:1px solid rgba(255,70,85,.2);flex-shrink:0;
+  background:var(--surf);
+}
+.sh-avatar-placeholder{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:var(--surf);border:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;color:var(--muted);
+}
+.sh-info{flex:1;min-width:0;}
+.sh-name{font-family:var(--dp);font-size:.9rem;font-weight:700;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sh-meta{font-family:var(--mono);font-size:.55rem;color:var(--muted2);letter-spacing:1.5px;margin-top:2px;}
+.sh-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:var(--r3);font-size:.75rem;line-height:1;transition:.15s;flex-shrink:0;}
+.sh-del:hover{color:var(--red);background:rgba(255,70,85,.08);}
+.sh-empty{padding:12px 14px;font-family:var(--mono);font-size:.62rem;color:var(--muted);letter-spacing:2px;text-align:center;}
+.sinput{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r3);padding:14px 18px;color:var(--txt);font-family:var(--body);font-size:1rem;font-weight:600;outline:none;transition:.25s;}
+.sinput::placeholder{color:var(--muted);font-weight:400;font-size:.92rem;}
+.sinput:focus{border-color:rgba(255,70,85,.5);box-shadow:0 0 0 3px rgba(255,70,85,.08),0 0 24px rgba(255,70,85,.05);}
+.stag{width:104px;flex:none;}
+.rsel{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r3);padding:14px 12px;color:var(--txt);font-family:var(--mono);font-size:.78rem;outline:none;cursor:pointer;-webkit-appearance:none;text-align:center;transition:.25s;width:72px;flex:none;}
+@media(max-width:500px){
+  .srow{flex-direction:column;}
+  .sinput-wrap{width:100%;}
+  .stag{width:100%;}
+  .rsel{width:100%;text-align:left;padding:14px 16px;}
+}
+.rsel:focus{border-color:rgba(255,70,85,.5);}
+.rsel option{background:#0C0C1C;}
+.shint{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;margin-bottom:6px;}
+.errbox{display:none;background:rgba(255,70,85,.06);border:1px solid rgba(255,70,85,.25);border-radius:var(--r3);padding:12px 16px;font-family:var(--mono);font-size:.72rem;color:#FF7B87;letter-spacing:.5px;margin-top:14px;}
+.errbox.on{display:block;}
+.loadwrap{display:none;align-items:center;justify-content:center;gap:16px;padding:24px 0;}
+.loadwrap.on{display:flex;}
+.loadring{width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,70,85,.1);border-top-color:var(--red);border-right-color:var(--gold);animation:spin .8s linear infinite;flex-shrink:0;}
+.loadtxt{font-family:var(--mono);font-size:.65rem;color:var(--red);letter-spacing:4px;animation:pulse 1.5s ease infinite;}
+.sbtn{width:100%;margin-top:20px;padding:16px;background:linear-gradient(135deg,var(--red),var(--red2));border:none;border-radius:var(--r3);color:#fff;font-family:var(--dp);font-size:1.15rem;font-weight:800;letter-spacing:5px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s,box-shadow .3s;}
+.sbtn::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);transform:translateX(-100%);transition:.5s;}
+.sbtn:hover::after{transform:translateX(100%);}
+.sbtn:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(255,70,85,.4);}
+.sbtn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* ── DASH ── */
+.dash{display:none;padding:40px 0 100px;}
+.dash.on{display:block;}
+
+/* PROFILE BANNER — mobile-first */
+.prof{
+  position:relative;
+  background:linear-gradient(135deg,rgba(12,12,28,.98),rgba(8,8,20,.96));
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--r);
+  padding:20px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+  margin-bottom:24px;
+  overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,.3);
+}
+.prof::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 10%,var(--red) 35%,var(--gold) 65%,transparent 90%);}
+.prof-glow{position:absolute;right:-60px;top:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(255,70,85,.07),transparent 70%);pointer-events:none;}
+
+/* Avatar + name row */
+.prof-top{display:flex;align-items:center;gap:16px;}
+.avatar-wrap{position:relative;flex-shrink:0;}
+.avatar{width:72px;height:72px;border-radius:50%;border:2px solid rgba(255,70,85,.2);object-fit:cover;box-shadow:0 0 30px rgba(255,70,85,.2);background:radial-gradient(circle,var(--red-g),var(--surf));}
+.avatar-fallback{width:72px;height:72px;border-radius:50%;border:2px solid rgba(255,70,85,.2);background:radial-gradient(circle,rgba(255,70,85,.15),var(--surf));box-shadow:0 0 30px rgba(255,70,85,.2);display:flex;align-items:center;justify-content:center;font-family:var(--dp);font-size:1.6rem;font-weight:900;color:rgba(255,70,85,.5);letter-spacing:1px;}
+.avatar-ring{position:absolute;inset:-5px;border-radius:50%;border:1px solid rgba(255,70,85,.15);animation:spin 8s linear infinite;}
+.prof-info{flex:1;min-width:0;}
+.pname{font-family:var(--dp);font-size:1.7rem;font-weight:900;letter-spacing:1px;line-height:1.1;word-break:break-word;}
+.ptag{font-family:var(--mono);font-size:.75rem;color:var(--muted2);letter-spacing:2px;margin-top:3px;}
+.pmeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.chip{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:.58rem;letter-spacing:1.5px;color:var(--muted2);padding:5px 10px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:999px;text-transform:uppercase;}
+.chip-dot{width:4px;height:4px;border-radius:50%;background:var(--red);box-shadow:0 0 5px var(--red);flex-shrink:0;}
+
+/* 3 stat cards — always horizontal row, equal width */
+.prof-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.pstat-card{
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--bdr);
+  border-radius:var(--r2);
+  padding:14px 10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  transition:.3s;
+  min-width:0;
+}
+.pstat-card:hover{border-color:rgba(255,70,85,.2);background:rgba(255,70,85,.04);}
+.pstat-val{font-family:var(--dp);font-size:1.8rem;font-weight:900;letter-spacing:1px;line-height:1;text-align:center;}
+.pstat-lbl{font-family:var(--mono);font-size:.5rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;text-align:center;line-height:1.4;}
+.grade-val{background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.ts-val{color:var(--blue);}
+.rank-nm{font-family:var(--dp);font-size:.85rem;font-weight:700;letter-spacing:1px;color:var(--gold);text-align:center;line-height:1.2;}
+.rank-img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(232,184,75,.3));}
+
+/* Tablet+ — side-by-side avatar/name, bigger text */
+@media(min-width:600px){
+  .prof{padding:28px 28px;gap:24px;}
+  .avatar,.avatar-fallback{width:90px;height:90px;}
+  .pname{font-size:2.2rem;}
+  .pstat-val{font-size:2rem;}
+  .rank-img{width:50px;height:50px;}
+  .rank-nm{font-size:.95rem;}
+  .pstat-card{padding:18px 14px;}
+}
+
+/* Desktop — original spacious layout */
+@media(min-width:900px){
+  .prof{flex-direction:row;align-items:center;padding:36px 40px;gap:36px;}
+  .prof-top{flex-direction:column;align-items:flex-start;gap:0;flex:1;}
+  .avatar-wrap{margin-bottom:0;}
+  .avatar,.avatar-fallback{width:108px;height:108px;}
+  .pname{font-size:3rem;}
+  .prof-stats{gap:16px;}
+  .pstat-val{font-size:2.2rem;}
+  .pstat-card{padding:20px 22px;}
+  .rank-img{width:56px;height:56px;}
+  .rank-nm{font-size:1rem;}
+}
+@media(min-width:900px){
+  .prof-top{flex-direction:row;align-items:center;gap:36px;}
+  .prof-info{display:flex;flex-direction:column;}
+}
+
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;gap:14px;margin-bottom:16px;margin-top:8px;}
+.sh-title{font-family:var(--dp);font-size:1.3rem;font-weight:800;letter-spacing:4px;text-transform:uppercase;white-space:nowrap;}
+.sh-line{flex:1;height:1px;background:linear-gradient(90deg,var(--bdr-hi),transparent);}
+.sh-tag{font-family:var(--mono);font-size:.58rem;color:var(--muted);letter-spacing:2px;white-space:nowrap;}
+
+/* STAT CARDS GRID */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;margin-bottom:28px;grid-auto-rows:minmax(220px,auto);}
+.sc{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:28px;position:relative;overflow:hidden;transition:border-color .3s,box-shadow .3s,transform .35s var(--ease);display:flex;flex-direction:column;justify-content:space-between;min-height:220px;backdrop-filter:blur(20px);}
+.sc:hover{border-color:rgba(255,70,85,.3);box-shadow:0 24px 70px rgba(0,0,0,.3),0 0 40px rgba(255,70,85,.08);transform:translateY(-5px);}
+.sc-blob{position:absolute;width:180px;height:180px;border-radius:50%;top:-40px;right:-40px;filter:blur(50px);pointer-events:none;opacity:.7;}
+.sc-ico{font-size:1.1rem;color:var(--muted);margin-bottom:12px;}
+.sc-lbl{font-family:var(--mono);font-size:.6rem;letter-spacing:4px;color:var(--muted);text-transform:uppercase;font-weight:500;}
+.sc-val{font-family:var(--dp);font-size:3.4rem;font-weight:900;letter-spacing:0;line-height:1;margin:10px 0 6px;word-break:break-word;}
+.sc-val.r{color:#FF6070;}.sc-val.g{color:var(--gold);}.sc-val.gr{color:var(--green);}.sc-val.b{color:var(--blue);}
+.sc-sub{font-size:.82rem;color:var(--muted2);line-height:1.5;min-height:38px;}
+.sc-footer{margin-top:18px;}
+.sc-bar{height:3px;background:rgba(255,255,255,.06);border-radius:999px;overflow:hidden;margin-bottom:8px;}
+.sc-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--red),var(--gold));transition:width 1.4s var(--ease);width:0;box-shadow:0 0 16px rgba(255,70,85,.25);}
+.sc-bm{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;}
+@media(max-width:1200px){.sgrid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:900px){.sgrid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:580px){.sgrid{grid-template-columns:1fr;}.sc{min-height:auto;}}
+
+/* TWO COL */
+.tcol{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;}
+@media(max-width:900px){.tcol{grid-template-columns:1fr;}}
+.panel{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:28px;backdrop-filter:blur(20px);}
+
+/* RADAR */
+.radar-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.radar-wrap svg{max-width:260px;}
+
+/* FORM CHART */
+.form-chart-wrap{width:100%;overflow:hidden;}
+.form-chart-wrap svg{width:100%;height:96px;}
+.form-lbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.56rem;color:var(--muted);letter-spacing:1px;margin-top:6px;}
+
+/* TABLES */
+.ptbl{width:100%;border-collapse:collapse;font-size:.85rem;}
+.ptbl th{font-family:var(--mono);font-size:.58rem;letter-spacing:2px;color:var(--muted);padding:6px 10px;text-align:right;border-bottom:1px solid var(--bdr);}
+.ptbl th:first-child{text-align:left;}
+.ptbl td{padding:10px;text-align:right;border-bottom:1px solid rgba(255,255,255,.03);transition:.2s;}
+.ptbl td:first-child{text-align:left;font-weight:600;}
+.ptbl tr:hover td{background:rgba(255,70,85,.03);}
+.map-name{display:flex;align-items:center;gap:8px;font-size:.88rem;font-weight:700;}
+.agent-cell{display:flex;align-items:center;gap:8px;}
+.agent-ico{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid var(--bdr);background:var(--surf);}
+.wr-cell{font-family:var(--dp);font-size:1.05rem;font-weight:700;letter-spacing:1px;}
+.wr-cell.hi{color:var(--green);}.wr-cell.mid{color:var(--blue);}.wr-cell.lo{color:var(--red);}
+
+/* MODE TABS (map/agent) */
+.mode-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+.mode-tab{padding:5px 13px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:999px;color:var(--muted2);font-family:var(--mono);font-size:.58rem;letter-spacing:2px;cursor:pointer;transition:.2s;text-transform:uppercase;}
+.mode-tab:hover{border-color:rgba(255,70,85,.25);color:var(--txt);}
+.mode-tab.active{background:rgba(255,70,85,.15);border-color:var(--red);color:var(--red);}
+
+
+.mfilters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.mfilter-btn{padding:7px 16px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:999px;color:var(--muted2);font-family:var(--mono);font-size:.62rem;letter-spacing:2px;cursor:pointer;transition:.2s;text-transform:uppercase;}
+.mfilter-btn:hover{border-color:rgba(255,70,85,.25);color:var(--txt);}
+.mfilter-btn.active{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 18px rgba(255,70,85,.3);}
+
+/* MATCH LIST */
+.mlist{display:flex;flex-direction:column;gap:8px;}
+.mr{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.06);border-radius:var(--r2);padding:14px 22px;transition:.2s;position:relative;overflow:hidden;cursor:default;}
+.mr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:var(--r3) 0 0 var(--r3);}
+.mr.win::before{background:var(--green);}
+.mr.loss::before{background:var(--red);}
+.mr:hover{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.12);}
+/* Desktop: single flex row */
+@media(min-width:761px){
+  .mr{display:grid;grid-template-columns:44px 1fr 80px 110px 120px 96px 86px;align-items:center;gap:14px;}
+  .mr-top,.mr-bottom{display:contents;}
+  .mr-top .ag-ico{width:38px;height:38px;}
+}
+.ag-ico{width:38px;height:38px;border-radius:50%;object-fit:cover;border:1px solid var(--bdr);}
+.minfo .mmode{font-family:var(--mono);font-size:.56rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.minfo .mmap{font-family:var(--dp);font-weight:700;font-size:1rem;letter-spacing:.5px;margin-top:2px;}
+.rbadge{display:inline-block;font-family:var(--dp);font-size:.88rem;font-weight:700;letter-spacing:2px;padding:4px 12px;border-radius:var(--r3);}
+.rbadge.win{color:var(--green);background:rgba(61,255,160,.1);border:1px solid rgba(61,255,160,.2);}
+.rbadge.loss{color:var(--red);background:rgba(255,70,85,.08);border:1px solid rgba(255,70,85,.2);}
+.mval{text-align:center;}
+.mval .mv{font-family:var(--dp);font-size:1.05rem;font-weight:700;letter-spacing:.5px;}
+.mval .ml{font-family:var(--mono);font-size:.54rem;color:var(--muted);letter-spacing:2px;margin-top:2px;}
+.acs-val{font-family:var(--dp);font-size:1.25rem;font-weight:900;letter-spacing:.5px;text-align:center;}
+.acs-val.s{color:var(--gold);}.acs-val.a{color:var(--green);}.acs-val.b{color:var(--blue);}.acs-val.c{color:var(--muted2);}
+.mth{display:grid;grid-template-columns:44px 1fr 80px 110px 120px 96px 86px;gap:14px;padding:6px 22px 12px;font-family:var(--mono);font-size:.56rem;letter-spacing:2px;color:var(--muted);}
+/* STORE */
+.store-panel,.market-panel{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:24px;min-height:150px;backdrop-filter:blur(20px);}
+.store-items{display:flex;gap:12px;flex-wrap:wrap;}
+.store-item,.market-item{width:120px;background:rgba(255,255,255,.02);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px;display:flex;flex-direction:column;gap:8px;align-items:center;cursor:pointer;transition:.2s;}
+.store-item img,.market-item img{width:100px;height:56px;object-fit:cover;border-radius:var(--r3);}
+.store-item .name,.market-item .name{font-family:var(--mono);font-size:.6rem;color:var(--muted2);text-align:center;line-height:1.3;}
+.store-item .price,.market-item .price{font-family:var(--dp);font-size:1rem;font-weight:700;color:var(--txt);}
+.store-item:hover,.market-item:hover{transform:translateY(-5px);box-shadow:0 18px 40px rgba(0,0,0,.25);border-color:rgba(255,70,85,.2);}
+.no-data{color:var(--muted);font-family:var(--mono);font-size:.7rem;padding:12px;}
+.store-note{width:100%;font-family:var(--mono);font-size:.58rem;letter-spacing:1.5px;color:var(--gold);padding:0 0 10px;opacity:.8;}
+.store-note.live{color:var(--green);}
+
+/* ITEM MODAL */
+.item-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);min-width:300px;max-width:680px;width:94vw;background:rgba(12,12,28,.98);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:28px;box-shadow:0 40px 120px rgba(0,0,0,.7);z-index:1200;display:none;backdrop-filter:blur(24px);}
+.item-modal.open{display:block;}
+.im-close{background:none;border:1px solid var(--bdr);padding:6px 12px;border-radius:var(--r3);color:var(--muted2);cursor:pointer;font-family:var(--mono);font-size:.65rem;letter-spacing:1px;}
+.im-close:hover{border-color:rgba(255,255,255,.2);color:var(--txt);}
+
+/* AI PANEL ── */
+.ai-fab{position:fixed;bottom:24px;right:16px;z-index:900;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ai-btn{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--red2));border:none;cursor:pointer;box-shadow:0 0 30px rgba(255,70,85,.4);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;animation:aipulse 2.8s ease infinite;}
+.ai-btn:hover{transform:scale(1.1);box-shadow:0 0 50px rgba(255,70,85,.6);}
+.ai-btn svg{width:22px;height:22px;fill:#fff;}
+.ai-tip{font-family:var(--mono);font-size:.5rem;letter-spacing:2px;color:var(--muted);white-space:nowrap;display:none;}
+@media(min-width:860px){
+  .ai-fab{bottom:28px;right:28px;}
+  .ai-btn{width:56px;height:56px;}
+  .ai-btn svg{width:24px;height:24px;}
+  .ai-tip{display:block;}
+}
+
+.ai-panel{position:fixed;top:0;right:0;bottom:0;width:400px;background:rgba(6,6,14,.97);border-left:1px solid var(--bdr);z-index:800;transform:translateX(100%);transition:transform .38s var(--ease);display:flex;flex-direction:column;backdrop-filter:blur(32px);}
+.ai-panel.open{transform:translateX(0);}
+.aph{padding:22px 24px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.aph-left{display:flex;flex-direction:column;gap:4px;}
+.aph-title{font-family:var(--dp);font-size:1.5rem;font-weight:800;letter-spacing:4px;}
+.aph-sub{font-family:var(--mono);font-size:.56rem;color:var(--red);letter-spacing:3px;text-transform:uppercase;}
+.aph-status{font-family:var(--mono);font-size:.54rem;color:var(--green);letter-spacing:2px;display:flex;align-items:center;gap:5px;}
+.aph-status::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+.ap-close{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:1.1rem;padding:6px;transition:.2s;line-height:1;}
+.ap-close:hover{color:var(--txt);}
+.ap-msgs{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px;}
+.msg{max-width:92%;padding:13px 16px;border-radius:var(--r2);font-size:.85rem;line-height:1.6;animation:fadeUp .3s var(--ease);}
+.msg.ai{background:rgba(255,70,85,.07);border:1px solid rgba(255,70,85,.15);color:var(--txt);align-self:flex-start;border-radius:4px var(--r2) var(--r2) var(--r2);}
+.msg.user{background:rgba(75,189,255,.08);border:1px solid rgba(75,189,255,.15);color:var(--txt);align-self:flex-end;border-radius:var(--r2) 4px var(--r2) var(--r2);}
+.msg.typing{background:rgba(255,70,85,.05);border:1px solid rgba(255,70,85,.1);align-self:flex-start;border-radius:4px var(--r2) var(--r2) var(--r2);}
+.typing-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--red);margin:0 2px;animation:tdot 1.2s ease infinite;}
+.typing-dots span:nth-child(2){animation-delay:.2s;}.typing-dots span:nth-child(3){animation-delay:.4s;}
+.msg-tag{font-family:var(--mono);font-size:.56rem;letter-spacing:3px;margin-bottom:6px;text-transform:uppercase;}
+.msg.ai .msg-tag{color:var(--red);}
+.msg.user .msg-tag{color:var(--blue);}
+.chips-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.chip-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,70,85,.07);border:1px solid rgba(255,70,85,.18);border-radius:var(--r3);padding:5px 11px;font-family:var(--mono);font-size:.58rem;letter-spacing:1px;color:var(--red);cursor:pointer;transition:.2s;}
+.chip-btn:hover{background:rgba(255,70,85,.15);}
+.ap-inp{padding:16px 22px;border-top:1px solid var(--bdr);display:flex;gap:8px;flex-shrink:0;}
+.ap-inp input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r3);padding:11px 15px;color:var(--txt);font-family:var(--body);font-size:.88rem;outline:none;transition:.2s;}
+.ap-inp input:focus{border-color:rgba(255,70,85,.4);}
+.ap-send{padding:11px 18px;background:var(--red);border:none;border-radius:var(--r3);color:#fff;font-family:var(--mono);font-size:.62rem;letter-spacing:2px;cursor:pointer;transition:.2s;text-transform:uppercase;}
+.ap-send:hover{background:var(--red2);}
+
+/* FOOTER */
+footer{text-align:center;padding:32px;border-top:1px solid var(--bdr);font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:3px;margin-top:20px;}
+footer span{color:var(--red);}
+
+@media(max-width:860px){
+  .ai-panel{width:100%;top:0;}
+  body{padding-bottom:20px;}
+  .dash{padding:20px 0 40px;}
+  .W{padding:0 14px;}
+  nav{padding:14px 16px;}
+  .nav-r{display:none;}
+  .sgrid{grid-template-columns:repeat(2,1fr)!important;}
+  .tcol{grid-template-columns:1fr!important;}
+  .htitle{font-size:clamp(2.8rem,12vw,5rem);}
+  .scard{padding:20px 16px;}
+}
+@media(max-width:760px){
+  .mth{display:none;}
+  /* Card-style match rows on mobile — 2 row layout */
+  .mr{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding:12px 14px;
+  }
+  .mr-top{display:flex;align-items:center;gap:10px;}
+  .mr-top .ag-ico{width:36px;height:36px;flex-shrink:0;}
+  .mr-top .minfo{flex:1;min-width:0;}
+  .mr-top .rbadge{flex-shrink:0;font-size:.78rem;padding:4px 10px;}
+  .mr-bottom{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .mr-bottom .mval,.mr-bottom .acs-val{
+    display:flex;flex-direction:column;align-items:center;
+    background:rgba(255,255,255,.03);
+    border-radius:var(--r3);
+    padding:7px 4px;
+  }
+  .mr-bottom .mval .mv{font-size:.9rem;}
+  .mr-bottom .mval .ml{font-size:.5rem;margin-top:2px;}
+  .mr-bottom .acs-val{font-size:1rem;}
+  /* Hide old inline children, show wrapper divs instead */
+  .mr > .ag-ico,.mr > .minfo,.mr > div:not(.mr-top):not(.mr-bottom){display:none;}
+  .mr > .mr-top,.mr > .mr-bottom{display:flex;}
+  .mr > .mr-bottom{display:grid;}
+}
+@media(max-width:480px){
+  .sgrid{grid-template-columns:1fr 1fr!important;}
+  .sc{min-height:auto;padding:18px 16px;}
+  .sc-val{font-size:2.4rem;}
+  .ai-fab{right:16px;bottom:24px;}
+  .hero{padding:40px 0 24px;}
+  .htitle{font-size:clamp(2.4rem,11vw,4rem);}
+}
+
+/* WISHLIST */
+#wishlistDrawer{position:fixed;right:20px;bottom:88px;width:300px;max-height:55vh;background:rgba(10,10,22,.98);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:16px;overflow:auto;display:none;z-index:1000;backdrop-filter:blur(24px);}
+@media(max-width:860px){
+  #wishlistDrawer{right:10px;left:10px;width:auto;bottom:80px;}
+}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes slideUp{from{opacity:0;transform:translateY(32px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+@keyframes aipulse{0%,100%{box-shadow:0 0 28px rgba(255,70,85,.4);}50%{box-shadow:0 0 55px rgba(255,70,85,.65);}}
+@keyframes tdot{0%,80%,100%{transform:scale(0);}40%{transform:scale(1);}}
+</style>
+</head>
+<body>
+<canvas id="bgc"></canvas>
+<div class="grain"></div>
+<div class="W">
+
+<!-- SETUP MODAL -->
+<div class="overlay hidden" id="setupModal">
+  <div class="modal">
+    <div class="modal-accent"></div>
+    <div class="modal-title">LIVE DATA KEY</div>
+    <div class="modal-sub">FragLy is running live — a HenrikDev key is baked in by default. You can override it with your own key below for a dedicated rate limit.</div>
+    <label class="modal-lbl">HenrikDev API Key</label>
+    <input class="modal-inp" id="keyInput" type="password" placeholder="HDEV-xxxx (leave blank to use default)" autocomplete="off">
+    <a class="modal-a" href="https://discord.com/invite/X3GaVkX2YN" target="_blank">→ Get your own key from Henrik's Discord</a>
+    <div class="modal-btns">
+      <button class="btn-p" onclick="saveKey()">SAVE KEY</button>
+      <button class="btn-s" onclick="dismissModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- WISHLIST DRAWER -->
+<div id="wishlistDrawer">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+    <div style="font-family:var(--dp);font-size:1.1rem;font-weight:700;letter-spacing:2px;">WISHLIST</div>
+    <button style="margin-left:auto;" onclick="toggleWishlist()" class="im-close">✕</button>
+  </div>
+  <div id="wishListContent"><div class="no-data">Your wishlist is empty.</div></div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    <span class="logo-val">Frag</span><span class="logo-stats">Ly</span>
+    <div class="logo-dot"></div>
+  </div>
+  <div class="nav-r">
+    <div class="nav-pill" id="apiPill" onclick="document.getElementById('setupModal').classList.remove('hidden')">⚙ API KEY</div>
+    <div class="nav-pill" onclick="toggleWishlist()">✦ WISHLIST <span id="wishCount">0</span></div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="grid-lines"></div>
+  <div class="hero-vign"></div>
+  <div class="hero-glow"></div>
+  <p class="eyebrow">Powered by FragLy</p>
+  <h1 class="htitle">
+    <span class="l1">DOMINATE</span>
+    <span class="l2">YOUR RANK</span>
+  </h1>
+  <p class="hsub">Real Stats · AI Coach · Match Intel · Zero Config</p>
+  <div class="scard">
+    <p class="scard-lbl">Enter Your Riot ID</p>
+    <div class="srow">
+      <div class="sinput-wrap">
+        <input class="sinput" id="nameIn" type="text" placeholder="PlayerName#TAG" autocomplete="off" spellcheck="false">
+        <div class="search-history" id="searchHistory"></div>
+      </div>
+      <select class="rsel" id="regIn">
+        <option value="na">NA</option><option value="eu">EU</option>
+        <option value="ap" selected>AP</option><option value="kr">KR</option>
+        <option value="latam">LATAM</option><option value="br">BR</option>
+      </select>
+    </div>
+    <p class="shint">e.g. TenZ#NA1 · AP</p>
+    <div class="errbox" id="errBox"></div>
+    <div class="loadwrap" id="loadingEl">
+      <div class="loadring"></div>
+      <p class="loadtxt" id="loadTxt">CONNECTING...</p>
+    </div>
+    <button class="sbtn" id="scanBtn" onclick="fetchStats()">SCAN PLAYER</button>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section class="dash" id="dash">
+
+  <!-- PROFILE -->
+  <div class="prof" id="profBanner">
+    <div class="prof-glow"></div>
+    <div class="prof-top">
+      <div class="avatar-wrap">
+        <img class="avatar" id="pAvatar" src="" alt="Player avatar" onerror="this.style.display='none';document.getElementById('pAvatarFallback').style.display='flex'">
+        <div class="avatar-fallback" id="pAvatarFallback" style="display:none"></div>
+        <div class="avatar-ring"></div>
+      </div>
+      <div class="prof-info">
+        <div class="pname" id="pName">—</div>
+        <div class="ptag" id="pTag">—</div>
+        <div class="pmeta">
+          <span class="chip"><span class="chip-dot"></span><span id="pLvl">—</span> LVL</span>
+          <span class="chip"><span class="chip-dot"></span><span id="pReg">—</span></span>
+          <span class="chip"><span class="chip-dot"></span><span id="pGames">—</span> GAMES</span>
+        </div>
+      </div>
+    </div>
+    <div class="prof-stats">
+      <div class="pstat-card">
+        <div class="pstat-val ts-val" id="tsVal">—</div>
+        <div class="pstat-lbl">Tracker<br>Score</div>
+      </div>
+      <div class="pstat-card">
+        <div class="pstat-val grade-val" id="gradeVal">—</div>
+        <div class="pstat-lbl">Grade</div>
+      </div>
+      <div class="pstat-card">
+        <img class="rank-img" id="rankImg" src="" alt="Rank">
+        <div class="rank-nm" id="rankNm">—</div>
+        <div class="pstat-lbl" id="rankRR">— RR</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS GRID -->
+  <div class="sh"><div class="sh-title">Performance Overview</div><div class="sh-line"></div><span class="sh-tag" id="matchCt">—</span></div>
+  <div class="sgrid" id="sgrid"></div>
+
+  <!-- RADAR + FORM -->
+  <div class="tcol">
+    <div class="panel">
+      <div class="sh"><h2 class="sh-title">Performance Radar</h2><div class="sh-line"></div></div>
+      <div class="radar-wrap" id="radarWrap"></div>
+    </div>
+    <div class="panel">
+      <div class="sh"><h2 class="sh-title">Recent Form</h2><div class="sh-line"></div><span class="sh-tag" id="formTag">LAST 10 · ACS</span></div>
+      <div class="form-chart-wrap" id="formChart"></div>
+      <div class="form-lbl" id="formLbl"></div>
+    </div>
+  </div>
+
+  <!-- MAP + AGENT (tabbed by mode) -->
+  <div class="tcol">
+    <div class="panel">
+      <div class="sh"><h2 class="sh-title">Map Performance</h2><div class="sh-line"></div></div>
+      <div class="mode-tabs" id="mapModeTabs"></div>
+      <table class="ptbl" id="mapTbl">
+        <thead><tr><th>MAP</th><th>G</th><th>WIN%</th><th>K/D</th><th>ACS</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="sh"><h2 class="sh-title">Agent Pool</h2><div class="sh-line"></div></div>
+      <div class="mode-tabs" id="agentModeTabs"></div>
+      <table class="ptbl" id="agentTbl">
+        <thead><tr><th>AGENT</th><th>G</th><th>WIN%</th><th>K/D</th><th>HS%</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MATCH HISTORY -->
+  <div class="sh"><h2 class="sh-title">Recent Matches</h2><div class="sh-line"></div></div>
+  <div class="mfilters" id="mfilters"></div>
+  <div class="mth"><span></span><span>MAP</span><span style="text-align:center">RESULT</span><span style="text-align:center">SCORE</span><span style="text-align:center">K / D / A</span><span style="text-align:center">ACS</span><span style="text-align:center">HS%</span></div>
+  <div class="mlist" id="mlist"></div>
+
+</section>
+
+<!-- AI COACH FAB -->
+<div class="ai-fab">
+  <button class="ai-btn" onclick="toggleAI()" title="AI Coach">
+    <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2m-3 9a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2m6 0a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2z"/></svg>
+  </button>
+  <span class="ai-tip">AI COACH</span>
+</div>
+
+<!-- AI PANEL -->
+<div class="ai-panel" id="aiPanel">
+  <div class="aph">
+    <div class="aph-left">
+      <div class="aph-title">AI COACH</div>
+      <div class="aph-sub">Powered by Claude · Keyless</div>
+      <div class="aph-status" id="aiStatus">READY</div>
+    </div>
+    <button class="ap-close" onclick="toggleAI()">✕</button>
+  </div>
+  <div class="ap-msgs" id="apMsgs"></div>
+  <div class="ap-inp">
+    <input id="apInput" type="text" placeholder="Ask your AI coach..." onkeydown="if(event.key==='Enter')sendMsg()">
+    <button class="ap-send" onclick="sendMsg()">SEND</button>
+  </div>
+</div>
+
+<footer><span>FragLy</span> &nbsp;v3 &nbsp;·&nbsp; KEYLESS BY DEFAULT &nbsp;·&nbsp; POWERED BY CLAUDE &nbsp;·&nbsp; UNOFFICIAL</footer>
+</div><!-- /.W -->
+
+<script>
+/* ═══════════════════════════════════════════
+   BACKGROUND CANVAS — particle field
+═══════════════════════════════════════════ */
+(()=>{
+  try{
+    const c=document.getElementById('bgc');
+    if(!c)return;
+    const ctx=c.getContext('2d');
+    if(!ctx){c.style.display='none';return;}
+    let W,H,pts=[],raf;
+    const resize=()=>{W=c.width=window.innerWidth;H=c.height=window.innerHeight;};
+    class P{
+      constructor(){this.reset();}
+      reset(){this.x=Math.random()*W;this.y=Math.random()*H;this.r=Math.random()*.9+.2;this.vx=(Math.random()-.5)*.18;this.vy=(Math.random()-.5)*.18;this.a=Math.random()*.35+.06;this.gold=Math.random()>.75;}
+      update(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>W||this.y<0||this.y>H)this.reset();}
+      draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=this.gold?'#E8B84B':'#FF4655';ctx.globalAlpha=this.a;ctx.fill();}
+    }
+    resize();
+    // Fewer particles on mobile for performance
+    const count=window.innerWidth<600?30:70;
+    pts=Array.from({length:count},()=>new P());
+    window.addEventListener('resize',()=>{resize();});
+    const loop=()=>{
+      try{
+        ctx.clearRect(0,0,W,H);ctx.globalAlpha=1;
+        for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+          const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+          if(d<90){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(255,70,85,${.04*(1-d/90)})`;ctx.lineWidth=.5;ctx.stroke();}
+        }
+        pts.forEach(p=>{p.update();p.draw();});ctx.globalAlpha=1;
+        raf=requestAnimationFrame(loop);
+      }catch(e){if(raf)cancelAnimationFrame(raf);}
+    };
+    loop();
+  }catch(e){
+    const c=document.getElementById('bgc');if(c)c.style.display='none';
+  }
+})();
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+const S={stats:null,player:null,matches:[],apiKey:'',matchFilter:'all',conversationHistory:[]};
+const LS={get:k=>localStorage.getItem(k)||'',set:(k,v)=>localStorage.setItem(k,v)};
+
+const _BAKED_KEY='HDEV-48f17e5b-60eb-4d15-8389-9e1c25c48973';
+function initKeys(){
+  // Seed the baked key if nothing has been saved yet — plug & play for all users
+  if(!LS.get('hd_key'))LS.set('hd_key',_BAKED_KEY);
+  S.apiKey=LS.get('hd_key')||_BAKED_KEY;
+  const pill=document.getElementById('apiPill');
+  pill.textContent='✓ LIVE';
+  pill.classList.add('ok');
+}
+function saveKey(){
+  const k=document.getElementById('keyInput').value.trim()||_BAKED_KEY;
+  S.apiKey=k;
+  LS.set('hd_key',k);
+  const pill=document.getElementById('apiPill');
+  pill.textContent='✓ LIVE';
+  pill.classList.add('ok');
+  dismissModal();
+}
+function dismissModal(){document.getElementById('setupModal').classList.add('hidden');}
+
+/* ═══════════════════════════════════════════
+   HENRIK API
+═══════════════════════════════════════════ */
+const BASE='https://api.henrikdev.xyz/valorant';
+const enc=s=>encodeURIComponent(s);
+async function api(url){
+  const opts={headers:{}};
+  if(S.apiKey)opts.headers['Authorization']=S.apiKey;
+  const r=await fetch(url,opts);
+  if(r.status===401)throw new Error('API_401');
+  if(r.status===404)throw new Error('Player not found. Check name, tag and region.');
+  if(r.status===429)throw new Error('Rate limited. Please wait a moment.');
+  if(!r.ok)throw new Error(`Server error (HTTP ${r.status}). Please retry.`);
+  return r.json();
+}
+
+/* ═══════════════════════════════════════════
+   DEMO DATA (keyless fallback)
+═══════════════════════════════════════════ */
+function createDemoData(name,tag,region){
+  const account={name:name||'VALORANT PLAYER',tag:tag||'0000',account_level:48,card:{small:''}};
+  const mmr={current_data:{images:{large:'',small:''},currenttierpatched:'Diamond 2',ranking_in_tier:68}};
+  const agentsData=[
+    {char:'Jett',k:24,d:13,a:8,hs:10,bs:45,ls:3,sc:610,dm:2560,dr:1220,won:true,map:'Ascent',rounds:24,team:'Blue',agIco:''},
+    {char:'Chamber',k:18,d:15,a:5,hs:8,bs:36,ls:2,sc:480,dm:2200,dr:1580,won:false,map:'Bind',rounds:24,team:'Blue',agIco:''},
+    {char:'Sage',k:15,d:10,a:12,hs:5,bs:40,ls:0,sc:430,dm:1980,dr:960,won:true,map:'Haven',rounds:24,team:'Blue',agIco:''},
+    {char:'Phoenix',k:21,d:14,a:7,hs:9,bs:42,ls:1,sc:520,dm:2420,dr:1340,won:false,map:'Split',rounds:24,team:'Blue',agIco:''},
+    {char:'Raze',k:27,d:11,a:6,hs:11,bs:38,ls:2,sc:620,dm:2700,dr:1180,won:true,map:'Breeze',rounds:24,team:'Blue',agIco:''},
+    {char:'Jett',k:20,d:12,a:4,hs:9,bs:38,ls:1,sc:550,dm:2320,dr:1120,won:true,map:'Fracture',rounds:22,team:'Blue',agIco:''},
+    {char:'Neon',k:23,d:16,a:9,hs:12,bs:44,ls:2,sc:580,dm:2480,dr:1460,won:false,map:'Lotus',rounds:26,team:'Blue',agIco:''},
+  ];
+  const matches=agentsData.map(d=>({
+    metadata:{map:d.map,mode:'Competitive',rounds_played:d.rounds},
+    teams:{blue:{rounds_won:d.won?13:9,has_won:d.won},red:{rounds_won:d.won?9:13,has_won:!d.won}},
+    players:{all_players:[{name,tag,team:d.team,character:d.char,stats:{kills:d.k,deaths:d.d,assists:d.a,headshots:d.hs,bodyshots:d.bs,legshots:d.ls,score:d.sc},damage_made:d.dm,damage_received:d.dr,assets:{agent:{small:d.agIco}}}]}
+  }));
+  return{account,mmr,matches};
+}
+
+function fallbackToDemo(name,rawTag,region){
+  showToast('Demo mode active — showing sample data');
+  const{account,mmr,matches}=createDemoData(name,rawTag,region);
+  render(account,mmr,matches,name,rawTag,region);
+  document.getElementById('dash').classList.add('on');
+  setTimeout(()=>document.getElementById('dash').scrollIntoView({behavior:'smooth',block:'start'}),200);
+  setTimeout(animBars,400);
+  setTimeout(()=>initAICoach(name,computeStats(matches,name,rawTag)),600);
+}
+
+/* ═══════════════════════════════════════════
+   MAIN FETCH
+═══════════════════════════════════════════ */
+async function fetchStats(){
+  let raw=document.getElementById('nameIn').value.trim();
+  const region=document.getElementById('regIn').value;
+  let name=raw,rawTag='';
+  if(raw.includes('#')){const s=raw.split('#');name=s[0].trim();rawTag=(s[1]||'').trim();}
+  if(!name||!rawTag){showErr('Enter your Riot ID with tag, e.g. TenZ#NA1');return;}
+  hideErr();setLoad(true,'CONNECTING TO RIOT SERVERS...');
+  document.getElementById('dash').classList.remove('on');
+  try{
+    // Always fetch real account data first — the keyless free tier supports this
+    // endpoint, so we can get the real player card URL even without a full API key.
+    setLoad(true,'FETCHING ACCOUNT DATA...');
+    // Use v1 (NOT v2) — v1 returns card:{small,large,wide} full image URLs.
+    // v2 only returns a UUID string for card, so acc.card.small would be undefined.
+    const acc=await api(`${BASE}/v1/account/${enc(name)}/${enc(rawTag)}`);
+    if(!acc?.data)throw new Error('Player not found.');
+    setLoad(true,'LOADING RANK & MMR...');
+    const mmr=await api(`${BASE}/v2/mmr/${region}/${enc(name)}/${enc(rawTag)}`);
+    setLoad(true,'PULLING MATCH HISTORY...');
+    const mData=await api(`${BASE}/v3/matches/${region}/${enc(name)}/${enc(rawTag)}?size=15`);
+    const matches=mData?.data||[];
+    setLoad(true,'COMPUTING INTELLIGENCE...');
+    render(acc.data,mmr?.data,matches,name,rawTag,region);
+    document.getElementById('dash').classList.add('on');
+    setTimeout(()=>document.getElementById('dash').scrollIntoView({behavior:'smooth',block:'start'}),200);
+    setTimeout(animBars,400);
+    setTimeout(()=>initAICoach(name,computeStats(matches,name,rawTag)),600);
+  }catch(e){
+    showErr(e.message||'Something went wrong. Please retry.');
+  }finally{setLoad(false);}
+}
+
+function showErr(m){const b=document.getElementById('errBox');b.textContent='⚠ '+m;b.classList.add('on');}
+function hideErr(){document.getElementById('errBox').classList.remove('on');}
+function setLoad(v,t=''){document.getElementById('loadingEl').classList.toggle('on',v);document.getElementById('scanBtn').disabled=v;if(t)document.getElementById('loadTxt').textContent=t;}
+
+/* ═══════════════════════════════════════════
+   STATS COMPUTATION
+═══════════════════════════════════════════ */
+function computeStats(matches,name,tag){
+  let kills=0,deaths=0,assists=0,hs=0,body=0,legs=0,wins=0,dmgMade=0,dmgRecv=0,score=0,rounds=0,total=0;
+  const maps={},agents={},formACS=[];
+  for(const m of matches){
+    const me=(m.players?.all_players||[]).find(p=>p.name?.toLowerCase()===name.toLowerCase()&&p.tag?.toLowerCase()===tag.toLowerCase());
+    if(!me)continue;total++;
+    const k=me.stats?.kills||0,d=me.stats?.deaths||0,a=me.stats?.assists||0;
+    const h=me.stats?.headshots||0,b=me.stats?.bodyshots||0,l=me.stats?.legshots||0;
+    const dmg=me.damage_made||0,dr=me.damage_received||0,sc=me.stats?.score||0;
+    const rnd=m.metadata?.rounds_played||20;
+    kills+=k;deaths+=d;assists+=a;hs+=h;body+=b;legs+=l;dmgMade+=dmg;dmgRecv+=dr;score+=sc;rounds+=rnd;
+    const myT=me.team?.toLowerCase();const won=m.teams?.[myT]?.has_won;if(won)wins++;
+    formACS.push(Math.round(sc/rnd));
+    const map=m.metadata?.map||'Unknown';
+    if(!maps[map])maps[map]={k:0,d:0,w:0,g:0,sc:0,rnd:0};
+    maps[map].k+=k;maps[map].d+=d;maps[map].g++;maps[map].sc+=sc;maps[map].rnd+=rnd;if(won)maps[map].w++;
+    const ag=me.character||'Unknown';const agIco=me.assets?.agent?.small||'';
+    if(!agents[ag])agents[ag]={k:0,d:0,h:0,b:0,l:0,w:0,g:0,ico:agIco};
+    agents[ag].k+=k;agents[ag].d+=d;agents[ag].h+=h;agents[ag].b+=b;agents[ag].l+=l;agents[ag].g++;if(won)agents[ag].w++;
+  }
+  const tot=hs+body+legs;
+  const hsPct=tot>0?Math.round(hs/tot*100):0;
+  const winPct=total>0?Math.round(wins/total*100):0;
+  const kd=deaths>0?(kills/deaths):kills;
+  const kda=deaths>0?((kills+assists*.5)/deaths):(kills+assists*.5);
+  const adr=rounds>0?Math.round(dmgMade/rounds):0;
+  const acs=rounds>0?Math.round(score/rounds):0;
+  const ddr=rounds>0?Math.round((dmgMade-dmgRecv)/rounds):0;
+  const kpr=rounds>0?parseFloat((kills/rounds).toFixed(2)):0;
+  const ts=Math.round(Math.min(acs/3,133)+Math.min(winPct*2,200)+Math.min((kd-0.5)*200,200)+Math.min(hsPct*3,100)+Math.min(Math.max(ddr+50,0)*1.5,100));
+  const grade=ts>=750?'S+':ts>=600?'S':ts>=450?'A':ts>=300?'B':ts>=150?'C':'D';
+  const mapArr=Object.entries(maps).sort((a,b)=>b[1].g-a[1].g);
+  const agentArr=Object.entries(agents).sort((a,b)=>b[1].g-a[1].g);
+  return{kills,deaths,assists,hsPct,winPct,wins,total,kd:+kd.toFixed(2),kda:+kda.toFixed(2),adr,acs,ddr,kpr,ts,grade,formACS,mapArr,agentArr,avgKills:(total>0?+(kills/total).toFixed(1):0)};
+}
+
+/* ═══════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════ */
+function getRankBench(rank){
+  const map={'iron':{acs:75,hs:12},'bronze':{acs:100,hs:14},'silver':{acs:130,hs:17},'gold':{acs:160,hs:20},'platinum':{acs:190,hs:23},'diamond':{acs:220,hs:27},'ascendant':{acs:240,hs:29},'immortal':{acs:260,hs:31},'radiant':{acs:280,hs:33}};
+  for(const k of Object.keys(map))if(rank.includes(k))return map[k];return null;
+}
+
+function render(acc,mmr,matches,name,tag,region){
+  S.matches=matches;S.player={name:acc.name||name,tag:acc.tag||tag};
+  // Avatar is handled by the render patch wrapper below
+  document.getElementById('pName').textContent=acc.name||name;
+  document.getElementById('pTag').textContent=`#${acc.tag||tag} · ${region.toUpperCase()}`;
+  document.getElementById('pLvl').textContent=acc.account_level||'?';
+  document.getElementById('pReg').textContent=region.toUpperCase();
+  const cur=mmr?.current_data;
+  document.getElementById('rankImg').src=cur?.images?.large||cur?.images?.small||'';
+  document.getElementById('rankNm').textContent=cur?.currenttierpatched||'Unranked';
+  document.getElementById('rankRR').textContent=(cur?.ranking_in_tier??'?')+' RR';
+  const st=computeStats(matches,name,tag);S.stats=st;
+  document.getElementById('pGames').textContent=st.total;
+  document.getElementById('matchCt').textContent=st.total+' GAMES ANALYZED';
+  document.getElementById('tsVal').textContent=st.ts;
+  document.getElementById('gradeVal').textContent=st.grade;
+  const rp=cur?.currenttierpatched?.toLowerCase()||'';const bench=getRankBench(rp);
+  const hsCol=st.hsPct>=35?'g':st.hsPct>=22?'b':'r';
+  const wrCol=st.winPct>=55?'gr':st.winPct>=45?'b':'r';
+  const kdCol=st.kd>=1.4?'g':st.kd>=1.0?'gr':'r';
+  const acsCol=st.acs>=220?'g':st.acs>=160?'b':'r';
+  document.getElementById('sgrid').innerHTML=[
+    scard('◎','HEADSHOT %',st.hsPct+'%',hsCol,`${bench?'Rank avg: '+bench.hs+'%':''} · Last ${st.total} games`,Math.min(st.hsPct*2.2,100),'rgba(255,70,85,.1)'),
+    scard('◈','WIN RATE',st.winPct+'%',wrCol,`${st.wins}W / ${st.total-st.wins}L out of ${st.total} games`,st.winPct,'rgba(61,255,160,.08)'),
+    scard('⬟','K/D RATIO',st.kd,kdCol,`${st.kills} Kills · ${st.deaths} Deaths · ${st.assists} Assists`,Math.min(st.kd*33,100),'rgba(255,70,85,.1)'),
+    scard('◆','ACS',st.acs,acsCol,`${bench?'Rank avg: '+bench.acs+' ACS':'Combat Score per Round'}`,Math.min(st.acs/3,100),'rgba(232,184,75,.08)'),
+    scard('◉','DAMAGE / RND',st.adr,st.adr>=150?'gr':st.adr>=100?'b':'r',`Damage delta: ${st.ddr>0?'+':''}${st.ddr} per round`,Math.min(st.adr/2,100),'rgba(75,189,255,.08)'),
+    scard('⬠','KILLS / RND',st.kpr,st.kpr>=1?'g':st.kpr>=.7?'b':'r',`Average ${st.avgKills} kills per match`,Math.min(st.kpr*50,100),'rgba(255,70,85,.08)'),
+    scard('◇','KDA SCORE',st.kda,st.kda>=2?'g':st.kda>=1.4?'b':'r','(Kills + 0.5 × Assists) ÷ Deaths',null,'rgba(232,184,75,.06)'),
+    scard('⬡','TRACKER SCORE',st.ts,'b',`Grade ${st.grade} · Composite of all metrics`,Math.min(st.ts/10,100),'rgba(75,189,255,.08)'),
+  ].join('');
+  document.getElementById('radarWrap').innerHTML=radarChart([
+    {l:'AIM',v:Math.min(st.hsPct*2.5,100)},{l:'IMPACT',v:Math.min(st.acs/2.8,100)},
+    {l:'COMBAT',v:Math.min(st.kd*50,100)},{l:'DAMAGE',v:Math.min(st.adr/2,100)},
+    {l:'CLUTCH',v:Math.min(st.winPct*1.4,100)},{l:'CONSIST',v:Math.min(st.kpr*60,100)},
+  ]);
+  renderForm(st.formACS);renderMapTbl(st.mapArr,matches);renderAgentTbl(st.agentArr,matches);
+  renderMatches(matches,name,tag);
+}
+
+/* SCARD */
+function scard(ico,lbl,val,col,sub,barPct=null,blobColor='rgba(255,70,85,.1)'){
+  return `<div class="sc"><div class="sc-blob" style="background:${blobColor}"></div><div><div class="sc-ico">${ico}</div><div class="sc-lbl">${lbl}</div></div><div class="sc-val ${col}">${val}</div><div class="sc-sub">${sub}</div>${barPct!==null?`<div class="sc-footer"><div class="sc-bar"><div class="sc-fill" data-t="${barPct}" style="width:0%"></div></div><div class="sc-bm">${barPct>=75?'EXCELLENT':barPct>=50?'GOOD':barPct>=25?'AVERAGE':'NEEDS WORK'}</div></div>`:''}</div>`;
+}
+function animBars(){document.querySelectorAll('.sc-fill[data-t]').forEach(b=>b.style.width=b.dataset.t+'%');}
+
+/* RADAR */
+function radarChart(metrics){
+  const cx=130,cy=130,r=92,n=metrics.length;
+  const ang=i=>(i*2*Math.PI/n)-Math.PI/2;
+  const grids=[.33,.67,1].map(l=>{const pts=metrics.map((_,i)=>`${cx+r*l*Math.cos(ang(i))},${cy+r*l*Math.sin(ang(i))}`).join(' ');return`<polygon points="${pts}" fill="none" stroke="rgba(255,70,85,0.08)" stroke-width="1"/>`;}).join('');
+  const axes=metrics.map((_,i)=>`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(ang(i))}" y2="${cy+r*Math.sin(ang(i))}" stroke="rgba(255,70,85,0.1)" stroke-width="1"/>`).join('');
+  const dpts=metrics.map((m,i)=>{const v=m.v/100;return`${cx+r*v*Math.cos(ang(i))},${cy+r*v*Math.sin(ang(i))}`;}).join(' ');
+  const data=`<polygon points="${dpts}" fill="rgba(255,70,85,0.14)" stroke="#FF4655" stroke-width="1.5"/>`;
+  const dots=metrics.map((m,i)=>{const v=m.v/100;return`<circle cx="${cx+r*v*Math.cos(ang(i))}" cy="${cy+r*v*Math.sin(ang(i))}" r="2.5" fill="#FF4655" opacity="0.9"/>`;}).join('');
+  const lbls=metrics.map((m,i)=>{const lx=cx+(r+18)*Math.cos(ang(i)),ly=cy+(r+18)*Math.sin(ang(i));return`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#4E4E72" font-size="8.5" font-family="DM Mono,monospace" letter-spacing="1">${m.l}</text>`;}).join('');
+  return `<svg viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">${grids}${axes}${data}${dots}${lbls}</svg>`;
+}
+
+/* FORM CHART */
+function renderForm(arr){
+  if(!arr||!arr.length){document.getElementById('formChart').innerHTML='';return;}
+  const max=Math.max(...arr,1),min=Math.min(...arr,0),range=max-min||1;
+  const W=300,H=90,pad=8;
+  const pts=arr.map((v,i)=>{const x=pad+(i/(arr.length-1||1))*(W-pad*2);const y=H-pad-(v-min)/range*(H-pad*2);return`${x},${y}`;});
+  const area=`M${pts[0]} `+pts.slice(1).map(p=>`L${p}`).join(' ')+` L${pad+(arr.length-1)/(arr.length-1||1)*(W-pad*2)},${H} L${pad},${H} Z`;
+  document.getElementById('formChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FF4655" stop-opacity=".25"/><stop offset="100%" stop-color="#FF4655" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#fg)"/><polyline points="${pts.join(' ')}" fill="none" stroke="#FF4655" stroke-width="1.5" stroke-linejoin="round"/>${arr.map((v,i)=>{const x=pad+(i/(arr.length-1||1))*(W-pad*2);const y=H-pad-(v-min)/range*(H-pad*2);return`<circle cx="${x}" cy="${y}" r="2.2" fill="#FF4655" opacity="0.8"/>`;}).join('')}</svg>`;
+  document.getElementById('formLbl').innerHTML=`<span>OLDER</span><span>RECENT</span>`;
+}
+
+/* MAP TABLE — tabbed by mode */
+let _mapTabMode='all', _agentTabMode='all';
+function buildModeTabsFor(matches, tabsElId, activeMode, onClickFn){
+  const modes=[...new Set(matches.map(m=>(m.metadata?.mode||'Competitive').toUpperCase()))].filter(Boolean);
+  const el=document.getElementById(tabsElId);if(!el)return;
+  el.innerHTML=['ALL',...modes].map(m=>`<button class="mode-tab ${activeMode===(m==='ALL'?'all':m.toLowerCase())?'active':''}" onclick="${onClickFn}('${m}')">${m}</button>`).join('');
+}
+function renderMapTbl(mapArr, allMatches){
+  buildModeTabsFor(allMatches||[],'mapModeTabs',_mapTabMode,'setMapTabMode');
+  const filtered=_mapTabMode==='all'?allMatches:(allMatches||[]).filter(m=>(m.metadata?.mode||'Competitive').toLowerCase()===_mapTabMode);
+  // recompute maps for filtered
+  const maps={};
+  const name=S.player?.name,tag=S.player?.tag;
+  for(const m of filtered){
+    const me=(m.players?.all_players||[]).find(p=>p.name?.toLowerCase()===name?.toLowerCase()&&p.tag?.toLowerCase()===tag?.toLowerCase());
+    if(!me)continue;
+    const k=me.stats?.kills||0,d=me.stats?.deaths||0,sc=me.stats?.score||0,rnd=m.metadata?.rounds_played||20;
+    const myT=me.team?.toLowerCase();const won=m.teams?.[myT]?.has_won;
+    const map=m.metadata?.map||'Unknown';
+    if(!maps[map])maps[map]={k:0,d:0,w:0,g:0,sc:0,rnd:0};
+    maps[map].k+=k;maps[map].d+=d;maps[map].g++;maps[map].sc+=sc;maps[map].rnd+=rnd;if(won)maps[map].w++;
+  }
+  const arr=Object.entries(maps).sort((a,b)=>b[1].g-a[1].g);
+  const tb=document.querySelector('#mapTbl tbody');if(!tb)return;
+  tb.innerHTML=arr.length?arr.slice(0,8).map(([map,d])=>{const wr=d.g>0?Math.round(d.w/d.g*100):0;const kd=d.d>0?(d.k/d.d).toFixed(2):'—';const acs=d.rnd>0?Math.round(d.sc/d.rnd):0;const wrc=wr>=55?'hi':wr>=45?'mid':'lo';return`<tr><td><div class="map-name">🗺 ${map}</div></td><td>${d.g}</td><td class="wr-cell ${wrc}">${wr}%</td><td>${kd}</td><td>${acs}</td></tr>`;}).join(''):`<tr><td colspan="5" style="color:var(--muted);font-family:var(--mono);font-size:.7rem;padding:16px 10px;text-align:center">No matches for this mode.</td></tr>`;
+}
+function setMapTabMode(m){_mapTabMode=m==='ALL'?'all':m.toLowerCase();renderMapTbl(null,S.matches);}
+
+/* AGENT TABLE — tabbed by mode */
+function renderAgentTbl(agentArr, allMatches){
+  buildModeTabsFor(allMatches||[],'agentModeTabs',_agentTabMode,'setAgentTabMode');
+  const filtered=_agentTabMode==='all'?allMatches:(allMatches||[]).filter(m=>(m.metadata?.mode||'Competitive').toLowerCase()===_agentTabMode);
+  const agents={};
+  const name=S.player?.name,tag=S.player?.tag;
+  for(const m of filtered){
+    const me=(m.players?.all_players||[]).find(p=>p.name?.toLowerCase()===name?.toLowerCase()&&p.tag?.toLowerCase()===tag?.toLowerCase());
+    if(!me)continue;
+    const k=me.stats?.kills||0,d=me.stats?.deaths||0;
+    const h=me.stats?.headshots||0,b=me.stats?.bodyshots||0,l=me.stats?.legshots||0;
+    const myT=me.team?.toLowerCase();const won=m.teams?.[myT]?.has_won;
+    const ag=me.character||'Unknown';const agIco=me.assets?.agent?.small||'';
+    if(!agents[ag])agents[ag]={k:0,d:0,h:0,b:0,l:0,w:0,g:0,ico:agIco};
+    agents[ag].k+=k;agents[ag].d+=d;agents[ag].h+=h;agents[ag].b+=b;agents[ag].l+=l;agents[ag].g++;if(won)agents[ag].w++;
+  }
+  const arr=Object.entries(agents).sort((a,b)=>b[1].g-a[1].g);
+  const tb=document.querySelector('#agentTbl tbody');if(!tb)return;
+  tb.innerHTML=arr.length?arr.slice(0,8).map(([ag,d])=>{const wr=d.g>0?Math.round(d.w/d.g*100):0;const kd=d.d>0?(d.k/d.d).toFixed(2):'—';const tot=d.h+d.b+d.l;const hs=tot>0?Math.round(d.h/tot*100):0;const wrc=wr>=55?'hi':wr>=45?'mid':'lo';return`<tr><td><div class="agent-cell">${d.ico?`<img class="agent-ico" src="${d.ico}" alt="${ag}" onerror="this.style.display='none'">`:'🎮'} ${ag}</div></td><td>${d.g}</td><td class="wr-cell ${wrc}">${wr}%</td><td>${kd}</td><td>${hs}%</td></tr>`;}).join(''):`<tr><td colspan="5" style="color:var(--muted);font-family:var(--mono);font-size:.7rem;padding:16px 10px;text-align:center">No matches for this mode.</td></tr>`;
+}
+function setAgentTabMode(m){_agentTabMode=m==='ALL'?'all':m.toLowerCase();renderAgentTbl(null,S.matches);}
+
+
+/* MATCHES */
+function renderMatches(matches,name,tag){
+  const modes=[...new Set(matches.map(m=>(m.metadata?.mode||'Competitive').toUpperCase()))];
+  const f=document.getElementById('mfilters');
+  f.innerHTML=['ALL',...modes].map(m=>`<button class="mfilter-btn ${S.matchFilter==='all'&&m==='ALL'||S.matchFilter===m.toLowerCase()?'active':''}" onclick="setMatchFilter('${m}')">${m}</button>`).join('');
+  let filtered=matches;
+  if(S.matchFilter!=='all')filtered=matches.filter(m=>(m.metadata?.mode||'Competitive').toLowerCase()===S.matchFilter.toLowerCase());
+  const rows=filtered.slice(0,12).map(m=>{
+    const me=(m.players?.all_players||[]).find(p=>p.name?.toLowerCase()===name.toLowerCase()&&p.tag?.toLowerCase()===tag.toLowerCase());
+    if(!me)return'';
+    const k=me.stats?.kills||0,d=me.stats?.deaths||0,a=me.stats?.assists||0;
+    const hs=me.stats?.headshots||0,b=me.stats?.bodyshots||0,l=me.stats?.legshots||0;
+    const tot=hs+b+l;const hsPct=tot>0?Math.round(hs/tot*100):0;
+    const hsC=hsPct>=35?'var(--gold)':hsPct>=22?'var(--blue)':'var(--muted2)';
+    const rnd=m.metadata?.rounds_played||20;const acs=Math.round((me.stats?.score||0)/rnd);
+    const acsC=acs>=220?'s':acs>=170?'a':acs>=120?'b':'c';
+    const myT=me.team?.toLowerCase();const won=m.teams?.[myT]?.has_won;const rc=won?'win':'loss';
+    const blW=m.teams?.blue?.rounds_won||0,rdW=m.teams?.red?.rounds_won||0;
+    const myR=myT==='blue'?blW:rdW,opR=myT==='blue'?rdW:blW;
+    const map=m.metadata?.map||'?';const mode=(m.metadata?.mode||'Competitive').toUpperCase();
+    const agIco=me.assets?.agent?.small||'';
+    return`<div class="mr ${rc}">
+      <div class="mr-top">
+        ${agIco?`<img class="ag-ico" src="${agIco}" alt="agent" onerror="this.src=''">`:`<div style="width:36px;height:36px;border-radius:50%;background:var(--surf);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0">🎮</div>`}
+        <div class="minfo"><div class="mmode">${mode}</div><div class="mmap">${map}</div></div>
+        <span class="rbadge ${rc}">${won?'WIN':'LOSS'}</span>
+      </div>
+      <div class="mr-bottom">
+        <div class="mval"><div class="mv">${myR}–${opR}</div><div class="ml">SCORE</div></div>
+        <div class="mval"><div class="mv">${k}/${d}/${a}</div><div class="ml">K/D/A</div></div>
+        <div class="acs-val ${acsC}">${acs}<div class="ml" style="font-family:var(--mono);font-size:.5rem;color:var(--muted);letter-spacing:2px">ACS</div></div>
+        <div class="mval"><div class="mv" style="color:${hsC};font-family:var(--dp);font-size:1.05rem;font-weight:700">${hsPct}%</div><div class="ml">HS%</div></div>
+      </div>
+    </div>`;
+  }).filter(Boolean);
+  document.getElementById('mlist').innerHTML=rows.length?rows.join(''):`<div style="color:var(--muted);font-family:var(--mono);font-size:.72rem;padding:20px">No matches found for this filter.</div>`;
+}
+function setMatchFilter(type){S.matchFilter=type==='ALL'?'all':type.toLowerCase();renderMatches(S.matches,S.player?.name,S.player?.tag);}
+
+/* WISHLIST */
+const WLS_KEY='val_wishlist_v3';
+function getWishlist(){try{return JSON.parse(localStorage.getItem(WLS_KEY)||'[]');}catch(e){return[];}}
+function setWishlist(arr){localStorage.setItem(WLS_KEY,JSON.stringify(arr));updateWishCount();}
+function addToWishlist(item){const w=getWishlist();if(w.find(x=>x.name===item.name))return;w.unshift(item);setWishlist(w);renderWishlist();showToast('Added to wishlist');}
+function removeFromWishlist(name){const w=getWishlist().filter(x=>x.name!==name);setWishlist(w);renderWishlist();}
+function renderWishlist(){const el=document.getElementById('wishListContent');const w=getWishlist();if(!w.length){el.innerHTML='<div class="no-data">Your wishlist is empty.</div>';return;}el.innerHTML=w.map(it=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr)"><img src="${it.image||''}" style="width:64px;height:40px;object-fit:cover;border-radius:6px;" onerror="this.style.display='none'"><div style="flex:1"><div style="font-family:var(--mono);font-size:.78rem">${it.name}</div><div style="font-family:var(--dp);font-size:.9rem;color:var(--gold)">${it.price?it.price+' VP':''}</div></div><button onclick='removeFromWishlist("${escapeHtml(it.name)}")' class="im-close">✕</button></div>`).join('');}
+function toggleWishlist(){const d=document.getElementById('wishlistDrawer');d.style.display=d.style.display==='block'?'none':'block';renderWishlist();}
+function updateWishCount(){const c=getWishlist().length;document.getElementById('wishCount').textContent=c;const m=document.getElementById('wishCountMob');if(m)m.textContent=c;}
+
+/* TOAST */
+function showToast(t){const id='vs_toast';let el=document.getElementById(id);if(!el){el=document.createElement('div');el.id=id;el.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);padding:11px 20px;background:linear-gradient(90deg,var(--red),var(--gold));color:#fff;border-radius:var(--r3);font-family:var(--mono);font-size:.68rem;letter-spacing:2px;z-index:2000;transition:opacity .4s;pointer-events:none;';document.body.appendChild(el);}el.textContent=t;el.style.opacity=1;clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity=0,2500);}
+function scrollToSection(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+/* ═══════════════════════════════════════════
+   AI COACH — Powered by Claude (keyless via Anthropic API)
+═══════════════════════════════════════════ */
+let aiOpen=false;
+function toggleAI(){
+  aiOpen=!aiOpen;
+  document.getElementById('aiPanel').classList.toggle('open',aiOpen);
+  // Hide FAB when panel is open so it doesn't block the send button on mobile
+  document.querySelector('.ai-fab').style.display=aiOpen?'none':'';
+  if(aiOpen)initAIPanel();
+}
+function initAIPanel(){
+  const msgs=document.getElementById('apMsgs');
+  if(msgs.dataset.ready)return;
+  msgs.dataset.ready='1';msgs.innerHTML='';
+  const hasKey=!!localStorage.getItem('fragly_ai_key');
+  const welcome=`Welcome to <strong>FragLy AI</strong> — your personal Valorant analyst!<br><br>`+
+    (hasKey
+      ?`AI is <strong>active</strong> — search a player above, then ask me anything for personalized coaching based on their real stats. 🎯`
+      :`Search a player above, then ask me anything! <em style="color:#7070A0;font-size:.82em">(On first message you'll be prompted to add a free Anthropic API key to enable real AI.)</em>`);
+  addMsg('ai',welcome);
+  addChips([{txt:'🎯 Improve aim',q:'How can I improve my headshot percentage?'},{txt:'📈 Rank up',q:'What should I focus on to rank up faster?'},{txt:'🗺 Map tips',q:'How do I get better at maps in Valorant?'},{txt:'🎭 Best agent',q:'How do I choose the right agent to main?'}]);
+  setTimeout(()=>document.getElementById('apInput')?.focus(),100);
+}
+
+function addMsg(role,text){
+  const c=document.getElementById('apMsgs');
+  const d=document.createElement('div');d.className=`msg ${role}`;
+  d.innerHTML=`<div class="msg-tag">${role==='ai'?'⬡ FRAGLY AI':'⬡ YOU'}</div>${text}`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function addChips(chips){
+  const c=document.getElementById('apMsgs');
+  const d=document.createElement('div');d.className='chips-row';
+  chips.forEach(({txt,q})=>{const b=document.createElement('span');b.className='chip-btn';b.textContent=txt;b.onclick=()=>{document.getElementById('apInput').value=q;sendMsg();};d.appendChild(b);});
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+function showTyping(){const c=document.getElementById('apMsgs');const d=document.createElement('div');d.className='msg typing';d.id='typingEl';d.innerHTML=`<div class="typing-dots"><span></span><span></span><span></span></div>`;c.appendChild(d);c.scrollTop=c.scrollHeight;}
+function hideTyping(){const t=document.getElementById('typingEl');if(t)t.remove();}
+
+async function sendMsg(){
+  const inp=document.getElementById('apInput');
+  const q=(inp.value||'').trim();if(!q)return;
+  inp.value='';addMsg('user',q);showTyping();
+
+  let ctx='';
+  if(S.stats&&S.player){
+    const st=S.stats;
+    ctx=` Player stats — Name:${S.player.name}#${S.player.tag} | HS%:${st.hsPct}% | WR:${st.winPct}% | K/D:${st.kd} | ACS:${st.acs} | ADR:${st.adr} | Grade:${st.grade} | Games:${st.total}${st.mapArr?.length?' | BestMap:'+st.mapArr[0]?.[0]:''}${st.agentArr?.length?' | TopAgent:'+st.agentArr[0]?.[0]:''}`;
+  }
+  const sys=`You are FragLy AI, an expert Valorant coach embedded in a stats tracker. Give specific, actionable advice in 3-5 sentences. Use **bold** for key terms. Always reference the player's actual stats when available. Be direct and encouraging.${ctx}`;
+  S.conversationHistory.push({role:'user',content:q});
+  document.getElementById('aiStatus').textContent='THINKING...';
+
+  try{
+    const storedKey=localStorage.getItem('fragly_ai_key')||'';
+    const headers={
+      'Content-Type':'application/json',
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    };
+    if(storedKey)headers['x-api-key']=storedKey;
+
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers,
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:sys,
+        messages:S.conversationHistory.slice(-10)
+      })
+    });
+
+    // Auth error — show inline key setup prompt instead of fake fallback
+    if(r.status===401||r.status===403){
+      hideTyping();
+      document.getElementById('aiStatus').textContent='NEEDS KEY';
+      S.conversationHistory.pop();
+      showAIKeyPrompt();
+      return;
+    }
+    if(!r.ok)throw new Error('api_fail');
+    const data=await r.json();
+    const txt=data.content?.map(b=>b.type==='text'?b.text:'').filter(Boolean).join('\n')||'';
+    if(!txt.trim())throw new Error('empty');
+    S.conversationHistory.push({role:'assistant',content:txt});
+    hideTyping();
+    document.getElementById('aiStatus').textContent='READY';
+    addMsg('ai',txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>'));
+  }catch(e){
+    hideTyping();
+    document.getElementById('aiStatus').textContent='READY';
+    S.conversationHistory.pop();
+    // Only use fallback for genuine network errors, not auth failures
+    addMsg('ai',getFallbackResponse(q,S.stats));
+  }
+}
+
+function showAIKeyPrompt(){
+  if(document.getElementById('aiKeyPrompt'))return;// Already shown
+  const c=document.getElementById('apMsgs');
+  const d=document.createElement('div');
+  d.className='msg ai';d.id='aiKeyPrompt';
+  d.innerHTML=`<div class="msg-tag">⬡ FRAGLY AI</div>
+    To unlock real AI coaching, add your <strong>free Anthropic API key</strong>.<br><br>
+    <input id="aiKeyInp" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,70,85,.3);border-radius:6px;padding:9px 12px;color:#ECE8F5;font-family:'DM Mono',monospace;font-size:.75rem;outline:none;box-sizing:border-box;margin-bottom:8px;">
+    <button onclick="saveAIKey()" style="width:100%;padding:9px;background:linear-gradient(135deg,#FF4655,#FF2D3E);border:none;border-radius:6px;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:3px;cursor:pointer;transition:.2s;">SAVE &amp; UNLOCK AI</button>
+    <div style="margin-top:9px;font-family:'DM Mono',monospace;font-size:.58rem;color:#4E4E72;line-height:1.7">
+      Get a free key → <a href="https://console.anthropic.com/keys" target="_blank" style="color:#FF4655;text-decoration:none">console.anthropic.com</a><br>
+      Saved locally on your device · Never sent anywhere else
+    </div>`;
+  c.appendChild(d);c.scrollTop=c.scrollHeight;
+}
+
+function saveAIKey(){
+  const k=(document.getElementById('aiKeyInp')?.value||'').trim();
+  if(!k){document.getElementById('aiKeyInp').style.borderColor='var(--red)';return;}
+  localStorage.setItem('fragly_ai_key',k);
+  const prompt=document.getElementById('aiKeyPrompt');
+  if(prompt)prompt.remove();
+  document.getElementById('aiStatus').textContent='READY';
+  addMsg('ai','✅ <strong>Claude AI unlocked!</strong> I\'m now running on real AI — ask me anything about your gameplay. 🎯');
+}
+
+
+function getFallbackResponse(q,st){
+  const qi=q.toLowerCase();
+  const has=w=>qi.includes(w);
+  if(!st){
+    if(has('aim')||has('headshot'))return`To improve your headshot %: (1) Keep crosshair at <strong>head level</strong> always. (2) Do 15 min Deathmatch daily focusing only on headshots. (3) Stop moving before every shot. Most players gain <strong>8-10% HS%</strong> from crosshair placement alone. 🎯`;
+    if(has('rank')||has('climb'))return`To rank up faster: (1) Play <strong>2-3 agents max</strong> and master their utility. (2) Focus on maps with positive win rate. (3) Review your worst 3 deaths after each match. Consistency beats big games every time. 📈`;
+    if(has('agent'))return`Choose an agent that fits your playstyle: <strong>Duelists</strong> (Jett, Reyna) for aggressive players, <strong>Controllers</strong> (Omen, Astra) for strategic players, <strong>Sentinels</strong> (Cypher, Sage) for defensive players. Master 2 agents max for consistent results.`;
+    if(has('map'))return`Map improvement tips: (1) Learn 2-3 <strong>default lineups</strong> per map. (2) Study common angles enemies hold. (3) Practice site executes in custom games. Map knowledge is worth more than mechanical skill at most ranks. 🗺`;
+    if(has('warm')||has('practice'))return`Best warmup routine: (1) <strong>10 min</strong> range — focus on flicks and tracking. (2) <strong>10 min</strong> Deathmatch — headshots only. (3) <strong>5 min</strong> spray control practice. Total 25 min before ranked. 🎯`;
+    return`Search a player profile above for personalized coaching! General tip: the three biggest rank factors in Valorant are <strong>crosshair placement</strong>, <strong>utility usage</strong>, and <strong>map control</strong>. Which would you like to improve?`;
+  }
+  // Personalized with real stats
+  const g=st.grade,hs=st.hsPct,wr=st.winPct,kd=st.kd,acs=st.acs,adr=st.adr;
+  if(has('aim')||has('headshot')){
+    if(hs>=30)return`Your HS% of <strong>${hs}%</strong> is excellent — top tier! Maintain it with daily Deathmatch warm-ups. Your <strong>ACS of ${acs}</strong> shows you're converting those headshots into impact. Keep pre-aiming common angles and you're on track. 🎯`;
+    if(hs>=20)return`Your HS% of <strong>${hs}%</strong> is average. To reach 30%+: walk before shooting, pre-aim head-level spots, and do headshot-only Deathmatch. Combined with your <strong>${wr}% win rate</strong>, fixing this will push your grade above ${g}. 🎯`;
+    return`Your HS% of <strong>${hs}%</strong> needs work — this is your #1 priority. Do 15 min headshot-only Deathmatch daily. Your <strong>K/D of ${kd}</strong> will improve naturally once headshots become habit. Target: 20%+ in 2 weeks. 🎯`;
+  }
+  if(has('rank')||has('climb')){
+    const tips=[];
+    if(hs<22)tips.push(`Improve aim — HS% ${hs}% is below rank average`);
+    if(wr<47)tips.push(`Win more rounds through better utility usage`);
+    if(kd<1.0)tips.push(`Stop unnecessary peaks — K/D ${kd} means you die more than you kill`);
+    if(acs<150)tips.push(`Deal more damage — ACS ${acs} is low, even assists count`);
+    if(!tips.length)tips.push(`Maintain consistency — your stats are solid, just keep it up`);
+    return`To rank up from <strong>Grade ${g}</strong>:<br><br>${tips.map((t,i)=>`${i+1}. ${t}`).join('<br>')}<br><br>Your <strong>ACS (${acs})</strong> is the single biggest ranking factor — focus there first. 📈`;
+  }
+  if(has('map')||has('best map')){
+    const best=st.mapArr?.[0];
+    return best?`Your best map is <strong>${best[0]}</strong> — lean into it for ranked. Your <strong>${wr}% overall win rate</strong> shows ${wr>=50?'you win more than you lose, keep queuing your strong maps':'room to improve through better map-specific strategies'}. Study 2-3 default lineups per map you struggle on. 🗺`:`Search a player above to see your map breakdown and best maps to queue!`;
+  }
+  if(has('agent')||has('best agent')){
+    const best=st.agentArr?.[0];
+    return best?`Your most played agent is <strong>${best[0]}</strong> with ${best[1]?.g} games. ${best[1]?.w/best[1]?.g>=0.5?'Your win rate on them is solid — keep maining this agent.':'Consider switching to an agent that better fits your playstyle.'} With a <strong>${kd} K/D</strong>, ${kd>=1.2?'duelists could amplify your impact':'a supportive agent might stabilize your team better'}. 🎭`:`Play your best agents — limiting to 2-3 max builds deeper game sense faster.`;
+  }
+  if(has('weak')||has('worst')){
+    const weak=[];
+    if(hs<22)weak.push(`Aim — HS% ${hs}%`);
+    if(wr<47)weak.push(`Win rate — ${wr}%`);
+    if(kd<1.0)weak.push(`Survival — K/D ${kd}`);
+    if(adr<100)weak.push(`Damage output — ADR ${adr}`);
+    return weak.length?`Your biggest weakness${weak.length>1?'es':''}: <strong>${weak.join(', ')}</strong>. Fix these in order — aim first, then decision-making, then damage output. Each improvement compounds the others. 💡`:`Your stats are well-rounded at Grade <strong>${g}</strong>! Focus on mental consistency — don't tilt, take breaks between losses, and review one death per match. 💡`;
+  }
+  // Generic personalized
+  const strength=hs>=25?`aim at ${hs}% HS`:wr>=50?`win rate at ${wr}%`:`KDA of ${st.kda}`;
+  return`Based on your <strong>Grade ${g}</strong> (${st.total} games): Your top strength is <strong>${strength}</strong>. ${kd>=1?'Your K/D is positive':'Work on your K/D first'} and your ACS of <strong>${acs}</strong> ${acs>=180?'is strong':'needs improvement'}. Ask me about aim, rank-up, maps, agents, or weaknesses for targeted coaching! 🎯`;
+}
+
+function initAICoach(name,st){
+  S.conversationHistory=[];// Reset for new player
+  const msgs=document.getElementById('apMsgs');msgs.innerHTML='';msgs.dataset.ready='1';
+  const hasKey=!!localStorage.getItem('fragly_ai_key');
+  const intro=`Hey <strong>${name}</strong>! I've analyzed your last <strong>${st.total} matches</strong>. Here's your Intel Report:<br><br>`+
+    `📊 Grade: <strong>${st.grade}</strong> · Tracker Score: <strong>${st.ts}/1000</strong><br>`+
+    `🎯 Headshot: <strong>${st.hsPct}%</strong> · ACS: <strong>${st.acs}</strong> · K/D: <strong>${st.kd}</strong><br>`+
+    `🏆 Win Rate: <strong>${st.winPct}%</strong> · ADR: <strong>${st.adr}</strong> · KDA: <strong>${st.kda}</strong><br><br>`+
+    (hasKey
+      ?`Ask me anything for personalized coaching based on your actual stats! 🎯`
+      :`Ask me anything — on your first question I'll walk you through a quick one-time AI setup. 🎯`);
+  addMsg('ai',intro);
+  addChips([{txt:'🎯 Fix my aim',q:'How can I improve my headshot percentage?'},{txt:'📈 Rank up tips',q:'What do I need to do to rank up?'},{txt:'🗺 My best map?',q:'Which map should I focus on?'},{txt:'🎭 Agent advice',q:'Which agent should I play?'},{txt:'⚔ My weakness',q:'What is my biggest weakness right now?'}]);
+}
+
+/* ═══════════════════════════════════════════
+   SEARCH HISTORY
+═══════════════════════════════════════════ */
+const HIST_KEY='fragl_search_history_v1';
+const MAX_HIST=10;
+
+function getHistory(){try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return[];}}
+function saveHistory(arr){try{localStorage.setItem(HIST_KEY,JSON.stringify(arr));}catch(e){}}
+
+function addToHistory(name,tag,region,avatarUrl){
+  let hist=getHistory();
+  // Remove existing entry for same player
+  hist=hist.filter(h=>!(h.name.toLowerCase()===name.toLowerCase()&&h.tag.toLowerCase()===tag.toLowerCase()));
+  // Add to front
+  hist.unshift({name,tag,region,avatarUrl:avatarUrl||'',ts:Date.now()});
+  if(hist.length>MAX_HIST)hist=hist.slice(0,MAX_HIST);
+  saveHistory(hist);
+}
+
+function renderHistoryDropdown(filter){
+  const el=document.getElementById('searchHistory');
+  let hist=getHistory();
+  if(filter){
+    const f=filter.toLowerCase();
+    hist=hist.filter(h=>(h.name+'#'+h.tag).toLowerCase().includes(f));
+  }
+  if(!hist.length){
+    el.innerHTML=`<div class="sh-empty">NO RECENT SEARCHES</div>`;
+    el.classList.add('open');
+    return;
+  }
+  el.innerHTML=hist.map((h,i)=>`
+    <div class="sh-item" onclick="selectHistory(${i})">
+      ${h.avatarUrl
+        ?`<img class="sh-avatar" src="${h.avatarUrl}" alt="${h.name}" onerror="this.style.display='none'">`
+        :`<div class="sh-avatar-placeholder">${h.name.charAt(0).toUpperCase()}</div>`
+      }
+      <div class="sh-info">
+        <div class="sh-name">${h.name}<span style="color:var(--muted2);font-weight:400">#${h.tag}</span></div>
+        <div class="sh-meta">${h.region.toUpperCase()} · ${timeAgo(h.ts)}</div>
+      </div>
+      <button class="sh-del" onclick="deleteHistory(event,${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+  el.classList.add('open');
+}
+
+function hideHistoryDropdown(){
+  setTimeout(()=>document.getElementById('searchHistory').classList.remove('open'),150);
+}
+
+function selectHistory(i){
+  const h=getHistory()[i];
+  if(!h)return;
+  document.getElementById('nameIn').value=h.name+'#'+h.tag;
+  document.getElementById('regIn').value=h.region;
+  document.getElementById('searchHistory').classList.remove('open');
+  fetchStats();
+}
+
+function deleteHistory(e,i){
+  e.stopPropagation();
+  let hist=getHistory();hist.splice(i,1);saveHistory(hist);
+  const val=document.getElementById('nameIn').value.trim();
+  renderHistoryDropdown(val||null);
+}
+
+function timeAgo(ts){
+  const s=Math.floor((Date.now()-ts)/1000);
+  if(s<60)return'just now';
+  if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+
+// Hook up input events
+(function initSearchHistory(){
+  const inp=document.getElementById('nameIn');
+  if(!inp)return;
+  inp.addEventListener('focus',()=>{
+    const v=inp.value.trim();
+    renderHistoryDropdown(v||null);
+  });
+  inp.addEventListener('input',()=>{
+    const v=inp.value.trim();
+    if(v.length>0)renderHistoryDropdown(v);
+    else renderHistoryDropdown(null);
+  });
+  inp.addEventListener('blur',hideHistoryDropdown);
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){document.getElementById('searchHistory').classList.remove('open');fetchStats();}
+    if(e.key==='Escape')document.getElementById('searchHistory').classList.remove('open');
+  });
+  // Close on outside click
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('.sinput-wrap'))
+      document.getElementById('searchHistory').classList.remove('open');
+  });
+})();
+
+/* INIT */
+initKeys();updateWishCount();
+
+// Patch render to also handle avatar + save history
+const _origRender=window.render;
+window.render=function(acc,mmr,matches,name,tag,region){
+  // Avatar: try small → large → wide card art (all from media.valorant-api.com)
+  const avatarUrl=acc.card?.small||acc.card?.large||acc.card?.wide||'';
+  const initials=(acc.name||name||'?').charAt(0).toUpperCase();
+  const img=document.getElementById('pAvatar');
+  const fb=document.getElementById('pAvatarFallback');
+  // Reset state before setting new src
+  img.style.display='none';fb.style.display='flex';fb.textContent=initials;
+  if(avatarUrl){
+    const tryLoad=(url)=>{
+      img.onload=()=>{img.style.display='block';fb.style.display='none';};
+      img.onerror=()=>{img.style.display='none';fb.style.display='flex';fb.textContent=initials;};
+      img.src=url;
+    };
+    tryLoad(avatarUrl);
+  }
+  // Save to search history
+  addToHistory(acc.name||name,acc.tag||tag,region,avatarUrl);
+  // Call original (skip its avatar line since we handle it)
+  _origRender(acc,mmr,matches,name,tag,region);
+};
+</script>
+</body>
+</html>
