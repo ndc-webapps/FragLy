@@ -255,9 +255,9 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 @media(max-width:580px){.sgrid{grid-template-columns:1fr;}.sc{min-height:auto;}}
 
 /* TWO COL */
-.tcol{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;}
+.tcol{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;align-items:start;}
 @media(max-width:900px){.tcol{grid-template-columns:1fr;}}
-.panel{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:28px;backdrop-filter:blur(20px);}
+.panel{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:28px;backdrop-filter:blur(20px);min-height:0;height:auto;}
 
 /* RADAR */
 .radar-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
@@ -513,6 +513,77 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .ap-send{padding:11px 18px;background:var(--red);border:none;border-radius:var(--r3);color:#fff;font-family:var(--mono);font-size:.62rem;letter-spacing:2px;cursor:pointer;transition:.2s;text-transform:uppercase;}
 .ap-send:hover{background:var(--red2);}
 
+/* SHARE IMAGE */
+.share-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.06);}
+.share-btn{padding:12px 16px;border:none;border-radius:var(--r3);background:linear-gradient(135deg,var(--red),var(--red2));color:#fff;font-family:var(--dp);font-size:.95rem;font-weight:800;letter-spacing:2px;cursor:pointer;transition:.2s;}
+.share-btn:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(255,70,85,.22);}
+.share-btn.alt{background:rgba(255,255,255,.04);border:1px solid var(--bdr);color:var(--txt);font-family:var(--mono);font-size:.66rem;font-weight:500;letter-spacing:2px;}
+.share-note{flex:1 1 240px;font-family:var(--mono);font-size:.58rem;color:var(--muted2);letter-spacing:1.3px;line-height:1.7;}
+.share-overlay{z-index:1700;overflow-y:auto;align-items:flex-start;padding:16px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+.share-modal{width:min(920px,96vw);padding:28px;max-height:calc(var(--app-vh,100dvh) - 24px);overflow-y:auto;overflow-x:hidden;margin:auto;}
+.share-player-indicator{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;border:1px solid rgba(61,255,160,.22);background:rgba(61,255,160,.06);font-family:var(--mono);font-size:.62rem;letter-spacing:1.6px;color:var(--green);text-transform:uppercase;margin-bottom:14px;}
+.share-player-indicator::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(61,255,160,.55);display:block;}
+.share-size-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.share-size-pill{padding:10px 14px;border-radius:999px;border:1px solid var(--bdr);background:rgba(255,255,255,.04);color:var(--muted2);cursor:pointer;font-family:var(--mono);font-size:.62rem;letter-spacing:2px;text-transform:uppercase;transition:.2s;}
+.share-size-pill.active,.share-size-pill:hover{border-color:rgba(255,70,85,.35);background:rgba(255,70,85,.1);color:var(--txt);}
+.share-preview-wrap{width:100%;min-height:280px;max-height:62vh;overflow:auto;background:rgba(255,255,255,.025);border:1px solid var(--bdr);border-radius:var(--r2);display:flex;align-items:flex-start;justify-content:center;padding:14px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.share-preview-empty{font-family:var(--mono);font-size:.68rem;letter-spacing:2px;color:var(--muted);text-align:center;padding:30px;line-height:1.8;margin:auto;}
+.share-preview{display:block;max-width:100%;height:auto;max-height:none;border-radius:18px;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 60px rgba(0,0,0,.45);scroll-margin-top:8px;}
+.share-modal-btns{margin-top:16px;flex-wrap:wrap;}
+#shareStage{position:fixed;left:-99999px;top:0;pointer-events:none;opacity:0;z-index:-10;}
+.share-card{position:relative;overflow:hidden;background:radial-gradient(circle at top right,rgba(255,70,85,.12),transparent 28%),radial-gradient(circle at top left,rgba(75,189,255,.12),transparent 24%),linear-gradient(180deg,#070913 0%,#050509 100%);border:1px solid rgba(255,255,255,.08);color:var(--txt);padding:36px;-webkit-tap-highlight-color:transparent;}
+.share-card *{outline:none!important;caret-color:transparent;-webkit-tap-highlight-color:transparent;}
+.share-card.capturing .pstat-card,.share-card.capturing .sc,.share-card.capturing .share-section-card{box-shadow:none!important;transform:none!important;}
+.share-card.capturing .pstat-card:hover,.share-card.capturing .sc:hover{background:rgba(255,255,255,.03)!important;border-color:var(--bdr)!important;}
+.share-card::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,70,85,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,70,85,.03) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(circle at center,rgba(255,255,255,.8),transparent 88%);pointer-events:none;}
+.share-card.feed{width:1200px;min-height:1500px;}
+.share-card.story{width:1080px;min-height:1920px;padding:34px;}
+.share-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px;position:relative;z-index:1;}
+.share-brand{display:flex;flex-direction:column;gap:6px;}
+.share-logo{font-family:var(--dp);font-size:2.6rem;font-weight:900;letter-spacing:4px;line-height:.95;}
+.share-logo .a{color:var(--txt);} .share-logo .b{background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.share-sub{font-family:var(--mono);font-size:.7rem;letter-spacing:2.8px;color:var(--muted2);text-transform:uppercase;}
+.share-kicker{font-family:var(--mono);font-size:.6rem;letter-spacing:2.2px;color:var(--green);text-transform:uppercase;padding:7px 10px;border:1px solid rgba(61,255,160,.18);background:rgba(61,255,160,.06);border-radius:999px;align-self:flex-start;}
+.share-card .prof{margin-bottom:22px;padding:24px 26px;position:relative;z-index:1;}
+.share-card .avatar,.share-card .avatar-fallback{width:96px;height:96px;}
+.share-card .pname{font-size:2.5rem;}
+.share-card .pstat-card{padding:18px 14px;}
+.share-card .pstat-val{font-size:2rem;}
+.share-card .sgrid{position:relative;z-index:1;gap:14px;margin-bottom:0;grid-auto-rows:minmax(0,auto);grid-template-columns:repeat(4,1fr)!important;}
+.share-card .sc{padding:18px 18px 16px;min-height:0;box-shadow:none;}
+.share-card .sc-val{font-size:2.6rem;}
+.share-card .sc-sub{min-height:auto;}
+.share-two-col{display:grid;grid-template-columns:1fr 1.25fr;gap:18px;position:relative;z-index:1;}
+.share-card.story .share-two-col{grid-template-columns:1fr;}
+.share-section-card{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:24px;backdrop-filter:blur(20px);position:relative;overflow:hidden;}
+.share-section-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 10%,var(--red) 45%,var(--gold) 90%,transparent);opacity:.75;}
+.share-sec-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.share-sec-title{font-family:var(--dp);font-size:1.35rem;font-weight:800;letter-spacing:4px;text-transform:uppercase;white-space:nowrap;}
+.share-sec-line{flex:1;height:1px;background:linear-gradient(90deg,var(--bdr-hi),transparent);}
+.share-sec-tag{font-family:var(--mono);font-size:.56rem;color:var(--muted);letter-spacing:2px;white-space:nowrap;}
+.share-card .form-chart-wrap svg{width:100%;height:auto;display:block;}
+.share-card .form-lbl{margin-top:10px;}
+.share-foot{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);font-family:var(--mono);font-size:.64rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;}
+.share-foot strong{color:var(--txt);font-weight:500;}
+.share-card.story .prof{padding:24px 22px;}
+.share-card.story .pname{font-size:2.15rem;}
+.share-card.story .sgrid{grid-template-columns:repeat(2,1fr)!important;}
+.share-card.story .sc{padding:16px 16px 14px;}
+.share-card.story .sc-val{font-size:2.25rem;}
+.share-card.story .share-foot{flex-direction:column;align-items:flex-start;}
+@media(max-width:720px){
+  .share-actions{flex-direction:column;align-items:stretch;}
+  .share-btn,.share-btn.alt{width:100%;}
+  .share-overlay{padding:10px 10px max(10px, env(safe-area-inset-bottom));}
+  .share-modal{width:100%;padding:16px 14px 18px;max-height:calc(var(--app-vh,100dvh) - 20px);}
+  .share-preview-wrap{min-height:0;max-height:none;padding:10px;}
+  .share-modal-btns{position:sticky;bottom:-18px;background:linear-gradient(180deg,rgba(8,10,20,0),rgba(8,10,20,.97) 24%);padding-top:12px;padding-bottom:max(2px, env(safe-area-inset-bottom));}
+  .share-modal-btns .btn-p,.share-modal-btns .btn-s{width:100%;}
+  .panel{padding:20px 16px;}
+  .share-note{font-size:.56rem;}
+  .form-chart-wrap{overflow:hidden;}
+}
+
 /* FOOTER */
 footer{text-align:center;padding:32px;border-top:1px solid var(--bdr);font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:3px;margin-top:20px;}
 footer span{color:var(--red);}
@@ -628,6 +699,30 @@ footer span{color:var(--red);}
   </div>
 </div>
 
+<!-- SHARE IMAGE MODAL -->
+<div class="overlay hidden share-overlay" id="shareModal" onclick="if(event.target.id==='shareModal')closeShareComposer()">
+  <div class="modal share-modal" onclick="event.stopPropagation()">
+    <div class="modal-accent"></div>
+    <div class="modal-title">SHARE STATS</div>
+    <div class="modal-sub">Create a premium shareable PNG using the real stats currently loaded in FragLy. Choose a format, generate the image, then download or use your device share sheet.</div>
+    <div class="share-player-indicator" id="sharePlayerIndicator">Current player: —</div>
+    <div class="share-size-pills">
+      <button class="share-size-pill active" id="shareFmtFeed" onclick="setShareFormat('feed')">FEED · 4:5</button>
+      <button class="share-size-pill" id="shareFmtStory" onclick="setShareFormat('story')">STORY · 9:16</button>
+    </div>
+    <div class="share-preview-wrap" id="sharePreviewWrap">
+      <div class="share-preview-empty" id="sharePreviewEmpty">Preview will appear here after generation.</div>
+      <img class="share-preview" id="sharePreview" alt="Share preview" style="display:none">
+    </div>
+    <div class="modal-btns share-modal-btns">
+      <button class="btn-p" id="shareGenerateBtn" onclick="generateSharePreview()">GENERATE PNG</button>
+      <button class="btn-s" id="shareDownloadBtn" onclick="downloadShareImage()">DOWNLOAD</button>
+      <button class="btn-s" id="shareNativeBtn" onclick="nativeShareImage()">SHARE</button>
+      <button class="btn-s" onclick="closeShareComposer()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
 <!-- NAV -->
 <nav>
   <div class="logo">
@@ -727,6 +822,10 @@ footer span{color:var(--red);}
       <div class="sh"><h2 class="sh-title">Recent Form</h2><div class="sh-line"></div><span class="sh-tag" id="formTag">LAST 10 · ACS</span></div>
       <div class="form-chart-wrap" id="formChart"></div>
       <div class="form-lbl" id="formLbl"></div>
+      <div class="share-actions">
+        <button class="share-btn" id="shareOpenBtn" onclick="openShareComposer()">CREATE SHARE IMAGE</button>
+        <div class="share-note">Generate a premium PNG in Facebook feed (4:5) or story (9:16) size using the real stats currently on screen.</div>
+      </div>
     </div>
   </div>
 
@@ -783,9 +882,12 @@ footer span{color:var(--red);}
   </div>
 </div>
 
+<div id="shareStage" aria-hidden="true"></div>
+
 <footer><span>FragLy</span> &nbsp;v3 &nbsp;·&nbsp; KEYLESS BY DEFAULT &nbsp;·&nbsp; POWERED BY CLAUDE &nbsp;·&nbsp; UNOFFICIAL</footer>
 </div><!-- /.W -->
 
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
 /* ═══════════════════════════════════════════
    BACKGROUND CANVAS — particle field
@@ -1037,6 +1139,7 @@ function render(acc,mmr,matches,name,tag,region){
   ]);
   renderForm(st.formACS);renderMapTbl(st.mapArr,matches);renderAgentTbl(st.agentArr,matches);
   renderMatches(matches,name,tag);
+  resetShareExportState();
 }
 
 /* SCARD */
@@ -1588,6 +1691,163 @@ function scoreRow(p,rounds,roundMetrics){
   </div>`;
 }
 
+
+/* SHARE IMAGE */
+let shareFormat='feed';
+let shareDataUrl='';
+let shareBlob=null;
+let shareSnapshotKey='';
+function getCurrentShareKey(){return `${S.player?.name||''}#${S.player?.tag||''}|${S.stats?.total||0}|${S.stats?.ts||0}|${S.region||''}|${shareFormat}`;}
+function syncSharePlayerIndicator(){const el=document.getElementById('sharePlayerIndicator'); if(el){const who=(S.player?.name&&S.player?.tag)?`${S.player.name}#${S.player.tag}`:'—'; el.textContent=`Current player: ${who}`;}}
+function resetShareExportState(reason=''){shareDataUrl=''; shareBlob=null; shareSnapshotKey=''; const preview=document.getElementById('sharePreview'); const empty=document.getElementById('sharePreviewEmpty'); const wrap=document.getElementById('sharePreviewWrap'); if(preview){preview.removeAttribute('src'); preview.style.display='none'; preview.onload=null;} if(empty){empty.style.display='block'; const who=(S.player?.name&&S.player?.tag)?`${S.player.name}#${S.player.tag}`:'this player'; empty.textContent=reason||`Generate a fresh preview for ${who}.`; } if(wrap){wrap.scrollTop=0; wrap.scrollLeft=0;} syncSharePlayerIndicator(); }
+function openShareComposer(fmt){
+  if(!S.stats||!S.player){showToast('Search a player first before generating a share image');return;}
+  if(fmt)shareFormat=fmt;
+  setShareFormat(shareFormat);
+  const modal=document.getElementById('shareModal');
+  const wrap=document.getElementById('sharePreviewWrap');
+  syncSharePlayerIndicator();
+  if(shareSnapshotKey!==getCurrentShareKey()){
+    resetShareExportState();
+  }else if(wrap){
+    wrap.scrollTop=0;wrap.scrollLeft=0;
+  }
+  modal.classList.remove('hidden');
+  document.body.style.overflow='hidden';
+}
+function closeShareComposer(){
+  document.getElementById('shareModal').classList.add('hidden');
+  if(document.getElementById('matchModal')?.classList.contains('hidden'))document.body.style.overflow='';
+}
+function setShareFormat(fmt){
+  const next=fmt==='story'?'story':'feed';
+  const changed=next!==shareFormat;
+  shareFormat=next;
+  document.getElementById('shareFmtFeed')?.classList.toggle('active',shareFormat==='feed');
+  document.getElementById('shareFmtStory')?.classList.toggle('active',shareFormat==='story');
+  if(changed)resetShareExportState(`Format changed to ${shareFormat==='story'?'Story':'Feed'}. Generate a fresh preview.`);
+}
+function cloneForShare(el){
+  if(!el)return document.createElement('div');
+  const clone=el.cloneNode(true);
+  clone.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
+  clone.querySelectorAll('.share-actions').forEach(n=>n.remove());
+  clone.querySelectorAll('[onclick]').forEach(n=>n.removeAttribute('onclick'));
+  clone.querySelectorAll('img').forEach(img=>{img.crossOrigin='anonymous';});
+  return clone;
+}
+function buildShareCard(fmt){
+  const stage=document.getElementById('shareStage');
+  stage.innerHTML='';
+  const card=document.createElement('div');
+  card.className=`share-card ${fmt}`;
+  card.innerHTML=`
+    <div class="share-topbar">
+      <div class="share-brand">
+        <div class="share-logo"><span class="a">Frag</span><span class="b">Ly</span></div>
+        <div class="share-sub">Valorant Performance Snapshot</div>
+      </div>
+      <div class="share-kicker">Real data · ${fmt==='story'?'Story':'Feed'} size</div>
+    </div>`;
+  card.appendChild(cloneForShare(document.getElementById('profBanner')));
+  const overviewWrap=document.createElement('div');
+  overviewWrap.className='share-section-card';
+  overviewWrap.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Performance Overview</div><div class="share-sec-line"></div><span class="share-sec-tag">${escapeHtml(String(S.stats?.total||0))} GAMES ANALYZED</span></div>`;
+  overviewWrap.appendChild(cloneForShare(document.getElementById('sgrid')));
+  card.appendChild(overviewWrap);
+  const row=document.createElement('div');
+  row.className='share-two-col';
+  const radar=document.createElement('div');
+  radar.className='share-section-card';
+  radar.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Performance Radar</div><div class="share-sec-line"></div><span class="share-sec-tag">LIVE PROFILE</span></div>`;
+  radar.appendChild(cloneForShare(document.getElementById('radarWrap')));
+  row.appendChild(radar);
+  const form=document.createElement('div');
+  form.className='share-section-card';
+  form.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Recent Form</div><div class="share-sec-line"></div><span class="share-sec-tag">LAST 10 · ACS</span></div>`;
+  const formChart=cloneForShare(document.getElementById('formChart'));
+  formChart.classList.add('form-chart-wrap');
+  form.appendChild(formChart);
+  form.appendChild(cloneForShare(document.getElementById('formLbl')));
+  row.appendChild(form);
+  card.appendChild(row);
+  const foot=document.createElement('div');
+  const now=new Date();
+  const who=`${S.player?.name||''}#${S.player?.tag||''}`;
+  foot.className='share-foot';
+  foot.innerHTML=`<span>Player · <strong>${escapeHtml(who)}</strong></span><span>Generated · <strong>${now.toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'})}</strong></span><span>FragLy live tracker</span>`;
+  card.appendChild(foot);
+  stage.appendChild(card);
+  return card;
+}
+async function ensureHtml2Canvas(){
+  if(window.html2canvas)return window.html2canvas;
+  await new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+    s.onload=resolve; s.onerror=()=>reject(new Error('Failed to load html2canvas'));
+    document.head.appendChild(s);
+  });
+  return window.html2canvas;
+}
+async function generateSharePreview(){
+  if(!S.stats||!S.player){showToast('Search a player first');return;}
+  const preview=document.getElementById('sharePreview');
+  const empty=document.getElementById('sharePreviewEmpty');
+  const wrap=document.getElementById('sharePreviewWrap');
+  const btn=document.getElementById('shareGenerateBtn');
+  try{
+    btn.disabled=true; btn.textContent='GENERATING...';
+    if(wrap){wrap.scrollTop=0;wrap.scrollLeft=0;}
+    preview.style.display='none';
+    empty.style.display='block';
+    empty.textContent='Generating premium PNG...';
+    if(document.activeElement&&typeof document.activeElement.blur==='function')document.activeElement.blur();
+    const h2c=await ensureHtml2Canvas();
+    const card=buildShareCard(shareFormat);
+    card.classList.add('capturing');
+    await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,140)));
+    const canvas=await h2c(card,{backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,windowWidth:card.scrollWidth,windowHeight:card.scrollHeight});
+    shareDataUrl=canvas.toDataURL('image/png');
+    shareBlob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+    shareSnapshotKey=getCurrentShareKey();
+    preview.onload=()=>{if(wrap){wrap.scrollTop=0;wrap.scrollLeft=0;}};
+    preview.src=shareDataUrl;
+    preview.style.display='block';
+    empty.style.display='none';
+    requestAnimationFrame(()=>{if(wrap){wrap.scrollTop=0;wrap.scrollLeft=0;}});
+    showToast(`Share image ready for ${S.player?.name||'player'}`);
+  }catch(err){
+    console.error(err);
+    preview.style.display='none';
+    empty.style.display='block';
+    empty.textContent='Could not generate the image right now. Please try again.';
+    showToast('Share image generation failed');
+  }finally{
+    btn.disabled=false; btn.textContent='GENERATE PNG';
+  }
+}
+function downloadShareImage(){
+  if(!shareDataUrl){showToast('Generate the image first');return;}
+  const a=document.createElement('a');
+  const base=`fragly-${(S.player?.name||'player').toLowerCase()}-${shareFormat}`.replace(/[^a-z0-9-]+/gi,'-');
+  a.href=shareDataUrl; a.download=base+'.png';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function nativeShareImage(){
+  if(!shareDataUrl||!shareBlob){showToast('Generate the image first');return;}
+  try{
+    const file=new File([shareBlob],`fragly-${shareFormat}.png`,{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:'FragLy Stats',text:'My FragLy Valorant stats'});
+    }else{
+      downloadShareImage();
+      showToast('Downloaded PNG — upload it to Facebook feed or story');
+    }
+  }catch(err){
+    if(err?.name!=='AbortError')showToast('Share cancelled or not supported');
+  }
+}
 
 /* WISHLIST */
 const WLS_KEY='val_wishlist_v3';
