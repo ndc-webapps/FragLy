@@ -4,15 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FragLy — Valorant Intelligence</title>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-VX3K3BF35Y"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-VX3K3BF35Y');
-</script>
+<!-- build: fragly-ai-coach-no-key-hardfix-2026-06-01 -->
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Barlow+Condensed:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 /* ════════════════════════════════════════
@@ -548,13 +540,26 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .share-card.capturing .pstat-card:hover,.share-card.capturing .sc:hover{background:rgba(255,255,255,.03)!important;border-color:var(--bdr)!important;}
 .share-card::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,70,85,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,70,85,.03) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(circle at center,rgba(255,255,255,.8),transparent 88%);pointer-events:none;}
 .share-card.feed{width:1200px;min-height:1500px;}
-.share-card.story{width:1080px;min-height:1920px;padding:34px;}
+.share-card.story{width:1080px;height:1920px;min-height:0;padding:42px;display:flex;flex-direction:column;gap:18px;overflow:hidden;}
 .share-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px;position:relative;z-index:1;}
 .share-brand{display:flex;flex-direction:column;gap:6px;}
 .share-logo{font-family:var(--dp);font-size:2.6rem;font-weight:900;letter-spacing:4px;line-height:.95;}
 .share-logo .a{color:var(--txt);} .share-logo .b{background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .share-sub{font-family:var(--mono);font-size:.7rem;letter-spacing:2.8px;color:var(--muted2);text-transform:uppercase;}
 .share-kicker{font-family:var(--mono);font-size:.6rem;letter-spacing:2.2px;color:var(--green);text-transform:uppercase;padding:7px 10px;border:1px solid rgba(61,255,160,.18);background:rgba(61,255,160,.06);border-radius:999px;align-self:flex-start;}
+.share-insights{position:relative;z-index:1;display:grid;grid-template-columns:1.1fr .95fr .95fr;gap:14px;margin-bottom:18px;}
+.share-insight{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.09);border-radius:var(--r);padding:18px 18px 16px;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025));box-shadow:0 20px 60px rgba(0,0,0,.22);}
+.share-insight::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 100% 0,rgba(255,70,85,.16),transparent 48%);pointer-events:none;}
+.share-insight.good::before{background:radial-gradient(circle at 100% 0,rgba(61,255,160,.16),transparent 48%);}
+.share-insight.warn::before{background:radial-gradient(circle at 100% 0,rgba(232,184,75,.16),transparent 48%);}
+.share-insight-k{position:relative;font-family:var(--mono);font-size:.55rem;letter-spacing:2.2px;color:var(--muted);text-transform:uppercase;margin-bottom:9px;}
+.share-insight-v{position:relative;font-family:var(--dp);font-size:1.65rem;line-height:1.02;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt);}
+.share-insight-p{position:relative;margin-top:8px;font-family:var(--mono);font-size:.62rem;line-height:1.55;letter-spacing:1px;color:rgba(236,232,245,.7);}
+.story-metrics{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.story-metric{border:1px solid rgba(255,255,255,.08);border-radius:var(--r2);padding:18px;background:rgba(255,255,255,.04);min-width:0;}
+.story-metric .k{font-family:var(--mono);font-size:.56rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.story-metric .v{font-family:var(--dp);font-size:2.8rem;line-height:.95;font-weight:900;margin-top:8px;color:var(--txt);}
+.story-metric.hot .v{color:var(--red);}.story-metric.gold .v{color:var(--gold);}.story-metric.green .v{color:var(--green);}.story-metric.blue .v{color:var(--blue);}
 .share-card .prof{margin-bottom:22px;padding:24px 26px;position:relative;z-index:1;}
 .share-card .avatar,.share-card .avatar-fallback{width:96px;height:96px;}
 .share-card .pname{font-size:2.5rem;}
@@ -576,15 +581,40 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .share-card .form-lbl{margin-top:10px;}
 .share-foot{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);font-family:var(--mono);font-size:.64rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;}
 .share-foot strong{color:var(--txt);font-weight:500;}
-.share-card.story .prof{padding:24px 22px;}
-.share-card.story .pname{font-size:2.15rem;}
-.share-card.story .sgrid{grid-template-columns:repeat(2,1fr)!important;}
-.share-card.story .sc{padding:16px 16px 14px;}
-.share-card.story .sc-val{font-size:2.25rem;}
-.share-card.story .share-foot{flex-direction:column;align-items:flex-start;}
+.share-card.story .share-topbar{margin-bottom:0;}
+.share-card.story .share-logo{font-size:3.1rem;}
+.share-card.story .share-sub{font-size:.72rem;}
+.share-card.story .share-kicker{font-size:.62rem;}
+.share-card.story .prof{padding:24px 24px;margin-bottom:0;}
+.share-card.story .avatar,.share-card.story .avatar-fallback{width:104px;height:104px;}
+.share-card.story .pname{font-size:2.35rem;}
+.share-card.story .pmeta{font-size:.72rem;}
+.share-card.story .prof-stats{gap:10px;}
+.share-card.story .pstat-card{padding:14px 10px;}
+.share-card.story .pstat-val{font-size:1.8rem;}
+.share-card.story .pstat-lbl{font-size:.45rem;}
+.share-card.story .share-insights{grid-template-columns:1fr;margin-bottom:0;gap:12px;}
+.share-card.story .share-insight{padding:18px 20px;}
+.share-card.story .share-insight-v{font-size:1.75rem;}
+.share-card.story .share-insight-p{font-size:.64rem;}
+.share-card.story .share-two-col{grid-template-columns:1fr;gap:14px;min-height:0;}
+.share-card.story .share-section-card{padding:20px;}
+.share-card.story .share-sec-head{margin-bottom:10px;}
+.share-card.story .share-sec-title{font-size:1.18rem;}
+.share-card.story .form-stats{grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+.share-card.story .form-stat{padding:8px 9px;}
+.share-card.story .form-stat .k{font-size:.42rem;letter-spacing:1.2px;}
+.share-card.story .form-stat .v{font-size:1.25rem;}
+.share-card.story .form-chart-wrap svg{max-height:330px;}
+.share-card.story .form-insight{font-size:.55rem;line-height:1.45;margin-top:9px;padding:9px 10px;}
+.share-card.story .form-lbl{font-size:.48rem;margin-top:6px;}
+.share-card.story .share-foot{margin-top:auto;flex-direction:row;align-items:center;font-size:.58rem;}
 @media(max-width:720px){
   .share-actions{flex-direction:column;align-items:stretch;}
   .share-btn,.share-btn.alt{width:100%;}
+  #formChart + .form-lbl + .share-actions{margin-top:12px;padding-top:12px;}
+  #formChart + .form-lbl + .share-actions .share-note{flex:auto;font-size:.54rem;line-height:1.55;letter-spacing:1px;}
+  #formChart + .form-lbl + .share-actions .share-btn{padding:11px 14px;font-size:.9rem;}
   .share-overlay{padding:10px 10px max(10px, env(safe-area-inset-bottom));}
   .share-modal{width:100%;padding:16px 14px 18px;max-height:calc(var(--app-vh,100dvh) - 20px);}
   .share-preview-wrap{min-height:0;max-height:none;padding:10px;}
@@ -593,6 +623,12 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
   .panel{padding:20px 16px;}
   .share-note{font-size:.56rem;}
   .form-chart-wrap{overflow:hidden;}
+}
+
+@media(max-width:520px){
+  #formChart + .form-lbl + .share-actions{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:0;}
+  #formChart + .form-lbl + .share-actions .share-note{max-width:30rem;}
+  .recent-form-panel{padding-bottom:18px;}
 }
 
 /* FOOTER */
@@ -654,6 +690,20 @@ footer span{color:var(--red);}
   #wishlistDrawer{right:10px;left:10px;width:auto;bottom:80px;}
 }
 
+
+
+
+/* IDLE SESSION WARNING */
+.idle-overlay{z-index:1900;}
+.idle-modal{text-align:left;overflow:hidden;}
+.idle-badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.56rem;letter-spacing:2.5px;color:var(--warn);text-transform:uppercase;padding:7px 10px;border:1px solid rgba(255,169,77,.22);background:rgba(255,169,77,.06);border-radius:999px;margin-bottom:14px;}
+.idle-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--warn);box-shadow:0 0 10px rgba(255,169,77,.55);}
+.idle-count-wrap{margin:18px 0 8px;padding:18px;border-radius:var(--r2);border:1px solid rgba(255,70,85,.18);background:linear-gradient(135deg,rgba(255,70,85,.09),rgba(232,184,75,.045));display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.idle-count-label{font-family:var(--mono);font-size:.62rem;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;line-height:1.5;}
+.idle-count{font-family:var(--dp);font-size:3.2rem;line-height:1;font-weight:900;letter-spacing:1px;color:var(--gold);min-width:82px;text-align:right;text-shadow:0 0 24px rgba(232,184,75,.18);}
+.idle-modal .modal-btns{position:relative;z-index:1;}
+@media(max-width:520px){.idle-count-wrap{align-items:flex-start;flex-direction:column}.idle-count{text-align:left;font-size:2.8rem}}
+
 /* ANIMATIONS */
 @keyframes fadeUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
@@ -681,6 +731,24 @@ footer span{color:var(--red);}
     <div class="modal-btns">
       <button class="btn-p" onclick="saveKey()">SAVE KEY</button>
       <button class="btn-s" onclick="dismissModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- IDLE SESSION WARNING MODAL -->
+<div class="overlay hidden idle-overlay" id="idleModal">
+  <div class="modal idle-modal" onclick="event.stopPropagation()">
+    <div class="modal-accent"></div>
+    <div class="idle-badge">Idle protection</div>
+    <div class="modal-title">STILL THERE?</div>
+    <div class="modal-sub">You’ve been idle for a while. Your current search session will end soon to keep FragLy fast for everyone.</div>
+    <div class="idle-count-wrap">
+      <div class="idle-count-label">Session ends in</div>
+      <div class="idle-count"><span id="idleCountdown">30</span>s</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-p" onclick="continueIdleSession()">I’M STILL HERE</button>
+      <button class="btn-s" onclick="endIdleSession()">END SESSION NOW</button>
     </div>
   </div>
 </div>
@@ -742,7 +810,6 @@ footer span{color:var(--red);}
   </div>
   <div class="nav-r">
     <div class="nav-pill" id="apiPill" onclick="document.getElementById('setupModal').classList.remove('hidden')">⚙ API KEY</div>
-    <div class="nav-pill" onclick="toggleWishlist()">✦ WISHLIST <span id="wishCount">0</span></div>
   </div>
 </nav>
 
@@ -829,7 +896,7 @@ footer span{color:var(--red);}
       <div class="sh"><h2 class="sh-title">Performance Radar</h2><div class="sh-line"></div></div>
       <div class="radar-wrap" id="radarWrap"></div>
     </div>
-    <div class="panel">
+    <div class="panel recent-form-panel">
       <div class="sh"><h2 class="sh-title">Recent Form</h2><div class="sh-line"></div><span class="sh-tag" id="formTag">LAST 10 · ACS</span></div>
       <div class="form-chart-wrap" id="formChart"></div>
       <div class="form-lbl" id="formLbl"></div>
@@ -881,7 +948,7 @@ footer span{color:var(--red);}
   <div class="aph">
     <div class="aph-left">
       <div class="aph-title">AI COACH</div>
-      <div class="aph-sub">Powered by Claude · Keyless</div>
+      <div class="aph-sub">KEYLESS AI · NO USER KEY</div>
       <div class="aph-status" id="aiStatus">READY</div>
     </div>
     <button class="ap-close" onclick="toggleAI()">✕</button>
@@ -895,11 +962,19 @@ footer span{color:var(--red);}
 
 <div id="shareStage" aria-hidden="true"></div>
 
-<footer><span>FragLy</span> &nbsp;v3 &nbsp;·&nbsp; KEYLESS BY DEFAULT &nbsp;·&nbsp; POWERED BY CLAUDE &nbsp;·&nbsp; UNOFFICIAL</footer>
+<footer><span>FragLy</span> &nbsp;v3 &nbsp;·&nbsp; KEYLESS BY DEFAULT &nbsp;·&nbsp; REAL AI COACH &nbsp;·&nbsp; UNOFFICIAL</footer>
 </div><!-- /.W -->
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
+/* Hard-purge old AI prompt data from previous deployments. */
+try{
+  ['fragly_ai_key','fragly_ai_api_key','fragly_anthropic_api_key','claude_api_key','anthropic_api_key'].forEach(function(k){
+    localStorage.removeItem(k);
+    sessionStorage.removeItem(k);
+  });
+}catch(e){}
+
 /* ═══════════════════════════════════════════
    BACKGROUND CANVAS — particle field
 ═══════════════════════════════════════════ */
@@ -982,14 +1057,31 @@ function dismissModal(){document.getElementById('setupModal').classList.add('hid
 ═══════════════════════════════════════════ */
 const BASE='https://api.henrikdev.xyz/valorant';
 const enc=s=>encodeURIComponent(s);
+
+function apiStatusMessage(status){
+  if(status===401)return 'FragLy API key is invalid or expired. Please update the API key.';
+  if(status===403)return 'FragLy API access was blocked. Please try again later or use your own HenrikDev API key.';
+  if(status===404)return 'Player not found. Check the Riot ID, tag, and region.';
+  if(status===429)return 'Current search load is at max. The Valorant data API is temporarily limiting requests. Please wait 30–60 seconds, then try again.';
+  if([500,502,503,504].includes(status))return 'Valorant data servers are busy right now. Please wait a bit and try again.';
+  return `Valorant data request failed (HTTP ${status}). Please wait a moment and try again.`;
+}
+function friendlyApiError(error){
+  const msg=String(error?.message||error||'');
+  if(msg==='Failed to fetch')return 'Unable to connect to the Valorant data API. Please check your connection and try again.';
+  if(msg.includes('NetworkError'))return 'Network error while connecting to the Valorant data API. Please try again.';
+  return msg||'Something went wrong. Please retry.';
+}
 async function api(url){
   const opts={headers:{}};
   if(S.apiKey)opts.headers['Authorization']=S.apiKey;
-  const r=await fetch(url,opts);
-  if(r.status===401)throw new Error('API_401');
-  if(r.status===404)throw new Error('Player not found. Check name, tag and region.');
-  if(r.status===429)throw new Error('Rate limited. Please wait a moment.');
-  if(!r.ok)throw new Error(`Server error (HTTP ${r.status}). Please retry.`);
+  let r;
+  try{
+    r=await fetch(url,opts);
+  }catch(e){
+    throw new Error('Unable to connect to the Valorant data API. Please check your connection and try again.');
+  }
+  if(!r.ok)throw new Error(apiStatusMessage(r.status));
   return r.json();
 }
 
@@ -1057,7 +1149,7 @@ async function fetchStats(){
     setTimeout(animBars,400);
     setTimeout(()=>initAICoach(name,computeStats(matches,name,rawTag)),600);
   }catch(e){
-    showErr(e.message||'Something went wrong. Please retry.');
+    showErr(friendlyApiError(e));
   }finally{setLoad(false);}
 }
 
@@ -1747,6 +1839,45 @@ function cloneForShare(el){
   clone.querySelectorAll('img').forEach(img=>{img.crossOrigin='anonymous';});
   return clone;
 }
+function getShareInsights(){
+  const st=S.stats||{};
+  const trend=(st.formACS&&st.formACS.length>1)?Math.round(st.formACS[st.formACS.length-1]-st.formACS[0]):0;
+  const topMap=st.mapArr?.[0]?.[0]||'No clear map yet';
+  const topAgent=st.agentArr?.[0]?.[0]||'No clear agent yet';
+  const verdict=st.ts>=820?'Elite form':st.ts>=680?'Rank-up ready':st.ts>=520?'Solid climb base':st.ts>=360?'Needs cleaner rounds':'Rebuild fundamentals';
+  const verdictNote=`${st.grade||'--'} grade · ${st.ts||0}/1000 tracker score across ${st.total||0} games.`;
+  let strength='Best edge',strengthNote=`${topAgent} on ${topMap} is the current profile identity.`;
+  const strengths=[
+    {ok:st.acs>=220,t:'High impact',n:`${st.acs} ACS creates real round pressure.`},
+    {ok:st.winPct>=55,t:'Win condition',n:`${st.winPct}% win rate means the playstyle is converting.`},
+    {ok:st.hsPct>=30,t:'Clean aim',n:`${st.hsPct}% headshot rate can punish wide swings.`},
+    {ok:st.kd>=1.2,t:'Duel control',n:`${st.kd} K/D shows reliable fight value.`},
+    {ok:st.adr>=150,t:'Damage engine',n:`${st.adr} ADR keeps rounds winnable.`},
+    {ok:trend>35,t:'Heating up',n:`Recent ACS is up ${trend} from the oldest match shown.`}
+  ];
+  const hit=strengths.find(x=>x.ok);if(hit){strength=hit.t;strengthNote=hit.n;}
+  let weakness='Next upgrade',weaknessNote='Keep the agent pool focused and review deaths after lost rounds.';
+  const weaknesses=[
+    {ok:st.winPct<45,t:'Close rounds',n:`${st.winPct}% win rate: prioritize trade spacing and post-plant discipline.`},
+    {ok:st.acs<160,t:'Round impact',n:`${st.acs} ACS: look for earlier utility value and cleaner first contact.`},
+    {ok:st.kd<1,t:'Survival value',n:`${st.kd} K/D: reduce dry peeks and isolate fights.`},
+    {ok:st.hsPct<20,t:'Crosshair level',n:`${st.hsPct}% HS: pre-aim common head height before clearing.`},
+    {ok:trend<-35,t:'Momentum dip',n:`Recent ACS is down ${Math.abs(trend)}: reset routines before queueing.`}
+  ];
+  const leak=weaknesses.find(x=>x.ok);if(leak){weakness=leak.t;weaknessNote=leak.n;}
+  return {verdict,verdictNote,strength,strengthNote,weakness,weaknessNote};
+}
+function shareInsightsHTML(){
+  const i=getShareInsights();
+  return `<div class="share-insights">
+    <div class="share-insight"><div class="share-insight-k">Verdict</div><div class="share-insight-v">${escapeHtml(i.verdict)}</div><div class="share-insight-p">${escapeHtml(i.verdictNote)}</div></div>
+    <div class="share-insight good"><div class="share-insight-k">Top Strength</div><div class="share-insight-v">${escapeHtml(i.strength)}</div><div class="share-insight-p">${escapeHtml(i.strengthNote)}</div></div>
+    <div class="share-insight warn"><div class="share-insight-k">Next Upgrade</div><div class="share-insight-v">${escapeHtml(i.weakness)}</div><div class="share-insight-p">${escapeHtml(i.weaknessNote)}</div></div>
+  </div>`;
+}
+function storyMetricHTML(label,value,tone=''){
+  return `<div class="story-metric ${tone}"><div class="k">${escapeHtml(label)}</div><div class="v">${escapeHtml(value)}</div></div>`;
+}
 function buildShareCard(fmt){
   const stage=document.getElementById('shareStage');
   stage.innerHTML='';
@@ -1761,6 +1892,37 @@ function buildShareCard(fmt){
       <div class="share-kicker">Real data · ${fmt==='story'?'Story':'Feed'} size</div>
     </div>`;
   card.appendChild(cloneForShare(document.getElementById('profBanner')));
+  card.insertAdjacentHTML('beforeend',shareInsightsHTML());
+  if(fmt==='story'){
+    const metrics=document.createElement('div');
+    const st=S.stats||{};
+    metrics.className='story-metrics';
+    metrics.innerHTML=[
+      storyMetricHTML('Grade',String(st.grade||'--'),'gold'),
+      storyMetricHTML('Score',String(st.ts||0),'blue'),
+      storyMetricHTML('Win Rate',`${st.winPct||0}%`,'green'),
+      storyMetricHTML('ACS',String(st.acs||0),'gold'),
+      storyMetricHTML('K/D',String(st.kd||0),'hot'),
+      storyMetricHTML('HS%',`${st.hsPct||0}%`,'blue')
+    ].join('');
+    card.appendChild(metrics);
+    const form=document.createElement('div');
+    form.className='share-section-card';
+    form.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Recent Form</div><div class="share-sec-line"></div><span class="share-sec-tag">LAST 10 Â· ACS</span></div>`;
+    const formChart=cloneForShare(document.getElementById('formChart'));
+    formChart.classList.add('form-chart-wrap');
+    form.appendChild(formChart);
+    form.appendChild(cloneForShare(document.getElementById('formLbl')));
+    card.appendChild(form);
+    const foot=document.createElement('div');
+    const now=new Date();
+    const who=`${S.player?.name||''}#${S.player?.tag||''}`;
+    foot.className='share-foot';
+    foot.innerHTML=`<span>Player Â· <strong>${escapeHtml(who)}</strong></span><span>${now.toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'})}</span><span>FragLy live tracker</span>`;
+    card.appendChild(foot);
+    stage.appendChild(card);
+    return card;
+  }
   const overviewWrap=document.createElement('div');
   overviewWrap.className='share-section-card';
   overviewWrap.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Performance Overview</div><div class="share-sec-line"></div><span class="share-sec-tag">${escapeHtml(String(S.stats?.total||0))} GAMES ANALYZED</span></div>`;
@@ -1818,7 +1980,9 @@ async function generateSharePreview(){
     const card=buildShareCard(shareFormat);
     card.classList.add('capturing');
     await new Promise(r=>requestAnimationFrame(()=>setTimeout(r,140)));
-    const canvas=await h2c(card,{backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,windowWidth:card.scrollWidth,windowHeight:card.scrollHeight});
+    const captureW=card.offsetWidth||card.scrollWidth;
+    const captureH=card.offsetHeight||card.scrollHeight;
+    const canvas=await h2c(card,{backgroundColor:null,useCORS:true,allowTaint:false,scale:2,logging:false,width:captureW,height:captureH,windowWidth:captureW,windowHeight:captureH});
     shareDataUrl=canvas.toDataURL('image/png');
     shareBlob=await new Promise(res=>canvas.toBlob(res,'image/png'));
     shareSnapshotKey=getCurrentShareKey();
@@ -1868,17 +2032,109 @@ function addToWishlist(item){const w=getWishlist();if(w.find(x=>x.name===item.na
 function removeFromWishlist(name){const w=getWishlist().filter(x=>x.name!==name);setWishlist(w);renderWishlist();}
 function renderWishlist(){const el=document.getElementById('wishListContent');const w=getWishlist();if(!w.length){el.innerHTML='<div class="no-data">Your wishlist is empty.</div>';return;}el.innerHTML=w.map(it=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr)"><img src="${it.image||''}" style="width:64px;height:40px;object-fit:cover;border-radius:6px;" onerror="this.style.display='none'"><div style="flex:1"><div style="font-family:var(--mono);font-size:.78rem">${it.name}</div><div style="font-family:var(--dp);font-size:.9rem;color:var(--gold)">${it.price?it.price+' VP':''}</div></div><button onclick='removeFromWishlist("${escapeHtml(it.name)}")' class="im-close">✕</button></div>`).join('');}
 function toggleWishlist(){const d=document.getElementById('wishlistDrawer');d.style.display=d.style.display==='block'?'none':'block';renderWishlist();}
-function updateWishCount(){const c=getWishlist().length;document.getElementById('wishCount').textContent=c;const m=document.getElementById('wishCountMob');if(m)m.textContent=c;}
+function updateWishCount(){const c=getWishlist().length;const el=document.getElementById('wishCount');if(el)el.textContent=c;const m=document.getElementById('wishCountMob');if(m)m.textContent=c;}
 
 /* TOAST */
 function showToast(t){const id='vs_toast';let el=document.getElementById(id);if(!el){el=document.createElement('div');el.id=id;el.style.cssText='position:fixed;left:50%;bottom:20px;transform:translateX(-50%);padding:11px 20px;background:linear-gradient(90deg,var(--red),var(--gold));color:#fff;border-radius:var(--r3);font-family:var(--mono);font-size:.68rem;letter-spacing:2px;z-index:2000;transition:opacity .4s;pointer-events:none;';document.body.appendChild(el);}el.textContent=t;el.style.opacity=1;clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity=0,2500);}
 function scrollToSection(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
 function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
+
+
+
 /* ═══════════════════════════════════════════
-   AI COACH — Powered by Claude (keyless via Anthropic API)
+   IDLE SESSION PROTECTION
+═══════════════════════════════════════════ */
+const IDLE_WARNING_MS=2.5*60*1000;
+const IDLE_GRACE_MS=30*1000;
+let idleTrackingActive=false;
+let idleWarningVisible=false;
+let idleWarnTimer=null;
+let idleEndTimer=null;
+let idleCountdownTimer=null;
+
+function clearIdleTimers(){
+  clearTimeout(idleWarnTimer);clearTimeout(idleEndTimer);clearInterval(idleCountdownTimer);
+  idleWarnTimer=null;idleEndTimer=null;idleCountdownTimer=null;
+}
+function startIdleSession(){
+  idleTrackingActive=true;
+  hideIdleWarning();
+  resetIdleTimers();
+}
+function resetIdleTimers(){
+  if(!idleTrackingActive)return;
+  clearIdleTimers();
+  idleWarningVisible=false;
+  idleWarnTimer=setTimeout(showIdleWarning,IDLE_WARNING_MS);
+}
+function hideIdleWarning(){
+  idleWarningVisible=false;
+  document.getElementById('idleModal')?.classList.add('hidden');
+}
+function showIdleWarning(){
+  if(!idleTrackingActive)return;
+  idleWarningVisible=true;
+  const modal=document.getElementById('idleModal');
+  const counter=document.getElementById('idleCountdown');
+  let remaining=Math.round(IDLE_GRACE_MS/1000);
+  if(counter)counter.textContent=remaining;
+  modal?.classList.remove('hidden');
+  clearInterval(idleCountdownTimer);
+  idleCountdownTimer=setInterval(()=>{
+    remaining-=1;
+    if(counter)counter.textContent=Math.max(remaining,0);
+  },1000);
+  clearTimeout(idleEndTimer);
+  idleEndTimer=setTimeout(endIdleSession,IDLE_GRACE_MS);
+}
+function continueIdleSession(){
+  if(!idleTrackingActive)idleTrackingActive=true;
+  hideIdleWarning();
+  resetIdleTimers();
+  showToast('Session kept active.');
+}
+function endIdleSession(){
+  const hadPlayer=!!S.player||!!S.stats||document.getElementById('dash')?.classList.contains('on');
+  idleTrackingActive=false;
+  idleWarningVisible=false;
+  clearIdleTimers();
+  hideIdleWarning();
+
+  S.stats=null;S.player=null;S.region=null;S.matches=[];S.conversationHistory=[];S.pendingPlayer=null;
+  document.getElementById('dash')?.classList.remove('on');
+  document.getElementById('searchHistory')?.classList.remove('open');
+  document.getElementById('nameIn')&&(document.getElementById('nameIn').value='');
+  document.getElementById('matchModal')?.classList.add('hidden');
+  document.getElementById('shareModal')?.classList.add('hidden');
+  closePlayerQuickMenu?.();
+  setLoad(false);
+  resetShareExportState?.('Session ended due to inactivity. Search again to generate a fresh image.');
+  if(aiOpen){aiOpen=false;document.getElementById('aiPanel')?.classList.remove('open');document.querySelector('.ai-fab')&&(document.querySelector('.ai-fab').style.display='');}
+  const msgs=document.getElementById('apMsgs');
+  if(msgs){msgs.innerHTML='';msgs.dataset.ready='';}
+  document.body.style.overflow='';
+  if(hadPlayer){
+    showToast('Session ended due to inactivity. Search again when you’re ready.');
+    showErr('Session ended due to inactivity. Search again when you’re ready.');
+  }
+  document.querySelector('.scard')?.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function handleIdleActivity(){
+  if(!idleTrackingActive||idleWarningVisible)return;
+  resetIdleTimers();
+}
+['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(evt=>{
+  document.addEventListener(evt,handleIdleActivity,{passive:true});
+});
+
+/* ═══════════════════════════════════════════
+   AI COACH — Real keyless AI via Pollinations
 ═══════════════════════════════════════════ */
 let aiOpen=false;
+let aiLastProvider='Pollinations Keyless AI';
+const AI_REFERRER='fragly-ai-coach';
+
 function toggleAI(){
   aiOpen=!aiOpen;
   document.getElementById('aiPanel').classList.toggle('open',aiOpen);
@@ -1886,17 +2142,41 @@ function toggleAI(){
   document.querySelector('.ai-fab').style.display=aiOpen?'none':'';
   if(aiOpen)initAIPanel();
 }
+
+function purgeOldAIKeyPrompt(){
+  try{
+    const old=document.getElementById('aiKeyPrompt');
+    if(old)old.remove();
+    const oldInput=document.getElementById('aiKeyInp');
+    if(oldInput){
+      const holder=oldInput.closest('.msg');
+      if(holder)holder.remove();
+    }
+    document.querySelectorAll('#apMsgs .msg.ai').forEach(el=>{
+      const html=(el.innerHTML||'');
+      const text=(el.textContent||'');
+      if(el.querySelector('input[type="password"]') || /SAVE\s*&\s*UNLOCK/i.test(text) || /console\.[a-z]+\.com/i.test(html))el.remove();
+    });
+    const sub=document.querySelector('.aph-sub');
+    if(sub)sub.textContent='KEYLESS AI · NO USER KEY';
+    const status=document.getElementById('aiStatus');
+    if(status&&/NEEDS\s+KEY|LOADING\s+AI/i.test(status.textContent||''))status.textContent='READY';
+  }catch(e){}
+}
+
 function initAIPanel(){
+  purgeOldAIKeyPrompt();
   const msgs=document.getElementById('apMsgs');
   if(msgs.dataset.ready)return;
   msgs.dataset.ready='1';msgs.innerHTML='';
-  const hasKey=!!localStorage.getItem('fragly_ai_key');
-  const welcome=`Welcome to <strong>FragLy AI</strong> — your personal Valorant analyst!<br><br>`+
-    (hasKey
-      ?`AI is <strong>active</strong> — search a player above, then ask me anything for personalized coaching based on their real stats. 🎯`
-      :`Search a player above, then ask me anything! <em style="color:#7070A0;font-size:.82em">(On first message you'll be prompted to add a free Anthropic API key to enable real AI.)</em>`);
+  const ready=true;
+  document.getElementById('aiStatus').textContent='READY';
+  const welcome=`Welcome to <strong>FragLy AI Coach</strong> — a real keyless Valorant analyst powered through Keyless AI.<br><br>`+
+    (ready
+      ?`No AI key is needed. Search a player, then ask me for coaching based on the loaded stats. 🎯`
+      :`AI engine is still loading. Wait a few seconds, then send your question again. No AI key setup is needed.`);
   addMsg('ai',welcome);
-  addChips([{txt:'🎯 Improve aim',q:'How can I improve my headshot percentage?'},{txt:'📈 Rank up',q:'What should I focus on to rank up faster?'},{txt:'🗺 Map tips',q:'How do I get better at maps in Valorant?'},{txt:'🎭 Best agent',q:'How do I choose the right agent to main?'}]);
+  addChips([{txt:'🎯 Improve aim',q:'How can I improve my headshot percentage?'},{txt:'📈 Rank up',q:'What should I focus on to rank up faster?'},{txt:'🗺 Map tips',q:'How do I get better at maps in Valorant?'},{txt:'🎭 Best agent',q:'Which agent should I play?'}]);
   setTimeout(()=>document.getElementById('apInput')?.focus(),100);
 }
 
@@ -1915,151 +2195,158 @@ function addChips(chips){
 function showTyping(){const c=document.getElementById('apMsgs');const d=document.createElement('div');d.className='msg typing';d.id='typingEl';d.innerHTML=`<div class="typing-dots"><span></span><span></span><span></span></div>`;c.appendChild(d);c.scrollTop=c.scrollHeight;}
 function hideTyping(){const t=document.getElementById('typingEl');if(t)t.remove();}
 
-async function sendMsg(){
-  const inp=document.getElementById('apInput');
-  const q=(inp.value||'').trim();if(!q)return;
-  inp.value='';addMsg('user',q);showTyping();
-
-  let ctx='';
-  if(S.stats&&S.player){
-    const st=S.stats;
-    ctx=` Player stats — Name:${S.player.name}#${S.player.tag} | HS%:${st.hsPct}% | WR:${st.winPct}% | K/D:${st.kd} | ACS:${st.acs} | ADR:${st.adr} | Grade:${st.grade} | Games:${st.total}${st.mapArr?.length?' | BestMap:'+st.mapArr[0]?.[0]:''}${st.agentArr?.length?' | TopAgent:'+st.agentArr[0]?.[0]:''}`;
+function buildAICoachContext(){
+  if(!S.stats||!S.player){
+    return `No player profile is loaded yet. If the user asks for personalized coaching, tell them to search a Riot ID first. You may still give general Valorant advice, but clearly say it is general advice.`;
   }
-  const sys=`You are FragLy AI, an expert Valorant coach embedded in a stats tracker. Give specific, actionable advice in 3-5 sentences. Use **bold** for key terms. Always reference the player's actual stats when available. Be direct and encouraging.${ctx}`;
+  const st=S.stats;
+  const bestMap=st.mapArr?.[0]?.[0]||'Not enough map data';
+  const topAgent=st.agentArr?.[0]?.[0]||'Not enough agent data';
+  return `Current loaded player profile:
+Name: ${S.player.name}#${S.player.tag}
+Region: ${S.region||'unknown'}
+Matches analyzed: ${st.total}
+Grade: ${st.grade}
+Tracker Score: ${st.ts}/1000
+Win Rate: ${st.winPct}%
+Headshot Rate: ${st.hsPct}%
+K/D: ${st.kd}
+KDA: ${st.kda}
+ACS: ${st.acs}
+ADR: ${st.adr}
+Best Map: ${bestMap}
+Top Agent: ${topAgent}
+Important instruction: Only use the stats above as the player's data. Do not invent ranks, MMR, hidden MMR, match details, or exact Riot data not provided in this context.`;
+}
+
+function buildAICoachMessages(userQuestion){
+  const system=`You are FragLy AI Coach, a sharp but friendly Valorant coach inside a player stats tracker.
+Answer in 3-6 short sentences unless the user asks for a detailed plan.
+Use the user's loaded stats when available.
+Give specific, actionable advice: aim routine, positioning, utility, map discipline, agent pool, round decision-making, and rank-up priorities.
+Do not claim you can see hidden MMR or private Riot data.
+Do not say you are a static fallback. You are a real AI coach.
+Use natural language that feels human, not robotic. Taglish is allowed if the user uses Taglish.
+Format important ideas with **bold** only.`;
+  const context=buildAICoachContext();
+  const recent=S.conversationHistory.slice(-8);
+  return [
+    {role:'system',content:system},
+    {role:'user',content:`Here is the current FragLy context.\n${context}`},
+    ...recent,
+    {role:'user',content:userQuestion}
+  ];
+}
+
+function extractAIText(response){
+  if(response==null)return '';
+  if(typeof response==='string')return response;
+  if(typeof response.text==='string')return response.text;
+  if(typeof response.content==='string')return response.content;
+  if(Array.isArray(response.content))return response.content.map(x=>x?.text||x?.content||'').join('\n').trim();
+  const msg=response.message||response;
+  if(typeof msg==='string')return msg;
+  if(typeof msg.content==='string')return msg.content;
+  if(Array.isArray(msg.content))return msg.content.map(x=>x?.text||x?.content||'').join('\n').trim();
+  if(msg?.text)return msg.text;
+  return '';
+}
+
+function formatAIText(txt){
+  const safe=escapeHtml(txt||'').trim();
+  return safe
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
+
+function aiUnavailableMessage(err){
+  const raw=String(err?.message||err||'').toLowerCase();
+  if(raw.includes('blocked')||raw.includes('network')||raw.includes('failed to fetch')){
+    return 'Real AI could not connect right now. Please check your connection, disable blockers for this site if needed, then try again. No AI key is required.';
+  }
+  if(raw.includes('quota')||raw.includes('limit')||raw.includes('rate')){
+    return 'The AI provider is temporarily busy or rate-limited. Please wait a moment and try again. No AI key is needed.';
+  }
+  return 'Real AI is temporarily unavailable. Please refresh the page or try again in a moment. No API key setup is required.';
+}
+
+function messagesToPrompt(messages){
+  return messages.map(m=>`${String(m.role||'user').toUpperCase()}: ${m.content||''}`).join('\n\n');
+}
+
+async function askKeylessAI(messages){
+  const payload={
+    model:'openai',
+    messages:messages.slice(-10),
+    temperature:.45,
+    max_tokens:700,
+    stream:false
+  };
+
+  const chatResponse=await fetch(`https://text.pollinations.ai/openai?referrer=${encodeURIComponent(AI_REFERRER)}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+
+  if(chatResponse.ok){
+    const data=await chatResponse.json();
+    const text=extractAIText(data);
+    if(text&&text.trim()){
+      aiLastProvider='Pollinations OpenAI';
+      return text.trim();
+    }
+  }
+
+  const prompt=`${messagesToPrompt(messages)}\n\nASSISTANT:`;
+  const simpleUrl=`https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=openai&temperature=0.45&referrer=${encodeURIComponent(AI_REFERRER)}`;
+  const simpleResponse=await fetch(simpleUrl);
+  if(!simpleResponse.ok)throw new Error(`AI request failed (${chatResponse.status || simpleResponse.status})`);
+  const text=(await simpleResponse.text()).trim();
+  if(!text)throw new Error('Empty AI response');
+  aiLastProvider='Pollinations Text';
+  return text;
+}
+
+async function sendMsg(){
+  purgeOldAIKeyPrompt();
+  const inp=document.getElementById('apInput');
+  const sendBtn=document.querySelector('.ap-send');
+  const q=(inp.value||'').trim();if(!q)return;
+  inp.value='';addMsg('user',escapeHtml(q));showTyping();
+  if(sendBtn)sendBtn.disabled=true;
   S.conversationHistory.push({role:'user',content:q});
   document.getElementById('aiStatus').textContent='THINKING...';
 
   try{
-    const storedKey=localStorage.getItem('fragly_ai_key')||'';
-    const headers={
-      'Content-Type':'application/json',
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    };
-    if(storedKey)headers['x-api-key']=storedKey;
-
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers,
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        system:sys,
-        messages:S.conversationHistory.slice(-10)
-      })
-    });
-
-    // Auth error — show inline key setup prompt instead of fake fallback
-    if(r.status===401||r.status===403){
-      hideTyping();
-      document.getElementById('aiStatus').textContent='NEEDS KEY';
-      S.conversationHistory.pop();
-      showAIKeyPrompt();
-      return;
-    }
-    if(!r.ok)throw new Error('api_fail');
-    const data=await r.json();
-    const txt=data.content?.map(b=>b.type==='text'?b.text:'').filter(Boolean).join('\n')||'';
-    if(!txt.trim())throw new Error('empty');
+    const messages=buildAICoachMessages(q);
+    const txt=await askKeylessAI(messages);
     S.conversationHistory.push({role:'assistant',content:txt});
     hideTyping();
     document.getElementById('aiStatus').textContent='READY';
-    addMsg('ai',txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>'));
+    addMsg('ai',formatAIText(txt));
   }catch(e){
     hideTyping();
-    document.getElementById('aiStatus').textContent='READY';
+    document.getElementById('aiStatus').textContent='AI OFFLINE';
     S.conversationHistory.pop();
-    // Only use fallback for genuine network errors, not auth failures
-    addMsg('ai',getFallbackResponse(q,S.stats));
+    addMsg('ai',aiUnavailableMessage(e));
+  }finally{
+    if(sendBtn)sendBtn.disabled=false;
+    setTimeout(()=>{ if(document.getElementById('aiStatus')?.textContent==='AI OFFLINE') document.getElementById('aiStatus').textContent='READY'; },2500);
   }
-}
-
-function showAIKeyPrompt(){
-  if(document.getElementById('aiKeyPrompt'))return;// Already shown
-  const c=document.getElementById('apMsgs');
-  const d=document.createElement('div');
-  d.className='msg ai';d.id='aiKeyPrompt';
-  d.innerHTML=`<div class="msg-tag">⬡ FRAGLY AI</div>
-    To unlock real AI coaching, add your <strong>free Anthropic API key</strong>.<br><br>
-    <input id="aiKeyInp" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,70,85,.3);border-radius:6px;padding:9px 12px;color:#ECE8F5;font-family:'DM Mono',monospace;font-size:.75rem;outline:none;box-sizing:border-box;margin-bottom:8px;">
-    <button onclick="saveAIKey()" style="width:100%;padding:9px;background:linear-gradient(135deg,#FF4655,#FF2D3E);border:none;border-radius:6px;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:3px;cursor:pointer;transition:.2s;">SAVE &amp; UNLOCK AI</button>
-    <div style="margin-top:9px;font-family:'DM Mono',monospace;font-size:.58rem;color:#4E4E72;line-height:1.7">
-      Get a free key → <a href="https://console.anthropic.com/keys" target="_blank" style="color:#FF4655;text-decoration:none">console.anthropic.com</a><br>
-      Saved locally on your device · Never sent anywhere else
-    </div>`;
-  c.appendChild(d);c.scrollTop=c.scrollHeight;
-}
-
-function saveAIKey(){
-  const k=(document.getElementById('aiKeyInp')?.value||'').trim();
-  if(!k){document.getElementById('aiKeyInp').style.borderColor='var(--red)';return;}
-  localStorage.setItem('fragly_ai_key',k);
-  const prompt=document.getElementById('aiKeyPrompt');
-  if(prompt)prompt.remove();
-  document.getElementById('aiStatus').textContent='READY';
-  addMsg('ai','✅ <strong>Claude AI unlocked!</strong> I\'m now running on real AI — ask me anything about your gameplay. 🎯');
-}
-
-
-function getFallbackResponse(q,st){
-  const qi=q.toLowerCase();
-  const has=w=>qi.includes(w);
-  if(!st){
-    if(has('aim')||has('headshot'))return`To improve your headshot %: (1) Keep crosshair at <strong>head level</strong> always. (2) Do 15 min Deathmatch daily focusing only on headshots. (3) Stop moving before every shot. Most players gain <strong>8-10% HS%</strong> from crosshair placement alone. 🎯`;
-    if(has('rank')||has('climb'))return`To rank up faster: (1) Play <strong>2-3 agents max</strong> and master their utility. (2) Focus on maps with positive win rate. (3) Review your worst 3 deaths after each match. Consistency beats big games every time. 📈`;
-    if(has('agent'))return`Choose an agent that fits your playstyle: <strong>Duelists</strong> (Jett, Reyna) for aggressive players, <strong>Controllers</strong> (Omen, Astra) for strategic players, <strong>Sentinels</strong> (Cypher, Sage) for defensive players. Master 2 agents max for consistent results.`;
-    if(has('map'))return`Map improvement tips: (1) Learn 2-3 <strong>default lineups</strong> per map. (2) Study common angles enemies hold. (3) Practice site executes in custom games. Map knowledge is worth more than mechanical skill at most ranks. 🗺`;
-    if(has('warm')||has('practice'))return`Best warmup routine: (1) <strong>10 min</strong> range — focus on flicks and tracking. (2) <strong>10 min</strong> Deathmatch — headshots only. (3) <strong>5 min</strong> spray control practice. Total 25 min before ranked. 🎯`;
-    return`Search a player profile above for personalized coaching! General tip: the three biggest rank factors in Valorant are <strong>crosshair placement</strong>, <strong>utility usage</strong>, and <strong>map control</strong>. Which would you like to improve?`;
-  }
-  // Personalized with real stats
-  const g=st.grade,hs=st.hsPct,wr=st.winPct,kd=st.kd,acs=st.acs,adr=st.adr;
-  if(has('aim')||has('headshot')){
-    if(hs>=30)return`Your HS% of <strong>${hs}%</strong> is excellent — top tier! Maintain it with daily Deathmatch warm-ups. Your <strong>ACS of ${acs}</strong> shows you're converting those headshots into impact. Keep pre-aiming common angles and you're on track. 🎯`;
-    if(hs>=20)return`Your HS% of <strong>${hs}%</strong> is average. To reach 30%+: walk before shooting, pre-aim head-level spots, and do headshot-only Deathmatch. Combined with your <strong>${wr}% win rate</strong>, fixing this will push your grade above ${g}. 🎯`;
-    return`Your HS% of <strong>${hs}%</strong> needs work — this is your #1 priority. Do 15 min headshot-only Deathmatch daily. Your <strong>K/D of ${kd}</strong> will improve naturally once headshots become habit. Target: 20%+ in 2 weeks. 🎯`;
-  }
-  if(has('rank')||has('climb')){
-    const tips=[];
-    if(hs<22)tips.push(`Improve aim — HS% ${hs}% is below rank average`);
-    if(wr<47)tips.push(`Win more rounds through better utility usage`);
-    if(kd<1.0)tips.push(`Stop unnecessary peaks — K/D ${kd} means you die more than you kill`);
-    if(acs<150)tips.push(`Deal more damage — ACS ${acs} is low, even assists count`);
-    if(!tips.length)tips.push(`Maintain consistency — your stats are solid, just keep it up`);
-    return`To rank up from <strong>Grade ${g}</strong>:<br><br>${tips.map((t,i)=>`${i+1}. ${t}`).join('<br>')}<br><br>Your <strong>ACS (${acs})</strong> is the single biggest ranking factor — focus there first. 📈`;
-  }
-  if(has('map')||has('best map')){
-    const best=st.mapArr?.[0];
-    return best?`Your best map is <strong>${best[0]}</strong> — lean into it for ranked. Your <strong>${wr}% overall win rate</strong> shows ${wr>=50?'you win more than you lose, keep queuing your strong maps':'room to improve through better map-specific strategies'}. Study 2-3 default lineups per map you struggle on. 🗺`:`Search a player above to see your map breakdown and best maps to queue!`;
-  }
-  if(has('agent')||has('best agent')){
-    const best=st.agentArr?.[0];
-    return best?`Your most played agent is <strong>${best[0]}</strong> with ${best[1]?.g} games. ${best[1]?.w/best[1]?.g>=0.5?'Your win rate on them is solid — keep maining this agent.':'Consider switching to an agent that better fits your playstyle.'} With a <strong>${kd} K/D</strong>, ${kd>=1.2?'duelists could amplify your impact':'a supportive agent might stabilize your team better'}. 🎭`:`Play your best agents — limiting to 2-3 max builds deeper game sense faster.`;
-  }
-  if(has('weak')||has('worst')){
-    const weak=[];
-    if(hs<22)weak.push(`Aim — HS% ${hs}%`);
-    if(wr<47)weak.push(`Win rate — ${wr}%`);
-    if(kd<1.0)weak.push(`Survival — K/D ${kd}`);
-    if(adr<100)weak.push(`Damage output — ADR ${adr}`);
-    return weak.length?`Your biggest weakness${weak.length>1?'es':''}: <strong>${weak.join(', ')}</strong>. Fix these in order — aim first, then decision-making, then damage output. Each improvement compounds the others. 💡`:`Your stats are well-rounded at Grade <strong>${g}</strong>! Focus on mental consistency — don't tilt, take breaks between losses, and review one death per match. 💡`;
-  }
-  // Generic personalized
-  const strength=hs>=25?`aim at ${hs}% HS`:wr>=50?`win rate at ${wr}%`:`KDA of ${st.kda}`;
-  return`Based on your <strong>Grade ${g}</strong> (${st.total} games): Your top strength is <strong>${strength}</strong>. ${kd>=1?'Your K/D is positive':'Work on your K/D first'} and your ACS of <strong>${acs}</strong> ${acs>=180?'is strong':'needs improvement'}. Ask me about aim, rank-up, maps, agents, or weaknesses for targeted coaching! 🎯`;
 }
 
 function initAICoach(name,st){
+  purgeOldAIKeyPrompt();
   S.conversationHistory=[];// Reset for new player
   const msgs=document.getElementById('apMsgs');msgs.innerHTML='';msgs.dataset.ready='1';
-  const hasKey=!!localStorage.getItem('fragly_ai_key');
-  const intro=`Hey <strong>${name}</strong>! I've analyzed your last <strong>${st.total} matches</strong>. Here's your Intel Report:<br><br>`+
+  document.getElementById('aiStatus').textContent='READY';
+  const intro=`Hey <strong>${escapeHtml(name)}</strong>! I analyzed your last <strong>${st.total} matches</strong> and I can coach you using your real loaded FragLy stats.<br><br>`+
     `📊 Grade: <strong>${st.grade}</strong> · Tracker Score: <strong>${st.ts}/1000</strong><br>`+
     `🎯 Headshot: <strong>${st.hsPct}%</strong> · ACS: <strong>${st.acs}</strong> · K/D: <strong>${st.kd}</strong><br>`+
     `🏆 Win Rate: <strong>${st.winPct}%</strong> · ADR: <strong>${st.adr}</strong> · KDA: <strong>${st.kda}</strong><br><br>`+
-    (hasKey
-      ?`Ask me anything for personalized coaching based on your actual stats! 🎯`
-      :`Ask me anything — on your first question I'll walk you through a quick one-time AI setup. 🎯`);
+    `Ask me anything. No AI key is needed — just ask your coach directly. 🎯`;
   addMsg('ai',intro);
   addChips([{txt:'🎯 Fix my aim',q:'How can I improve my headshot percentage?'},{txt:'📈 Rank up tips',q:'What do I need to do to rank up?'},{txt:'🗺 My best map?',q:'Which map should I focus on?'},{txt:'🎭 Agent advice',q:'Which agent should I play?'},{txt:'⚔ My weakness',q:'What is my biggest weakness right now?'}]);
 }
@@ -2189,6 +2476,7 @@ window.render=function(acc,mmr,matches,name,tag,region){
   addToHistory(acc.name||name,acc.tag||tag,region,avatarUrl);
   // Call original (skip its avatar line since we handle it)
   _origRender(acc,mmr,matches,name,tag,region);
+  startIdleSession();
 };
 </script>
 </body>
