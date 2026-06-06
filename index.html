@@ -2589,15 +2589,18 @@ async function askKeylessAI(messages){
   };
 
   const PURL='https://text.pollinations.ai';
-  let chatResponse=null;
+  // Token as query param (browser-safe, no CORS preflight on Authorization header)
+  const postUrl=`${PURL}/openai?referrer=${encodeURIComponent(AI_REFERRER)}${aiTokenQuery()}`;
+  let chatResponse=null,lastStatus=0;
   // One retry for transient 429
   for(let i=0;i<2;i++){
     if(i>0)await new Promise(r=>setTimeout(r,1500));
-    chatResponse=await fetch(`${PURL}/openai?referrer=${encodeURIComponent(AI_REFERRER)}`,{
+    chatResponse=await fetch(postUrl,{
       method:'POST',
-      headers:aiAuthHeaders({'Content-Type':'application/json'}),
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
     });
+    lastStatus=chatResponse.status;
     DBG('[AI] POST attempt',i+1,'status:',chatResponse.status);
     if(chatResponse.status!==429)break;
   }
@@ -2624,12 +2627,13 @@ async function askKeylessAI(messages){
   let simpleResponse=null;
   for(let i=0;i<2;i++){
     if(i>0)await new Promise(r=>setTimeout(r,1500));
-    simpleResponse=await fetch(simpleUrl,{headers:aiAuthHeaders()});
+    simpleResponse=await fetch(simpleUrl);// token is in URL ?token= — simple request, no preflight
+    lastStatus=simpleResponse.status;
     DBG('[AI] GET attempt',i+1,'status:',simpleResponse.status);
     if(simpleResponse.status!==429)break;
   }
 
-  if(!simpleResponse.ok)throw new Error(`AI request failed (${chatResponse.status||simpleResponse.status})`);
+  if(!simpleResponse.ok)throw new Error(`AI request failed (HTTP ${lastStatus||chatResponse.status||simpleResponse.status})`);
   const text=(await simpleResponse.text()).trim();
   if(!text)throw new Error('Empty AI response');
   DBG('[AI] GET fallback success');
@@ -2661,8 +2665,9 @@ async function sendMsg(){
     S.conversationHistory.push({role:'assistant',content:local});
     hideTyping();
     document.getElementById('aiStatus').textContent='READY';
-    const busy=/429|queue|busy|rate|limit/i.test(String(e?.message||e));
-    const note=busy?`<br><br><span style="opacity:.6;font-size:.85em">⚡ Live AI is busy right now — this answer is from your real loaded stats.</span>`:'';
+    const emsg=String(e?.message||e);
+    const busy=/429|queue|busy|rate|limit/i.test(emsg);
+    const note=`<br><br><span style="opacity:.55;font-size:.8em">⚡ Live AI unavailable (${escapeHtml(emsg)}) — answer from your real loaded stats.</span>`;
     addMsg('ai',formatAIText(local)+note);
   }finally{
     if(sendBtn)sendBtn.disabled=false;
