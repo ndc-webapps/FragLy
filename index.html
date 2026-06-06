@@ -203,6 +203,18 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .rank-nm{font-family:var(--dp);font-size:.85rem;font-weight:700;letter-spacing:1px;color:var(--gold);text-align:center;line-height:1.2;}
 .rank-img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(232,184,75,.3));}
 
+/* PLAYTIME STRIP */
+.playtime-strip{display:flex;flex-wrap:wrap;gap:10px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05);}
+.pt-item{flex:1;min-width:110px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r2);padding:12px 14px;display:flex;flex-direction:column;gap:3px;transition:.25s;}
+.pt-item:hover{border-color:rgba(255,70,85,.2);background:rgba(255,70,85,.03);}
+.pt-lbl{font-family:var(--mono);font-size:.5rem;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;}
+.pt-val{font-family:var(--dp);font-size:1.4rem;font-weight:900;letter-spacing:1px;line-height:1;margin-top:4px;}
+.pt-val.today{color:var(--red);}
+.pt-val.recent{color:var(--blue);}
+.pt-val.avg{color:var(--gold);}
+.pt-note{font-family:var(--mono);font-size:.46rem;color:var(--muted);letter-spacing:1.5px;margin-top:3px;opacity:.8;}
+@media(max-width:480px){.pt-item{min-width:80px;padding:10px 12px;}.pt-val{font-size:1.2rem;}}
+
 /* Tablet+ — side-by-side avatar/name, bigger text */
 @media(min-width:600px){
   .prof{padding:28px 28px;gap:24px;}
@@ -312,6 +324,15 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .mfilter-btn{padding:7px 16px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:999px;color:var(--muted2);font-family:var(--mono);font-size:.62rem;letter-spacing:2px;cursor:pointer;transition:.2s;text-transform:uppercase;}
 .mfilter-btn:hover{border-color:rgba(255,70,85,.25);color:var(--txt);}
 .mfilter-btn.active{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 18px rgba(255,70,85,.3);}
+.mf-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 5px;margin-left:7px;border-radius:999px;background:rgba(255,255,255,.08);font-size:.54rem;letter-spacing:.5px;color:inherit;vertical-align:middle;}
+.mfilter-btn.active .mf-count{background:rgba(0,0,0,.25);}
+
+/* PER-MODE SUMMARY (real aggregates for the active category) */
+.mode-summary{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px;}
+.ms-cell{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r3);padding:10px 6px;text-align:center;min-width:0;}
+.ms-v{font-family:var(--dp);font-size:1.25rem;font-weight:900;letter-spacing:.5px;line-height:1;color:var(--txt);}
+.ms-k{font-family:var(--mono);font-size:.48rem;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-top:5px;}
+@media(max-width:600px){.mode-summary{grid-template-columns:repeat(3,1fr);}}
 
 /* MATCH LIST */
 .mlist{display:flex;flex-direction:column;gap:8px;}
@@ -566,6 +587,10 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .share-card .pname{font-size:2.5rem;}
 .share-card .pstat-card{padding:18px 14px;}
 .share-card .pstat-val{font-size:2rem;}
+.share-card .playtime-strip{gap:8px;padding-top:14px;}
+.share-card .pt-item{padding:10px 12px;min-width:90px;}
+.share-card .pt-val{font-size:1.25rem;}
+.share-card .pt-note{font-size:.44rem;}
 .share-card .sgrid{position:relative;z-index:1;gap:14px;margin-bottom:0;grid-auto-rows:minmax(0,auto);grid-template-columns:repeat(4,1fr)!important;}
 .share-card .sc{padding:18px 18px 16px;min-height:0;box-shadow:none;}
 .share-card .sc-val{font-size:2.6rem;}
@@ -885,6 +910,23 @@ footer span{color:var(--red);}
         <div class="pstat-lbl" id="rankRR">— RR</div>
       </div>
     </div>
+    <div class="playtime-strip" id="playtimeStrip" style="display:none">
+      <div class="pt-item">
+        <div class="pt-lbl">Today's Playtime</div>
+        <div class="pt-val today" id="ptToday">—</div>
+        <div class="pt-note" id="ptTodayNote"></div>
+      </div>
+      <div class="pt-item">
+        <div class="pt-lbl">Last 10 Games</div>
+        <div class="pt-val recent" id="ptRecent">—</div>
+        <div class="pt-note">Real match durations</div>
+      </div>
+      <div class="pt-item">
+        <div class="pt-lbl">Avg / Match</div>
+        <div class="pt-val avg" id="ptAvg">—</div>
+        <div class="pt-note">Across timed games</div>
+      </div>
+    </div>
   </div>
 
   <!-- STATS GRID -->
@@ -929,8 +971,9 @@ footer span{color:var(--red);}
   </div>
 
   <!-- MATCH HISTORY -->
-  <div class="sh"><h2 class="sh-title">Recent Matches</h2><div class="sh-line"></div></div>
+  <div class="sh"><h2 class="sh-title">Match History</h2><div class="sh-line"></div><span class="sh-tag" id="histCount"></span></div>
   <div class="mfilters" id="mfilters"></div>
+  <div class="mode-summary" id="modeSummary" style="display:none"></div>
   <div class="mth"><span></span><span>MAP</span><span style="text-align:center">RESULT</span><span style="text-align:center">SCORE</span><span style="text-align:center">K / D / A</span><span style="text-align:center">ACS</span><span style="text-align:center">HS%</span></div>
   <div class="mlist" id="mlist"></div>
 
@@ -1018,7 +1061,7 @@ try{
 /* ═══════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════ */
-const S={stats:null,player:null,region:null,matches:[],apiKey:'',matchFilter:'all',conversationHistory:[],matchCache:{},pendingPlayer:null};
+const S={stats:null,player:null,region:null,matches:[],history:[],apiKey:'',matchFilter:'all',conversationHistory:[],matchCache:{},pendingPlayer:null};
 const LS={get:k=>localStorage.getItem(k)||'',set:(k,v)=>localStorage.setItem(k,v)};
 
 // Mobile browser safe viewport height.
@@ -1084,39 +1127,6 @@ async function api(url){
   }
   if(!r.ok)throw new Error(apiStatusMessage(r.status));
   return r.json();
-}
-
-/* ═══════════════════════════════════════════
-   DEMO DATA (keyless fallback)
-═══════════════════════════════════════════ */
-function createDemoData(name,tag,region){
-  const account={name:name||'VALORANT PLAYER',tag:tag||'0000',account_level:48,card:{small:''}};
-  const mmr={current_data:{images:{large:'',small:''},currenttierpatched:'Diamond 2',ranking_in_tier:68}};
-  const agentsData=[
-    {char:'Jett',k:24,d:13,a:8,hs:10,bs:45,ls:3,sc:610,dm:2560,dr:1220,won:true,map:'Ascent',rounds:24,team:'Blue',agIco:''},
-    {char:'Chamber',k:18,d:15,a:5,hs:8,bs:36,ls:2,sc:480,dm:2200,dr:1580,won:false,map:'Bind',rounds:24,team:'Blue',agIco:''},
-    {char:'Sage',k:15,d:10,a:12,hs:5,bs:40,ls:0,sc:430,dm:1980,dr:960,won:true,map:'Haven',rounds:24,team:'Blue',agIco:''},
-    {char:'Phoenix',k:21,d:14,a:7,hs:9,bs:42,ls:1,sc:520,dm:2420,dr:1340,won:false,map:'Split',rounds:24,team:'Blue',agIco:''},
-    {char:'Raze',k:27,d:11,a:6,hs:11,bs:38,ls:2,sc:620,dm:2700,dr:1180,won:true,map:'Breeze',rounds:24,team:'Blue',agIco:''},
-    {char:'Jett',k:20,d:12,a:4,hs:9,bs:38,ls:1,sc:550,dm:2320,dr:1120,won:true,map:'Fracture',rounds:22,team:'Blue',agIco:''},
-    {char:'Neon',k:23,d:16,a:9,hs:12,bs:44,ls:2,sc:580,dm:2480,dr:1460,won:false,map:'Lotus',rounds:26,team:'Blue',agIco:''},
-  ];
-  const matches=agentsData.map(d=>({
-    metadata:{map:d.map,mode:'Competitive',rounds_played:d.rounds},
-    teams:{blue:{rounds_won:d.won?13:9,has_won:d.won},red:{rounds_won:d.won?9:13,has_won:!d.won}},
-    players:{all_players:[{name,tag,team:d.team,character:d.char,stats:{kills:d.k,deaths:d.d,assists:d.a,headshots:d.hs,bodyshots:d.bs,legshots:d.ls,score:d.sc},damage_made:d.dm,damage_received:d.dr,assets:{agent:{small:d.agIco}}}]}
-  }));
-  return{account,mmr,matches};
-}
-
-function fallbackToDemo(name,rawTag,region){
-  showToast('Demo mode active — showing sample data');
-  const{account,mmr,matches}=createDemoData(name,rawTag,region);
-  render(account,mmr,matches,name,rawTag,region);
-  document.getElementById('dash').classList.add('on');
-  setTimeout(()=>document.getElementById('dash').scrollIntoView({behavior:'smooth',block:'start'}),200);
-  setTimeout(animBars,400);
-  setTimeout(()=>initAICoach(name,computeStats(matches,name,rawTag)),600);
 }
 
 /* ═══════════════════════════════════════════
@@ -1242,8 +1252,19 @@ function render(acc,mmr,matches,name,tag,region){
     {l:'CLUTCH',v:Math.min(st.winPct*1.4,100)},{l:'CONSIST',v:Math.min(st.kpr*60,100)},
   ]);
   renderForm(st.formACS);renderMapTbl(st.mapArr,matches);renderAgentTbl(st.agentArr,matches);
-  renderMatches(matches,name,tag);
+  // Match-history list works off its own array (S.history) so we can deepen it with
+  // the stored-matches endpoint without disturbing overview/tables/stats above.
+  S.history=matches.slice();S._deep=new Set();
+  renderMatches(S.history,name,tag);
+  const pt=calcPlaytime(matches);
+  document.getElementById('ptToday').textContent=pt.dailyMs>0?formatPlaytime(pt.dailyMs):'None today';
+  document.getElementById('ptTodayNote').textContent=pt.dailyCount>0?`${pt.dailyCount} game${pt.dailyCount>1?'s':''} today`:'No games yet';
+  document.getElementById('ptRecent').textContent=pt.recentMs>0?formatPlaytime(pt.recentMs):'—';
+  document.getElementById('ptAvg').textContent=pt.avgMs>0?formatPlaytime(pt.avgMs):'—';
+  document.getElementById('playtimeStrip').style.display=pt.counted>0?'flex':'none';
   resetShareExportState();
+  // Deepen match history in the background (real data only; failure keeps the live list).
+  loadFullHistory(name,tag,region);
 }
 
 /* SCARD */
@@ -1393,13 +1414,37 @@ function setAgentTabMode(m){_agentTabMode=m==='ALL'?'all':m.toLowerCase();render
 
 
 /* MATCHES */
+const HISTORY_PER_TAB=20;
+function modeOf(m){return(m?.metadata?.mode||m?.metadata?.queue||'Competitive');}
 function renderMatches(matches,name,tag){
-  const modes=[...new Set(matches.map(m=>(m.metadata?.mode||m.metadata?.queue||'Competitive').toUpperCase()))];
+  matches=matches||[];
+  // Build per-category tabs from the modes actually present, each with a real count.
+  const counts={};
+  for(const m of matches){const mo=modeOf(m).toUpperCase();counts[mo]=(counts[mo]||0)+1;}
+  const modes=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
   const f=document.getElementById('mfilters');
-  f.innerHTML=['ALL',...modes].map(m=>`<button class="mfilter-btn ${S.matchFilter==='all'&&m==='ALL'||S.matchFilter===m.toLowerCase()?'active':''}" onclick="setMatchFilter('${m}')">${m}</button>`).join('');
+  const tabs=[['ALL',matches.length],...modes.map(mo=>[mo,counts[mo]])];
+  f.innerHTML=tabs.map(([label,n])=>{
+    const active=(S.matchFilter==='all'&&label==='ALL')||S.matchFilter===label.toLowerCase();
+    return`<button class="mfilter-btn ${active?'active':''}" onclick="setMatchFilter('${label.replace(/'/g,"\\'")}')">${escapeHtml(label)}<span class="mf-count">${n}</span></button>`;
+  }).join('');
   let filtered=matches.map((m,i)=>({m,i}));
-  if(S.matchFilter!=='all')filtered=filtered.filter(x=>(x.m.metadata?.mode||x.m.metadata?.queue||'Competitive').toLowerCase()===S.matchFilter.toLowerCase());
-  const rows=filtered.slice(0,12).map(({m,i})=>{
+  if(S.matchFilter!=='all')filtered=filtered.filter(x=>modeOf(x.m).toLowerCase()===S.matchFilter.toLowerCase());
+  // Per-category real-stats summary (reuses computeStats — no new math, no fake values).
+  const summaryEl=document.getElementById('modeSummary');
+  if(summaryEl){
+    if(S.matchFilter!=='all'&&filtered.length){
+      const cs=computeStats(filtered.map(x=>x.m),name,tag);
+      summaryEl.style.display='grid';
+      summaryEl.innerHTML=[
+        ['GAMES',cs.total],['W–L',`${cs.wins}–${cs.total-cs.wins}`],['WIN%',cs.winPct+'%'],
+        ['K/D',cs.kd],['ACS',cs.acs],['HS%',cs.hsPct+'%']
+      ].map(([k,v])=>`<div class="ms-cell"><div class="ms-v">${v}</div><div class="ms-k">${k}</div></div>`).join('');
+    }else{summaryEl.style.display='none';summaryEl.innerHTML='';}
+  }
+  const histCount=document.getElementById('histCount');
+  if(histCount)histCount.textContent=`${matches.length} TRACKED`;
+  const rows=filtered.slice(0,HISTORY_PER_TAB).map(({m,i})=>{
     const me=(m.players?.all_players||[]).find(p=>p.name?.toLowerCase()===name.toLowerCase()&&p.tag?.toLowerCase()===tag.toLowerCase());
     if(!me)return'';
     const k=me.stats?.kills||0,d=me.stats?.deaths||0,a=me.stats?.assists||0;
@@ -1431,12 +1476,36 @@ function renderMatches(matches,name,tag){
   }).filter(Boolean);
   document.getElementById('mlist').innerHTML=rows.length?rows.join(''):`<div style="color:var(--muted);font-family:var(--mono);font-size:.72rem;padding:20px">No matches found for this filter.</div>`;
 }
-function setMatchFilter(type){S.matchFilter=type==='ALL'?'all':type.toLowerCase();renderMatches(S.matches,S.player?.name,S.player?.tag);}
+function setMatchFilter(type){
+  S.matchFilter=type==='ALL'?'all':type.toLowerCase();
+  renderMatches(S.history||S.matches,S.player?.name,S.player?.tag);
+  if(type!=='ALL')deepenMode(type); // pull up to 20 real matches for this exact category
+}
+async function deepenMode(label){
+  // HenrikDev mode slug = lowercased label with separators stripped
+  // (Competitive→competitive, Team Deathmatch→teamdeathmatch, Spike Rush→spikerush).
+  const slug=String(label||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(!slug||!S.player||!S.region)return;
+  if(!S._deep)S._deep=new Set();
+  if(S._deep.has(slug))return; S._deep.add(slug);
+  try{
+    const res=await api(`${BASE}/v1/stored-matches/${S.region}/${enc(S.player.name)}/${enc(S.player.tag)}?size=20&mode=${slug}`);
+    const items=res?.data||[];
+    if(!items.length)return; // wrong slug or no matches in this mode → keep grouped data
+    const norm=items.map(normalizeStored);
+    const byId=new Map();let anon=0;
+    for(const m of [...(S.history||[]),...norm]){const id=getMatchId(m)||('a'+(anon++));if(!byId.has(id))byId.set(id,m);}
+    const all=[...byId.values()].sort((a,b)=>getMatchStartMs(b)-getMatchStartMs(a));
+    if(all.length===(S.history?.length||0))return; // nothing new to add
+    S.history=all;
+    if(S.matchFilter===slug||S.matchFilter===String(label).toLowerCase())renderMatches(S.history,S.player.name,S.player.tag);
+  }catch(e){/* keep existing real data; never fabricate */}
+}
 
 /* REAL MATCH DETAILS MODAL */
 function getMatchId(m){return m?.metadata?.matchid||m?.metadata?.match_id||m?.metadata?.id||m?.matchid||m?.match_id||m?.id||'';}
 function openMatchDetails(index){
-  const cached=S.matches?.[index];
+  const cached=(S.history||S.matches)?.[index];
   if(!cached){showToast('Match not found');return;}
   const matchId=getMatchId(cached);
   const modal=document.getElementById('matchModal');
@@ -1550,6 +1619,119 @@ function formatDuration(v){
   if(s>100000)s=Math.round(s/1000);
   const m=Math.floor(s/60),sec=Math.round(s%60);
   return `${m}m ${String(sec).padStart(2,'0')}s`;
+}
+function getMatchDurationMs(match){
+  const meta=match?.metadata||{};
+  const raw=meta.game_length_in_ms??meta.duration_in_ms??meta.game_length??null;
+  if(raw==null){
+    // Duration field absent — estimate from rounds (~135s per round including buy phase)
+    const rnd=Number(meta.rounds_played);
+    return(Number.isFinite(rnd)&&rnd>0)?rnd*135000:0;
+  }
+  const n=Number(raw);
+  if(!Number.isFinite(n)||n<=0)return 0;
+  // Values >100000 are milliseconds; smaller values are seconds (matches formatDuration logic)
+  return n>100000?n:n*1000;
+}
+function getMatchStartMs(match){
+  const meta=match?.metadata||{};
+  const raw=meta.game_start??meta.started_at??meta.start_time??null;
+  if(raw==null||raw==='')return 0;
+  // ISO date string (stored-matches uses "2026-02-10T18:36:43.55Z")
+  if(typeof raw==='string'&&!/^\d+$/.test(raw)){
+    const t=Date.parse(raw);return Number.isNaN(t)?0:t;
+  }
+  const n=Number(raw);
+  if(!Number.isFinite(n)||n<=0)return 0;
+  return n>1e12?n:n*1000;
+}
+function formatPlaytime(ms){
+  if(!ms||ms<=0)return'—';
+  const tot=Math.round(ms/60000);
+  if(tot<60)return`${tot}m`;
+  const h=Math.floor(tot/60),m=tot%60;
+  return m>0?`${h}h ${m}m`:`${h}h`;
+}
+function calcPlaytime(matches){
+  // Every value here is derived ONLY from real match durations the API actually
+  // returns (metadata.game_length / *_in_ms). Matches without a real duration are
+  // skipped — we never fabricate or estimate playtime.
+  const now=new Date();
+  const todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  const todayEnd=todayStart+86400000;
+  let dailyMs=0,recentMs=0,counted=0,dailyCount=0;
+  for(const m of matches){
+    // Only count matches that expose a genuine duration field (not the rounds fallback).
+    const meta=m?.metadata||{};
+    const hasRealDur=(meta.game_length_in_ms??meta.duration_in_ms??meta.game_length)!=null;
+    if(!hasRealDur)continue;
+    const dur=getMatchDurationMs(m);
+    if(dur<=0)continue;
+    counted++;recentMs+=dur;
+    const t=getMatchStartMs(m);
+    if(t>0&&t>=todayStart&&t<todayEnd){dailyMs+=dur;dailyCount++;}
+  }
+  const avgMs=counted>0?Math.round(recentMs/counted):0;
+  return{dailyMs,recentMs,avgMs,counted,dailyCount};
+}
+
+/* ═══════════════════════════════════════════
+   DEEP MATCH HISTORY (per-category, real data only)
+   ───────────────────────────────────────────
+   v3/matches is hard-capped at 10 by the API. To let users track more matches
+   split by mode, we also pull v1/stored-matches (up to ~20). That endpoint returns
+   a lighter, per-player shape with NO duration field — so it powers the match list
+   and per-mode summaries only, never the playtime numbers above (which require real
+   durations). We normalise each stored item into the same shape renderMatches and
+   openMatchDetails already consume, so nothing downstream needs special-casing.
+═══════════════════════════════════════════ */
+function normalizeStored(it){
+  const meta=it?.meta||{},st=it?.stats||{},tm=it?.teams||{};
+  const blue=num(tm.blue,0),red=num(tm.red,0);
+  const rounds=(blue+red)||0;
+  const sh=st.shots||{},dm=st.damage||{};
+  const agName=st.character?.name||st.character||'Unknown';
+  const agId=st.character?.id;
+  return{
+    metadata:{
+      map:meta.map?.name||meta.map||'Unknown',
+      mode:meta.mode||'Unknown',
+      rounds_played:rounds||20,
+      matchid:meta.id||meta.matchid||'',
+      game_start:meta.started_at||'',
+      started_at:meta.started_at||''
+    },
+    players:{all_players:[{
+      name:st.name,tag:st.tag,team:st.team,
+      character:agName,
+      assets:{agent:{small:agId?mediaUrl('agents',agId,'displayicon.png'):''}},
+      stats:{kills:num(st.kills),deaths:num(st.deaths),assists:num(st.assists),
+             headshots:num(sh.head),bodyshots:num(sh.body),legshots:num(sh.leg),
+             score:num(st.score)},
+      damage_made:num(dm.made),damage_received:num(dm.received)
+    }]},
+    teams:{blue:{rounds_won:blue,has_won:blue>red},red:{rounds_won:red,has_won:red>blue}},
+    _stored:true
+  };
+}
+async function loadFullHistory(name,tag,region){
+  try{
+    const res=await api(`${BASE}/v1/stored-matches/${region}/${enc(name)}/${enc(tag)}?size=20`);
+    const items=res?.data||[];
+    if(!items.length)return; // nothing stored — keep the live v3 list exactly as-is
+    const stored=items.map(normalizeStored);
+    // Merge live v3 matches (richer; have duration) with stored history; dedupe by id,
+    // preferring the v3 copy when a match appears in both. Then sort newest-first.
+    const byId=new Map();let anon=0;
+    for(const m of [...(S.matches||[]),...stored]){
+      const id=getMatchId(m)||('anon'+(anon++));
+      if(!byId.has(id))byId.set(id,m);
+    }
+    const all=[...byId.values()].sort((a,b)=>getMatchStartMs(b)-getMatchStartMs(a));
+    if(all.length<=(S.matches?.length||0))return; // no net gain over what's shown
+    S.history=all;
+    renderMatches(S.history,S.player?.name||name,S.player?.tag||tag);
+  }catch(e){/* silent: real live list already shown; never fall back to fake data */}
 }
 function normalizeTeam(t){return String(t||'').toLowerCase().includes('red')?'red':String(t||'').toLowerCase().includes('blue')?'blue':String(t||'').toLowerCase();}
 function getPlayers(match){
@@ -2102,7 +2284,7 @@ function endIdleSession(){
   clearIdleTimers();
   hideIdleWarning();
 
-  S.stats=null;S.player=null;S.region=null;S.matches=[];S.conversationHistory=[];S.pendingPlayer=null;
+  S.stats=null;S.player=null;S.region=null;S.matches=[];S.history=[];S.conversationHistory=[];S.pendingPlayer=null;
   document.getElementById('dash')?.classList.remove('on');
   document.getElementById('searchHistory')?.classList.remove('open');
   document.getElementById('nameIn')&&(document.getElementById('nameIn').value='');
