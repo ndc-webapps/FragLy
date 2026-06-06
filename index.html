@@ -2360,7 +2360,6 @@ const AI_REFERRER='fragly.vercel.app';
 // Baked Pollinations token (free, from auth.pollinations.ai). Lifts the anonymous
 // 1-request queue limit so real AI works reliably. Keyless for end users — no user key.
 const AI_TOKEN='sk_B20Nen9oQEmtYvH1EOPsOqGCbwI70H4t';// Pollinations token (lifts anon limit)
-function aiAuthHeaders(base){const h=Object.assign({},base||{});if(AI_TOKEN)h['Authorization']='Bearer '+AI_TOKEN;return h;}
 function aiTokenQuery(){return AI_TOKEN?`&token=${encodeURIComponent(AI_TOKEN)}`:'';}
 
 function toggleAI(){
@@ -2580,61 +2579,72 @@ function messagesToPrompt(messages){
 }
 
 async function askKeylessAI(messages){
-  const payload={
-    model:'openai',
-    messages:messages.slice(-10),
-    temperature:.45,
-    max_tokens:700,
-    stream:false
-  };
-
-  const PURL='https://text.pollinations.ai';
-  let chatResponse=null;
-  // One retry for transient 429
-  for(let i=0;i<2;i++){
-    if(i>0)await new Promise(r=>setTimeout(r,1500));
-    chatResponse=await fetch(`${PURL}/openai?referrer=${encodeURIComponent(AI_REFERRER)}`,{
+  // PRIMARY: same-origin serverless proxy (/api/coach). Fixes CORS + per-IP
+  // rate limit + hides token. This is the path that works in prod on Vercel.
+  try{
+    const r=await fetch('/api/coach',{
       method:'POST',
-      headers:aiAuthHeaders({'Content-Type':'application/json'}),
-      body:JSON.stringify(payload)
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:messages.slice(-10)})
     });
-    DBG('[AI] POST attempt',i+1,'status:',chatResponse.status);
-    if(chatResponse.status!==429)break;
-  }
-
-  if(chatResponse.ok){
-    const data=await chatResponse.json();
-    const text=extractAIText(data);
-    if(text&&text.trim()){
-      DBG('[AI] POST success via Pollinations OpenAI');
-      aiLastProvider='Pollinations OpenAI';
-      return text.trim();
+    DBG('[AI] /api/coach status:',r.status);
+    if(r.ok){
+      const data=await r.json();
+      if(data&&data.text&&data.text.trim()){
+        DBG('[AI] proxy success via',data.provider||'proxy');
+        aiLastProvider=data.provider||'FragLy Proxy';
+        return data.text.trim();
+      }
+      DBG('[AI] proxy ok but empty text');
+    } else {
+      // surface upstream detail when present
+      let detail='';try{detail=(await r.json())?.upstreamStatus||'';}catch(e){}
+      DBG('[AI] proxy failed, status:',r.status,'upstream:',detail);
+      if(r.status!==404)throw new Error(`AI proxy failed (HTTP ${r.status}${detail?`/upstream ${detail}`:''})`);
+      // 404 => function not deployed (e.g. raw file / non-Vercel host): fall through to direct call
+      DBG('[AI] /api/coach 404 — falling back to direct Pollinations');
     }
-    DBG('[AI] POST ok but empty text, trying GET fallback');
-  } else {
-    DBG('[AI] POST failed, status:',chatResponse.status,', trying GET fallback');
+  }catch(e){
+    // Network/parse error or thrown above. If it's a real proxy error (not a
+    // missing-function 404), re-throw so the caller shows the stat fallback.
+    if(!/404/.test(String(e&&e.message)))throw e;
   }
 
-  // GET fallback: keep URL short — use just the last user question + compact context
+  // SECONDARY (only when proxy is absent, e.g. opening index.html directly):
+  // direct browser → Pollinations. Subject to CORS/IP limits, best-effort.
+  const PURL='https://text.pollinations.ai';
+  let lastStatus=0;
+  const postUrl=`${PURL}/openai?referrer=${encodeURIComponent(AI_REFERRER)}${aiTokenQuery()}`;
+  try{
+    const chatResponse=await fetch(postUrl,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'openai',messages:messages.slice(-10),temperature:.45,max_tokens:700,stream:false})
+    });
+    lastStatus=chatResponse.status;
+    DBG('[AI] direct POST status:',chatResponse.status);
+    if(chatResponse.ok){
+      const data=await chatResponse.json();
+      const text=extractAIText(data);
+      if(text&&text.trim()){aiLastProvider='Pollinations OpenAI';return text.trim();}
+    }
+  }catch(e){DBG('[AI] direct POST error:',e&&e.message);}
+
   const lastQ=(messages.filter(m=>m.role==='user').slice(-1)[0]?.content||'help me improve').slice(0,300);
   const ctx=buildAICoachContext().slice(0,400);
   const shortPrompt=`You are a Valorant coach. Context: ${ctx}\n\nQuestion: ${lastQ}\n\nAnswer concisely:`;
   const simpleUrl=`${PURL}/${encodeURIComponent(shortPrompt)}?model=openai&temperature=0.45&referrer=${encodeURIComponent(AI_REFERRER)}${aiTokenQuery()}`;
+  try{
+    const simpleResponse=await fetch(simpleUrl);
+    lastStatus=simpleResponse.status;
+    DBG('[AI] direct GET status:',simpleResponse.status);
+    if(simpleResponse.ok){
+      const text=(await simpleResponse.text()).trim();
+      if(text){aiLastProvider='Pollinations Text';return text;}
+    }
+  }catch(e){DBG('[AI] direct GET error:',e&&e.message);}
 
-  let simpleResponse=null;
-  for(let i=0;i<2;i++){
-    if(i>0)await new Promise(r=>setTimeout(r,1500));
-    simpleResponse=await fetch(simpleUrl,{headers:aiAuthHeaders()});
-    DBG('[AI] GET attempt',i+1,'status:',simpleResponse.status);
-    if(simpleResponse.status!==429)break;
-  }
-
-  if(!simpleResponse.ok)throw new Error(`AI request failed (${chatResponse.status||simpleResponse.status})`);
-  const text=(await simpleResponse.text()).trim();
-  if(!text)throw new Error('Empty AI response');
-  DBG('[AI] GET fallback success');
-  aiLastProvider='Pollinations Text';
-  return text;
+  throw new Error(`AI request failed (HTTP ${lastStatus||'network'})`);
 }
 
 async function sendMsg(){
@@ -2661,8 +2671,9 @@ async function sendMsg(){
     S.conversationHistory.push({role:'assistant',content:local});
     hideTyping();
     document.getElementById('aiStatus').textContent='READY';
-    const busy=/429|queue|busy|rate|limit/i.test(String(e?.message||e));
-    const note=busy?`<br><br><span style="opacity:.6;font-size:.85em">⚡ Live AI is busy right now — this answer is from your real loaded stats.</span>`:'';
+    const emsg=String(e?.message||e);
+    const busy=/429|queue|busy|rate|limit/i.test(emsg);
+    const note=`<br><br><span style="opacity:.55;font-size:.8em">⚡ Live AI unavailable (${escapeHtml(emsg)}) — answer from your real loaded stats.</span>`;
     addMsg('ai',formatAIText(local)+note);
   }finally{
     if(sendBtn)sendBtn.disabled=false;
