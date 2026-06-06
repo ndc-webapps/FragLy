@@ -2493,6 +2493,69 @@ function formatAIText(txt){
     .replace(/\n/g,'<br>');
 }
 
+// Local keyless coach — used when Pollinations is busy/rate-limited.
+// Builds advice ONLY from the real loaded stats (S.stats). No invented numbers.
+function localCoachReply(question){
+  const st=S.stats;
+  if(!st||!S.player){
+    return `I can't see loaded stats yet. Search a Riot ID first, then ask me for coaching based on your real matches. 🎯`;
+  }
+  const q=String(question||'').toLowerCase();
+  const name=S.player.name;
+  const bestMap=st.mapArr?.[0];
+  const topAgent=st.agentArr?.[0];
+  // pick best/worst map by win rate (min 1 game)
+  let mapWin=null,mapLose=null;
+  if(st.mapArr&&st.mapArr.length){
+    const wr=st.mapArr.map(([m,d])=>[m,d.g>0?Math.round(d.w/d.g*100):0,d.g]);
+    const sorted=[...wr].sort((a,b)=>b[1]-a[1]);
+    mapWin=sorted[0];mapLose=sorted[sorted.length-1];
+  }
+
+  if(q.includes('headshot')||q.includes('aim')||q.includes('hs')){
+    const target=Math.min(st.hsPct+5,35);
+    return `Your headshot rate is **${st.hsPct}%** across ${st.total} games. `+
+      (st.hsPct<20
+        ?`That's below the comfortable zone — aim for **${target}%**. Do 10 min of Aim Lab / the Range gridshot daily, lower your sens slightly, and practice flicking to head level before each round.`
+        :`Solid base. Push toward **${target}%** by pre-aiming common angles at head height and refining crosshair placement instead of relying on flicks.`);
+  }
+  if(q.includes('rank')||q.includes('rank up')||q.includes('climb')){
+    const lead=st.winPct<50?`Your win rate is **${st.winPct}%** — closing out rounds is the priority.`:`Your win rate is **${st.winPct}%**, that's a climbing pace.`;
+    return `${lead} Your ACS is **${st.acs}** and K/D is **${st.kd}**. To rank up: trade your teammates' deaths, stop over-peeking when ahead, and play for round wins over frags. Stick to ${topAgent?`**${topAgent[0]}**`:'one main agent'} so your utility usage gets automatic.`;
+  }
+  if(q.includes('map')){
+    if(mapWin&&mapLose&&mapWin[0]!==mapLose[0]){
+      return `Your best map right now is **${mapWin[0]}** (${mapWin[1]}% win over ${mapWin[2]} games). Your weakest is **${mapLose[0]}** (${mapLose[1]}%). Queue ${mapWin[0]} when you can, and review your deaths on ${mapLose[0]} — usually it's bad default positions or losing the same duel.`;
+    }
+    return bestMap?`You've mostly played **${bestMap[0]}** (${bestMap[1].g} games). I need a few more maps in your history to compare win rates — keep playing and ask again.`:`Not enough map data yet. Play a few more games and ask again.`;
+  }
+  if(q.includes('agent')||q.includes('character')){
+    if(topAgent){
+      const a=topAgent[1];const awr=a.g>0?Math.round(a.w/a.g*100):0;
+      return `Your most-played agent is **${topAgent[0]}** (${a.g} games, ${awr}% win). Sticking to a small pool is good for consistency. If ${topAgent[0]} is a duelist, make sure someone holds site; if it's a controller, time your smokes with your team's executes.`;
+    }
+    return `Not enough agent data yet. Play a few more games and ask again.`;
+  }
+  if(q.includes('weak')||q.includes('improve')||q.includes('worst')){
+    // find the weakest real metric
+    const issues=[];
+    if(st.hsPct<20)issues.push(`headshot rate (**${st.hsPct}%**) — work on crosshair placement`);
+    if(st.kd<1)issues.push(`K/D (**${st.kd}**) — you're trading down; stop taking solo duels`);
+    if(st.winPct<50)issues.push(`win rate (**${st.winPct}%**) — play more for the round, less for frags`);
+    if(st.adr<130)issues.push(`damage per round (**${st.adr}**) — shoot more bodies, not just for kills`);
+    const top=issues[0]||`consistency — your stats are balanced (Grade **${st.grade}**, ACS **${st.acs}**). Focus on cleaner decision-making in clutches.`;
+    return `Hey ${escapeHtml(name)}, your biggest fixable weakness is your ${top}.`+
+      (issues.length>1?` After that, look at your ${issues[1]}.`:``);
+  }
+  if(q.includes('kd')||q.includes('k/d')||q.includes('death')){
+    return `Your K/D is **${st.kd}** (KDA **${st.kda}**) over ${st.total} games. `+
+      (st.kd<1?`You're dying more than you frag — stop entry-peeking without backup and trade instead of going for the highlight.`:`That's positive. Keep it up by holding angles and letting duels come to you.`);
+  }
+  // general / fallback summary — all real numbers
+  return `Quick read on **${escapeHtml(name)}** (${st.total} games): Grade **${st.grade}**, Tracker Score **${st.ts}/1000**, Win **${st.winPct}%**, K/D **${st.kd}**, HS **${st.hsPct}%**, ACS **${st.acs}**. `+
+    `Ask me about your **aim**, **rank up plan**, **best map**, **agent**, or **biggest weakness** for specific advice. 🎯`;
+}
+
 function aiUnavailableMessage(err){
   const raw=String(err?.message||err||'').toLowerCase();
   if(raw.includes('blocked')||raw.includes('network')||raw.includes('failed to fetch')){
@@ -2587,10 +2650,15 @@ async function sendMsg(){
     document.getElementById('aiStatus').textContent='READY';
     addMsg('ai',formatAIText(txt));
   }catch(e){
+    DBG('[AI] live API failed, using local stat-based coach:',e?.message||e);
+    // Graceful fallback (like AtelierDentalClinic): answer from REAL loaded stats.
+    const local=localCoachReply(q);
+    S.conversationHistory.push({role:'assistant',content:local});
     hideTyping();
-    document.getElementById('aiStatus').textContent='AI OFFLINE';
-    S.conversationHistory.pop();
-    addMsg('ai',aiUnavailableMessage(e));
+    document.getElementById('aiStatus').textContent='READY';
+    const busy=/429|queue|busy|rate|limit/i.test(String(e?.message||e));
+    const note=busy?`<br><br><span style="opacity:.6;font-size:.85em">⚡ Live AI is busy right now — this answer is from your real loaded stats.</span>`:'';
+    addMsg('ai',formatAIText(local)+note);
   }finally{
     if(sendBtn)sendBtn.disabled=false;
     setTimeout(()=>{ if(document.getElementById('aiStatus')?.textContent==='AI OFFLINE') document.getElementById('aiStatus').textContent='READY'; },2500);
