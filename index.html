@@ -340,6 +340,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .mr::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:var(--r3) 0 0 var(--r3);}
 .mr.win::before{background:var(--green);}
 .mr.loss::before{background:var(--red);}
+.mr.dm::before{background:var(--blue);}
 .mr:hover{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.12);}
 /* Desktop: single flex row */
 @media(min-width:761px){
@@ -353,6 +354,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .rbadge{display:inline-block;font-family:var(--dp);font-size:.88rem;font-weight:700;letter-spacing:2px;padding:4px 12px;border-radius:var(--r3);}
 .rbadge.win{color:var(--green);background:rgba(61,255,160,.1);border:1px solid rgba(61,255,160,.2);}
 .rbadge.loss{color:var(--red);background:rgba(255,70,85,.08);border:1px solid rgba(255,70,85,.2);}
+.rbadge.dm{color:var(--blue);background:rgba(75,189,255,.1);border:1px solid rgba(75,189,255,.22);font-size:.74rem;letter-spacing:1px;}
 .mval{text-align:center;}
 .mval .mv{font-family:var(--dp);font-size:1.05rem;font-weight:700;letter-spacing:.5px;}
 .mval .ml{font-family:var(--mono);font-size:.54rem;color:var(--muted);letter-spacing:2px;margin-top:2px;}
@@ -1062,6 +1064,11 @@ try{
    STATE
 ═══════════════════════════════════════════ */
 const S={stats:null,player:null,region:null,matches:[],history:[],apiKey:'',matchFilter:'all',conversationHistory:[],matchCache:{},pendingPlayer:null};
+// Caveman debugging — flip FRAGLY_DEBUG to false to silence. Tags every step of the
+// data pipeline so issues (e.g. matches counted but not rendered) are obvious in the
+// browser console without a debugger.
+const FRAGLY_DEBUG=true;
+function DBG(...a){if(FRAGLY_DEBUG){try{console.log('%c[FragLy]','color:#FF4655;font-weight:bold',...a);}catch(e){}}}
 const LS={get:k=>localStorage.getItem(k)||'',set:(k,v)=>localStorage.setItem(k,v)};
 
 // Mobile browser safe viewport height.
@@ -1416,6 +1423,8 @@ function setAgentTabMode(m){_agentTabMode=m==='ALL'?'all':m.toLowerCase();render
 /* MATCHES */
 const HISTORY_PER_TAB=20;
 function modeOf(m){return(m?.metadata?.mode||m?.metadata?.queue||'Competitive');}
+// Free-for-all = pure Deathmatch only (Team Deathmatch / Escalation have real teams).
+function isFFAMode(mode){return String(mode||'').toLowerCase().replace(/[^a-z0-9]/g,'')==='deathmatch';}
 function renderMatches(matches,name,tag){
   matches=matches||[];
   // Build per-category tabs from the modes actually present, each with a real count.
@@ -1430,16 +1439,24 @@ function renderMatches(matches,name,tag){
   }).join('');
   let filtered=matches.map((m,i)=>({m,i}));
   if(S.matchFilter!=='all')filtered=filtered.filter(x=>modeOf(x.m).toLowerCase()===S.matchFilter.toLowerCase());
+  // Caveman trace: how many of the filtered matches can we actually resolve the player in?
+  // A gap here is the classic "counted by mode but not displayed" bug.
+  const resolved=filtered.filter(x=>(x.m.players?.all_players||[]).some(p=>p.name?.toLowerCase()===String(name||'').toLowerCase()&&p.tag?.toLowerCase()===String(tag||'').toLowerCase())).length;
+  DBG('renderMatches: filter',S.matchFilter,'· counted',filtered.length,'· player-resolved',resolved,resolved<filtered.length?'⚠ UNRESOLVED='+(filtered.length-resolved):'✓');
   // Per-category real-stats summary (reuses computeStats — no new math, no fake values).
   const summaryEl=document.getElementById('modeSummary');
   if(summaryEl){
     if(S.matchFilter!=='all'&&filtered.length){
       const cs=computeStats(filtered.map(x=>x.m),name,tag);
+      // Deathmatch has no win/loss → show kill-based real stats instead of W–L/WIN%.
+      const ffa=isFFAMode(S.matchFilter);
+      const cells=ffa?[
+        ['GAMES',cs.total],['AVG K',cs.avgKills],['K/D',cs.kd],['ACS',cs.acs],['ADR',cs.adr],['HS%',cs.hsPct+'%']
+      ]:[
+        ['GAMES',cs.total],['W–L',`${cs.wins}–${cs.total-cs.wins}`],['WIN%',cs.winPct+'%'],['K/D',cs.kd],['ACS',cs.acs],['HS%',cs.hsPct+'%']
+      ];
       summaryEl.style.display='grid';
-      summaryEl.innerHTML=[
-        ['GAMES',cs.total],['W–L',`${cs.wins}–${cs.total-cs.wins}`],['WIN%',cs.winPct+'%'],
-        ['K/D',cs.kd],['ACS',cs.acs],['HS%',cs.hsPct+'%']
-      ].map(([k,v])=>`<div class="ms-cell"><div class="ms-v">${v}</div><div class="ms-k">${k}</div></div>`).join('');
+      summaryEl.innerHTML=cells.map(([k,v])=>`<div class="ms-cell"><div class="ms-v">${v}</div><div class="ms-k">${k}</div></div>`).join('');
     }else{summaryEl.style.display='none';summaryEl.innerHTML='';}
   }
   const histCount=document.getElementById('histCount');
@@ -1453,10 +1470,16 @@ function renderMatches(matches,name,tag){
     const hsC=hsPct>=35?'var(--gold)':hsPct>=22?'var(--blue)':'var(--muted2)';
     const rnd=m.metadata?.rounds_played||20;const acs=Math.round((me.stats?.score||0)/rnd);
     const acsC=acs>=220?'s':acs>=170?'a':acs>=120?'b':'c';
-    const myT=me.team?.toLowerCase();const won=m.teams?.[myT]?.has_won;const rc=won?'win':'loss';
+    const map=m.metadata?.map||'?';const mode=(m.metadata?.mode||'Competitive').toUpperCase();
+    // Deathmatch is free-for-all: no team win/loss and no round score exist, so we must
+    // NOT fabricate a WIN/LOSS badge or an "X–Y" team score. Show kills instead.
+    const ffa=isFFAMode(m.metadata?.mode);
+    const myT=me.team?.toLowerCase();const won=m.teams?.[myT]?.has_won;
+    const rc=ffa?'dm':(won?'win':'loss');
     const blW=m.teams?.blue?.rounds_won||0,rdW=m.teams?.red?.rounds_won||0;
     const myR=myT==='blue'?blW:rdW,opR=myT==='blue'?rdW:blW;
-    const map=m.metadata?.map||'?';const mode=(m.metadata?.mode||'Competitive').toUpperCase();
+    const badge=ffa?`<span class="rbadge dm">${k} KILLS</span>`:`<span class="rbadge ${rc}">${won?'WIN':'LOSS'}</span>`;
+    const scoreCell=ffa?`<div class="mval"><div class="mv">—</div><div class="ml">FFA</div></div>`:`<div class="mval"><div class="mv">${myR}–${opR}</div><div class="ml">SCORE</div></div>`;
     const agIco=me.assets?.agent?.small||'';
     const mid=getMatchId(m);
     const date=formatMatchDate(m.metadata?.game_start_patched||m.metadata?.game_start||m.metadata?.started_at||m.metadata?.start_time);
@@ -1464,10 +1487,10 @@ function renderMatches(matches,name,tag){
       <div class="mr-top">
         ${agIco?`<img class="ag-ico" src="${agIco}" alt="agent" onerror="this.src=''">`:`<div style="width:36px;height:36px;border-radius:50%;background:var(--surf);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0">🎮</div>`}
         <div class="minfo"><div class="mmode">${mode}${date!=='—'?' · '+escapeHtml(date):''}</div><div class="mmap">${escapeHtml(map)}</div></div>
-        <span class="rbadge ${rc}">${won?'WIN':'LOSS'}</span>
+        ${badge}
       </div>
       <div class="mr-bottom">
-        <div class="mval"><div class="mv">${myR}–${opR}</div><div class="ml">SCORE</div></div>
+        ${scoreCell}
         <div class="mval"><div class="mv">${k}/${d}/${a}</div><div class="ml">K/D/A</div></div>
         <div class="acs-val ${acsC}">${acs}<div class="ml" style="font-family:var(--mono);font-size:.5rem;color:var(--muted);letter-spacing:2px">ACS</div></div>
         <div class="mval"><div class="mv" style="color:${hsC};font-family:var(--dp);font-size:1.05rem;font-weight:700">${hsPct}%</div><div class="ml">HS%</div></div>
@@ -1491,15 +1514,17 @@ async function deepenMode(label){
   try{
     const res=await api(`${BASE}/v1/stored-matches/${S.region}/${enc(S.player.name)}/${enc(S.player.tag)}?size=20&mode=${slug}`);
     const items=res?.data||[];
+    DBG('deepenMode',slug,'→ stored-matches returned',items.length,'· null-name entries:',items.filter(it=>!it?.stats?.name).length);
     if(!items.length)return; // wrong slug or no matches in this mode → keep grouped data
-    const norm=items.map(normalizeStored);
+    const norm=items.map(it=>normalizeStored(it,S.player.name,S.player.tag));
     const byId=new Map();let anon=0;
     for(const m of [...(S.history||[]),...norm]){const id=getMatchId(m)||('a'+(anon++));if(!byId.has(id))byId.set(id,m);}
     const all=[...byId.values()].sort((a,b)=>getMatchStartMs(b)-getMatchStartMs(a));
     if(all.length===(S.history?.length||0))return; // nothing new to add
+    DBG('deepenMode',slug,'→ history grew to',all.length);
     S.history=all;
     if(S.matchFilter===slug||S.matchFilter===String(label).toLowerCase())renderMatches(S.history,S.player.name,S.player.tag);
-  }catch(e){/* keep existing real data; never fabricate */}
+  }catch(e){DBG('deepenMode',slug,'failed:',e?.message||e);/* keep existing real data; never fabricate */}
 }
 
 /* REAL MATCH DETAILS MODAL */
@@ -1685,13 +1710,20 @@ function calcPlaytime(matches){
    durations). We normalise each stored item into the same shape renderMatches and
    openMatchDetails already consume, so nothing downstream needs special-casing.
 ═══════════════════════════════════════════ */
-function normalizeStored(it){
+function normalizeStored(it,selfName,selfTag){
   const meta=it?.meta||{},st=it?.stats||{},tm=it?.teams||{};
   const blue=num(tm.blue,0),red=num(tm.red,0);
   const rounds=(blue+red)||0;
   const sh=st.shots||{},dm=st.damage||{};
   const agName=st.character?.name||st.character||'Unknown';
   const agId=st.character?.id;
+  // The stored-matches `stats` block is ALWAYS the requested player — but the API
+  // frequently returns name/tag as null (every deathmatch entry, and many others).
+  // If we trusted those nulls, renderMatches/computeStats could not resolve the
+  // player and the match would be counted by mode yet never displayed (the exact
+  // "13 counted, 0 shown" deathmatch bug). Fall back to the searched Riot ID.
+  const meName=st.name||selfName||'';
+  const meTag=st.tag||selfTag||'';
   return{
     metadata:{
       map:meta.map?.name||meta.map||'Unknown',
@@ -1702,7 +1734,7 @@ function normalizeStored(it){
       started_at:meta.started_at||''
     },
     players:{all_players:[{
-      name:st.name,tag:st.tag,team:st.team,
+      name:meName,tag:meTag,puuid:st.puuid,team:st.team,
       character:agName,
       assets:{agent:{small:agId?mediaUrl('agents',agId,'displayicon.png'):''}},
       stats:{kills:num(st.kills),deaths:num(st.deaths),assists:num(st.assists),
@@ -1718,8 +1750,9 @@ async function loadFullHistory(name,tag,region){
   try{
     const res=await api(`${BASE}/v1/stored-matches/${region}/${enc(name)}/${enc(tag)}?size=20`);
     const items=res?.data||[];
+    DBG('loadFullHistory: stored-matches returned',items.length,'items · null-name entries:',items.filter(it=>!it?.stats?.name).length);
     if(!items.length)return; // nothing stored — keep the live v3 list exactly as-is
-    const stored=items.map(normalizeStored);
+    const stored=items.map(it=>normalizeStored(it,name,tag));
     // Merge live v3 matches (richer; have duration) with stored history; dedupe by id,
     // preferring the v3 copy when a match appears in both. Then sort newest-first.
     const byId=new Map();let anon=0;
@@ -1728,10 +1761,11 @@ async function loadFullHistory(name,tag,region){
       if(!byId.has(id))byId.set(id,m);
     }
     const all=[...byId.values()].sort((a,b)=>getMatchStartMs(b)-getMatchStartMs(a));
+    DBG('loadFullHistory: merged history',all.length,'(v3',(S.matches||[]).length,'+ stored-only',all.length-(S.matches||[]).length,')');
     if(all.length<=(S.matches?.length||0))return; // no net gain over what's shown
     S.history=all;
     renderMatches(S.history,S.player?.name||name,S.player?.tag||tag);
-  }catch(e){/* silent: real live list already shown; never fall back to fake data */}
+  }catch(e){DBG('loadFullHistory failed (keeping live list):',e?.message||e);/* never fall back to fake data */}
 }
 function normalizeTeam(t){return String(t||'').toLowerCase().includes('red')?'red':String(t||'').toLowerCase().includes('blue')?'blue':String(t||'').toLowerCase();}
 function getPlayers(match){
