@@ -12,7 +12,11 @@
 
 const POLLINATIONS_TOKEN = process.env.POLLINATIONS_TOKEN || 'sk_B20Nen9oQEmtYvH1EOPsOqGCbwI70H4t';
 const REFERRER = 'fragly.vercel.app';
-const BASE = 'https://text.pollinations.ai';
+// Authenticated generation host (OpenAI-compatible). The token bypasses the
+// per-IP "Queue full" limit here — verified returning 200 from a queue-blocked
+// IP. The legacy text.pollinations.ai ignored the token; gen.* honors it.
+const GEN = 'https://gen.pollinations.ai/v1/chat/completions';
+const LEGACY = 'https://text.pollinations.ai';
 
 function extractText(data) {
   if (data == null) return '';
@@ -62,7 +66,6 @@ module.exports = async function handler(req, res) {
 
   const headers = { 'Content-Type': 'application/json' };
   if (POLLINATIONS_TOKEN) headers['Authorization'] = 'Bearer ' + POLLINATIONS_TOKEN;
-  // token also as query param — covers both auth mechanisms the API may honor
   const tokenQ = POLLINATIONS_TOKEN ? `&token=${encodeURIComponent(POLLINATIONS_TOKEN)}` : '';
 
   const payload = {
@@ -73,36 +76,34 @@ module.exports = async function handler(req, res) {
     stream: false
   };
 
-  // 1) OpenAI-compatible POST. Retry transient 429s with backoff — Vercel's
-  //    shared egress IP can briefly hit the anonymous queue; a few spaced
-  //    retries usually ride past it.
+  // 1) Authenticated OpenAI-compatible endpoint. The token bypasses the per-IP
+  //    queue here, so this is the reliable path. Light retry for transient 5xx.
   let upstreamStatus = 0;
-  const backoff = [0, 800, 2000, 4000];
+  const backoff = [0, 800, 2000];
   for (let i = 0; i < backoff.length; i++) {
     if (backoff[i]) await new Promise((r) => setTimeout(r, backoff[i]));
     try {
-      const r = await fetch(`${BASE}/openai?referrer=${encodeURIComponent(REFERRER)}${tokenQ}`, {
-        method: 'POST', headers, body: JSON.stringify(payload)
-      });
+      const r = await fetch(GEN, { method: 'POST', headers, body: JSON.stringify(payload) });
       upstreamStatus = r.status;
       if (r.ok) {
         const data = await r.json();
         const text = extractText(data);
         if (text && text.trim()) {
           res.statusCode = 200;
-          return res.end(JSON.stringify({ text: text.trim(), provider: 'pollinations-openai' }));
+          return res.end(JSON.stringify({ text: text.trim(), provider: 'pollinations-gen' }));
         }
       }
-      if (r.status !== 429) break;
+      // 4xx (other than 429) won't improve on retry
+      if (r.status !== 429 && r.status < 500) break;
     } catch (e) {
       upstreamStatus = upstreamStatus || 599;
     }
   }
 
-  // 2) Simple GET fallback (prompt-in-URL), also with a couple 429 retries
+  // 2) Legacy fallback (anonymous tier) — best-effort if gen.* is unavailable
   try {
     const prompt = messages.map((m) => `${String(m.role || 'user').toUpperCase()}: ${m.content || ''}`).join('\n\n') + '\n\nASSISTANT:';
-    const url = `${BASE}/${encodeURIComponent(prompt.slice(0, 1800))}?model=openai&temperature=0.45&referrer=${encodeURIComponent(REFERRER)}${tokenQ}`;
+    const url = `${LEGACY}/${encodeURIComponent(prompt.slice(0, 1800))}?model=openai&temperature=0.45&referrer=${encodeURIComponent(REFERRER)}${tokenQ}`;
     let r;
     for (let i = 0; i < 3; i++) {
       if (i > 0) await new Promise((rs) => setTimeout(rs, 1000 * i));
@@ -114,7 +115,7 @@ module.exports = async function handler(req, res) {
       const text = (await r.text()).trim();
       if (text) {
         res.statusCode = 200;
-        return res.end(JSON.stringify({ text, provider: 'pollinations-text' }));
+        return res.end(JSON.stringify({ text, provider: 'pollinations-legacy' }));
       }
     }
   } catch (e) {
