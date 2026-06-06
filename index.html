@@ -203,6 +203,18 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .rank-nm{font-family:var(--dp);font-size:.85rem;font-weight:700;letter-spacing:1px;color:var(--gold);text-align:center;line-height:1.2;}
 .rank-img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(232,184,75,.3));}
 
+/* PLAYTIME STRIP */
+.playtime-strip{display:flex;flex-wrap:wrap;gap:10px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05);}
+.pt-item{flex:1;min-width:110px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r2);padding:12px 14px;display:flex;flex-direction:column;gap:3px;transition:.25s;}
+.pt-item:hover{border-color:rgba(255,70,85,.2);background:rgba(255,70,85,.03);}
+.pt-lbl{font-family:var(--mono);font-size:.5rem;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;}
+.pt-val{font-family:var(--dp);font-size:1.4rem;font-weight:900;letter-spacing:1px;line-height:1;margin-top:4px;}
+.pt-val.today{color:var(--red);}
+.pt-val.recent{color:var(--blue);}
+.pt-val.lifetime{color:var(--gold);}
+.pt-note{font-family:var(--mono);font-size:.46rem;color:var(--muted);letter-spacing:1.5px;margin-top:3px;opacity:.8;}
+@media(max-width:480px){.pt-item{min-width:80px;padding:10px 12px;}.pt-val{font-size:1.2rem;}}
+
 /* Tablet+ — side-by-side avatar/name, bigger text */
 @media(min-width:600px){
   .prof{padding:28px 28px;gap:24px;}
@@ -566,6 +578,10 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .share-card .pname{font-size:2.5rem;}
 .share-card .pstat-card{padding:18px 14px;}
 .share-card .pstat-val{font-size:2rem;}
+.share-card .playtime-strip{gap:8px;padding-top:14px;}
+.share-card .pt-item{padding:10px 12px;min-width:90px;}
+.share-card .pt-val{font-size:1.25rem;}
+.share-card .pt-note{font-size:.44rem;}
 .share-card .sgrid{position:relative;z-index:1;gap:14px;margin-bottom:0;grid-auto-rows:minmax(0,auto);grid-template-columns:repeat(4,1fr)!important;}
 .share-card .sc{padding:18px 18px 16px;min-height:0;box-shadow:none;}
 .share-card .sc-val{font-size:2.6rem;}
@@ -883,6 +899,21 @@ footer span{color:var(--red);}
         <img class="rank-img" id="rankImg" src="" alt="Rank">
         <div class="rank-nm" id="rankNm">—</div>
         <div class="pstat-lbl" id="rankRR">— RR</div>
+      </div>
+    </div>
+    <div class="playtime-strip" id="playtimeStrip" style="display:none">
+      <div class="pt-item">
+        <div class="pt-lbl">Today's Playtime</div>
+        <div class="pt-val today" id="ptToday">—</div>
+      </div>
+      <div class="pt-item">
+        <div class="pt-lbl">Recent (10 Games)</div>
+        <div class="pt-val recent" id="ptRecent">—</div>
+      </div>
+      <div class="pt-item">
+        <div class="pt-lbl">Lifetime (est.)</div>
+        <div class="pt-val lifetime" id="ptLifetime">—</div>
+        <div class="pt-note" id="ptNote"></div>
       </div>
     </div>
   </div>
@@ -1243,6 +1274,12 @@ function render(acc,mmr,matches,name,tag,region){
   ]);
   renderForm(st.formACS);renderMapTbl(st.mapArr,matches);renderAgentTbl(st.agentArr,matches);
   renderMatches(matches,name,tag);
+  const pt=calcPlaytime(matches,acc.account_level||0);
+  document.getElementById('ptToday').textContent=pt.dailyMs>0?formatPlaytime(pt.dailyMs):'None today';
+  document.getElementById('ptRecent').textContent=pt.recentMs>0?formatPlaytime(pt.recentMs):'—';
+  document.getElementById('ptLifetime').textContent=pt.estLifetimeMs>0?'~'+formatPlaytime(pt.estLifetimeMs):'—';
+  document.getElementById('ptNote').textContent=pt.estMatches>0?`~${pt.estMatches} est. matches · lvl ${acc.account_level||'?'}`:'';
+  document.getElementById('playtimeStrip').style.display=matches.length>0?'flex':'none';
   resetShareExportState();
 }
 
@@ -1550,6 +1587,54 @@ function formatDuration(v){
   if(s>100000)s=Math.round(s/1000);
   const m=Math.floor(s/60),sec=Math.round(s%60);
   return `${m}m ${String(sec).padStart(2,'0')}s`;
+}
+function getMatchDurationMs(match){
+  const meta=match?.metadata||{};
+  const raw=meta.game_length_in_ms??meta.duration_in_ms??meta.game_length??null;
+  if(raw==null){
+    // Duration field absent — estimate from rounds (~135s per round including buy phase)
+    const rnd=Number(meta.rounds_played);
+    return(Number.isFinite(rnd)&&rnd>0)?rnd*135000:0;
+  }
+  const n=Number(raw);
+  if(!Number.isFinite(n)||n<=0)return 0;
+  // Values >100000 are milliseconds; smaller values are seconds (matches formatDuration logic)
+  return n>100000?n:n*1000;
+}
+function getMatchStartMs(match){
+  const meta=match?.metadata||{};
+  const raw=meta.game_start??meta.started_at??meta.start_time??null;
+  if(raw==null)return 0;
+  const n=Number(raw);
+  if(!Number.isFinite(n)||n<=0)return 0;
+  return n>1e12?n:n*1000;
+}
+function formatPlaytime(ms){
+  if(!ms||ms<=0)return'—';
+  const tot=Math.round(ms/60000);
+  if(tot<60)return`${tot}m`;
+  const h=Math.floor(tot/60),m=tot%60;
+  return m>0?`${h}h ${m}m`:`${h}h`;
+}
+function calcPlaytime(matches,accountLevel){
+  const now=new Date();
+  const todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  const todayEnd=todayStart+86400000;
+  let dailyMs=0,recentMs=0,counted=0;
+  for(const m of matches){
+    const dur=getMatchDurationMs(m);
+    if(dur<=0)continue;
+    counted++;recentMs+=dur;
+    const t=getMatchStartMs(m);
+    if(t>0&&t>=todayStart&&t<todayEnd)dailyMs+=dur;
+  }
+  // Lifetime estimation:
+  // Each Valorant level costs ~5000 XP; average match yields ~3500 XP.
+  // Conservatively estimate 1.5 matches per account level.
+  // Actual lifetime may be 1.5–3× higher for active players.
+  const avgMs=counted>0?recentMs/counted:35*60000;
+  const estMatches=Math.round((accountLevel||0)*1.5);
+  return{dailyMs,recentMs,estLifetimeMs:estMatches*avgMs,estMatches};
 }
 function normalizeTeam(t){return String(t||'').toLowerCase().includes('red')?'red':String(t||'').toLowerCase().includes('blue')?'blue':String(t||'').toLowerCase();}
 function getPlayers(match){
