@@ -2467,6 +2467,16 @@ function extractAIText(response){
   if(typeof response.text==='string')return response.text;
   if(typeof response.content==='string')return response.content;
   if(Array.isArray(response.content))return response.content.map(x=>x?.text||x?.content||'').join('\n').trim();
+  // Standard OpenAI choices format: {choices:[{message:{content:"..."}}]}
+  if(Array.isArray(response.choices)&&response.choices.length>0){
+    const c=response.choices[0];
+    if(c?.message?.content){
+      const mc=c.message.content;
+      return typeof mc==='string'?mc:(Array.isArray(mc)?mc.map(x=>x?.text||'').join('').trim():'');
+    }
+    if(typeof c?.text==='string'&&c.text)return c.text;
+    if(typeof c?.delta?.content==='string')return c.delta.content;
+  }
   const msg=response.message||response;
   if(typeof msg==='string')return msg;
   if(typeof msg.content==='string')return msg.content;
@@ -2488,10 +2498,13 @@ function aiUnavailableMessage(err){
   if(raw.includes('blocked')||raw.includes('network')||raw.includes('failed to fetch')){
     return 'Real AI could not connect right now. Please check your connection, disable blockers for this site if needed, then try again. No AI key is required.';
   }
-  if(raw.includes('quota')||raw.includes('limit')||raw.includes('rate')){
-    return 'The AI provider is temporarily busy or rate-limited. Please wait a moment and try again. No AI key is needed.';
+  if(raw.includes('quota')||raw.includes('limit')||raw.includes('rate')||raw.includes('429')||raw.includes('queue')||raw.includes('busy')){
+    return 'The AI provider is temporarily busy. Please wait a moment and try again. No AI key is needed.';
   }
-  return 'Real AI is temporarily unavailable. Please refresh the page or try again in a moment. No API key setup is required.';
+  if(raw.includes('request failed')||raw.includes('empty')||raw.includes('status')){
+    return 'The AI coach got an unexpected response. Please try again in a moment. No API key is required.';
+  }
+  return 'Real AI is temporarily unavailable. Please try again in a moment. No API key setup is required.';
 }
 
 function messagesToPrompt(messages){
@@ -2507,27 +2520,51 @@ async function askKeylessAI(messages){
     stream:false
   };
 
-  const chatResponse=await fetch(`https://text.pollinations.ai/openai?referrer=${encodeURIComponent(AI_REFERRER)}`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  });
+  const PURL='https://text.pollinations.ai';
+  let chatResponse=null;
+  // One retry for transient 429
+  for(let i=0;i<2;i++){
+    if(i>0)await new Promise(r=>setTimeout(r,1500));
+    chatResponse=await fetch(`${PURL}/openai?referrer=${encodeURIComponent(AI_REFERRER)}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    DBG('[AI] POST attempt',i+1,'status:',chatResponse.status);
+    if(chatResponse.status!==429)break;
+  }
 
   if(chatResponse.ok){
     const data=await chatResponse.json();
     const text=extractAIText(data);
     if(text&&text.trim()){
+      DBG('[AI] POST success via Pollinations OpenAI');
       aiLastProvider='Pollinations OpenAI';
       return text.trim();
     }
+    DBG('[AI] POST ok but empty text, trying GET fallback');
+  } else {
+    DBG('[AI] POST failed, status:',chatResponse.status,', trying GET fallback');
   }
 
-  const prompt=`${messagesToPrompt(messages)}\n\nASSISTANT:`;
-  const simpleUrl=`https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=openai&temperature=0.45&referrer=${encodeURIComponent(AI_REFERRER)}`;
-  const simpleResponse=await fetch(simpleUrl);
-  if(!simpleResponse.ok)throw new Error(`AI request failed (${chatResponse.status || simpleResponse.status})`);
+  // GET fallback: keep URL short — use just the last user question + compact context
+  const lastQ=(messages.filter(m=>m.role==='user').slice(-1)[0]?.content||'help me improve').slice(0,300);
+  const ctx=buildAICoachContext().slice(0,400);
+  const shortPrompt=`You are a Valorant coach. Context: ${ctx}\n\nQuestion: ${lastQ}\n\nAnswer concisely:`;
+  const simpleUrl=`${PURL}/${encodeURIComponent(shortPrompt)}?model=openai&temperature=0.45&referrer=${encodeURIComponent(AI_REFERRER)}`;
+
+  let simpleResponse=null;
+  for(let i=0;i<2;i++){
+    if(i>0)await new Promise(r=>setTimeout(r,1500));
+    simpleResponse=await fetch(simpleUrl);
+    DBG('[AI] GET attempt',i+1,'status:',simpleResponse.status);
+    if(simpleResponse.status!==429)break;
+  }
+
+  if(!simpleResponse.ok)throw new Error(`AI request failed (${chatResponse.status||simpleResponse.status})`);
   const text=(await simpleResponse.text()).trim();
   if(!text)throw new Error('Empty AI response');
+  DBG('[AI] GET fallback success');
   aiLastProvider='Pollinations Text';
   return text;
 }
