@@ -87,13 +87,16 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .srow{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
 .sinput-wrap{flex:1;position:relative;min-width:0;}
 .sinput-wrap .sinput{width:100%;}
-/* Search history dropdown */
+/* Search history dropdown — portaled to <body>, positioned under the input via JS.
+   Fixed positioning + body parent means no ancestor overflow:hidden can clip it,
+   and it scrolls internally once the list is taller than the available space. */
 .search-history{
-  display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+  display:none;position:fixed;top:0;left:0;width:320px;
   background:rgba(10,10,22,.98);border:1px solid rgba(255,70,85,.3);
-  border-radius:var(--r3);z-index:500;overflow:hidden;
+  border-radius:var(--r3);z-index:1600;
   box-shadow:0 12px 40px rgba(0,0,0,.5);
-  max-height:260px;overflow-y:auto;
+  max-height:min(300px,52vh);overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
 }
 .search-history.open{display:block;}
 .sh-item{
@@ -857,7 +860,6 @@ footer span{color:var(--red);}
     <div class="srow">
       <div class="sinput-wrap">
         <input class="sinput" id="nameIn" type="text" placeholder="PlayerName#TAG" autocomplete="off" spellcheck="false">
-        <div class="search-history" id="searchHistory"></div>
       </div>
       <select class="rsel" id="regIn">
         <option value="na">NA</option><option value="eu">EU</option>
@@ -1010,6 +1012,10 @@ footer span{color:var(--red);}
 
 <footer><span>FragLy</span> &nbsp;v3 &nbsp;·&nbsp; KEYLESS BY DEFAULT &nbsp;·&nbsp; REAL AI COACH &nbsp;·&nbsp; UNOFFICIAL</footer>
 </div><!-- /.W -->
+
+<!-- Search suggestions are portaled to <body> so no card/hero overflow:hidden (or
+     backdrop-filter containing block) can clip the list. Positioned under the input by JS. -->
+<div class="search-history" id="searchHistory"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
@@ -2587,6 +2593,17 @@ function addToHistory(name,tag,region,avatarUrl){
   saveHistory(hist);
 }
 
+// Anchor the body-portaled dropdown directly under the Riot ID input.
+function positionHistoryDropdown(){
+  const el=document.getElementById('searchHistory');
+  if(!el||!el.classList.contains('open'))return;
+  const anchor=document.querySelector('.sinput-wrap');
+  if(!anchor)return;
+  const r=anchor.getBoundingClientRect();
+  el.style.left=Math.round(r.left)+'px';
+  el.style.top=Math.round(r.bottom+4)+'px';
+  el.style.width=Math.round(r.width)+'px';
+}
 function renderHistoryDropdown(filter){
   const el=document.getElementById('searchHistory');
   let hist=getHistory();
@@ -2597,6 +2614,7 @@ function renderHistoryDropdown(filter){
   if(!hist.length){
     el.innerHTML=`<div class="sh-empty">NO RECENT SEARCHES</div>`;
     el.classList.add('open');
+    positionHistoryDropdown();
     return;
   }
   el.innerHTML=hist.map((h,i)=>`
@@ -2613,10 +2631,14 @@ function renderHistoryDropdown(filter){
     </div>
   `).join('');
   el.classList.add('open');
+  positionHistoryDropdown();
 }
 
+// Skip the blur-close while the user is actively pressing/scrolling inside the
+// dropdown (otherwise scrolling the list on mobile would dismiss it before a tap).
+let _histPointerInside=false;
 function hideHistoryDropdown(){
-  setTimeout(()=>document.getElementById('searchHistory').classList.remove('open'),150);
+  setTimeout(()=>{if(_histPointerInside)return;document.getElementById('searchHistory')?.classList.remove('open');},150);
 }
 
 function selectHistory(i){
@@ -2661,11 +2683,22 @@ function timeAgo(ts){
     if(e.key==='Enter'){document.getElementById('searchHistory').classList.remove('open');fetchStats();}
     if(e.key==='Escape')document.getElementById('searchHistory').classList.remove('open');
   });
-  // Close on outside click
+  // Close on outside click — but NOT when clicking inside the portaled dropdown.
   document.addEventListener('click',e=>{
-    if(!e.target.closest('.sinput-wrap'))
+    if(!e.target.closest('.sinput-wrap')&&!e.target.closest('#searchHistory'))
       document.getElementById('searchHistory').classList.remove('open');
   });
+  // Keep the dropdown open while the user presses/scrolls inside it.
+  const dd=document.getElementById('searchHistory');
+  if(dd){
+    dd.addEventListener('pointerdown',()=>{_histPointerInside=true;},{passive:true});
+    document.addEventListener('pointerup',()=>{setTimeout(()=>{_histPointerInside=false;},0);},{passive:true});
+  }
+  // Re-anchor the fixed dropdown when the page scrolls or the viewport resizes.
+  const reanchor=()=>positionHistoryDropdown();
+  window.addEventListener('scroll',reanchor,{passive:true});
+  window.addEventListener('resize',reanchor,{passive:true});
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',reanchor,{passive:true});
 })();
 
 /* INIT */
