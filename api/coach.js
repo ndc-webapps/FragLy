@@ -62,6 +62,8 @@ module.exports = async function handler(req, res) {
 
   const headers = { 'Content-Type': 'application/json' };
   if (POLLINATIONS_TOKEN) headers['Authorization'] = 'Bearer ' + POLLINATIONS_TOKEN;
+  // token also as query param — covers both auth mechanisms the API may honor
+  const tokenQ = POLLINATIONS_TOKEN ? `&token=${encodeURIComponent(POLLINATIONS_TOKEN)}` : '';
 
   const payload = {
     model: 'openai',
@@ -71,12 +73,15 @@ module.exports = async function handler(req, res) {
     stream: false
   };
 
-  // 1) OpenAI-compatible POST (with one retry on transient 429)
+  // 1) OpenAI-compatible POST. Retry transient 429s with backoff — Vercel's
+  //    shared egress IP can briefly hit the anonymous queue; a few spaced
+  //    retries usually ride past it.
   let upstreamStatus = 0;
-  for (let i = 0; i < 2; i++) {
-    if (i > 0) await new Promise((r) => setTimeout(r, 1200));
+  const backoff = [0, 800, 2000, 4000];
+  for (let i = 0; i < backoff.length; i++) {
+    if (backoff[i]) await new Promise((r) => setTimeout(r, backoff[i]));
     try {
-      const r = await fetch(`${BASE}/openai?referrer=${encodeURIComponent(REFERRER)}`, {
+      const r = await fetch(`${BASE}/openai?referrer=${encodeURIComponent(REFERRER)}${tokenQ}`, {
         method: 'POST', headers, body: JSON.stringify(payload)
       });
       upstreamStatus = r.status;
@@ -94,11 +99,16 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // 2) Simple GET fallback (prompt-in-URL)
+  // 2) Simple GET fallback (prompt-in-URL), also with a couple 429 retries
   try {
     const prompt = messages.map((m) => `${String(m.role || 'user').toUpperCase()}: ${m.content || ''}`).join('\n\n') + '\n\nASSISTANT:';
-    const url = `${BASE}/${encodeURIComponent(prompt.slice(0, 1800))}?model=openai&temperature=0.45&referrer=${encodeURIComponent(REFERRER)}`;
-    const r = await fetch(url, { headers: POLLINATIONS_TOKEN ? { Authorization: 'Bearer ' + POLLINATIONS_TOKEN } : {} });
+    const url = `${BASE}/${encodeURIComponent(prompt.slice(0, 1800))}?model=openai&temperature=0.45&referrer=${encodeURIComponent(REFERRER)}${tokenQ}`;
+    let r;
+    for (let i = 0; i < 3; i++) {
+      if (i > 0) await new Promise((rs) => setTimeout(rs, 1000 * i));
+      r = await fetch(url, { headers: POLLINATIONS_TOKEN ? { Authorization: 'Bearer ' + POLLINATIONS_TOKEN } : {} });
+      if (r.status !== 429) break;
+    }
     upstreamStatus = r.status;
     if (r.ok) {
       const text = (await r.text()).trim();
