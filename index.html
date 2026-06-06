@@ -2359,7 +2359,7 @@ let aiLastProvider='Pollinations Keyless AI';
 const AI_REFERRER='fragly.vercel.app';
 // Baked Pollinations token (free, from auth.pollinations.ai). Lifts the anonymous
 // 1-request queue limit so real AI works reliably. Keyless for end users — no user key.
-const AI_TOKEN='';// <-- PASTE POLLINATIONS TOKEN HERE
+const AI_TOKEN='sk_B20Nen9oQEmtYvH1EOPsOqGCbwI70H4t';// Pollinations token (lifts anon limit)
 function aiAuthHeaders(base){const h=Object.assign({},base||{});if(AI_TOKEN)h['Authorization']='Bearer '+AI_TOKEN;return h;}
 function aiTokenQuery(){return AI_TOKEN?`&token=${encodeURIComponent(AI_TOKEN)}`:'';}
 
