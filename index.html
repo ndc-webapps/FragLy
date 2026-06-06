@@ -2357,6 +2357,11 @@ function handleIdleActivity(){
 let aiOpen=false;
 let aiLastProvider='Pollinations Keyless AI';
 const AI_REFERRER='fragly-ai-coach';
+// Baked Pollinations token (free, from auth.pollinations.ai). Lifts the anonymous
+// 1-request queue limit so real AI works reliably. Keyless for end users — no user key.
+const AI_TOKEN='';// <-- PASTE POLLINATIONS TOKEN HERE
+function aiAuthHeaders(base){const h=Object.assign({},base||{});if(AI_TOKEN)h['Authorization']='Bearer '+AI_TOKEN;return h;}
+function aiTokenQuery(){return AI_TOKEN?`&token=${encodeURIComponent(AI_TOKEN)}`:'';}
 
 function toggleAI(){
   aiOpen=!aiOpen;
@@ -2590,7 +2595,7 @@ async function askKeylessAI(messages){
     if(i>0)await new Promise(r=>setTimeout(r,1500));
     chatResponse=await fetch(`${PURL}/openai?referrer=${encodeURIComponent(AI_REFERRER)}`,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:aiAuthHeaders({'Content-Type':'application/json'}),
       body:JSON.stringify(payload)
     });
     DBG('[AI] POST attempt',i+1,'status:',chatResponse.status);
@@ -2614,12 +2619,12 @@ async function askKeylessAI(messages){
   const lastQ=(messages.filter(m=>m.role==='user').slice(-1)[0]?.content||'help me improve').slice(0,300);
   const ctx=buildAICoachContext().slice(0,400);
   const shortPrompt=`You are a Valorant coach. Context: ${ctx}\n\nQuestion: ${lastQ}\n\nAnswer concisely:`;
-  const simpleUrl=`${PURL}/${encodeURIComponent(shortPrompt)}?model=openai&temperature=0.45&referrer=${encodeURIComponent(AI_REFERRER)}`;
+  const simpleUrl=`${PURL}/${encodeURIComponent(shortPrompt)}?model=openai&temperature=0.45&referrer=${encodeURIComponent(AI_REFERRER)}${aiTokenQuery()}`;
 
   let simpleResponse=null;
   for(let i=0;i<2;i++){
     if(i>0)await new Promise(r=>setTimeout(r,1500));
-    simpleResponse=await fetch(simpleUrl);
+    simpleResponse=await fetch(simpleUrl,{headers:aiAuthHeaders()});
     DBG('[AI] GET attempt',i+1,'status:',simpleResponse.status);
     if(simpleResponse.status!==429)break;
   }
