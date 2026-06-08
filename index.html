@@ -6,9 +6,6 @@
 <title>FragLy — Valorant Intelligence</title>
 <!-- build: fragly-ai-coach-no-key-hardfix-2026-06-01 -->
 <script defer src="/_vercel/insights/script.js"></script>
-<!-- StatsPilot tracker: enable after StatsPilot is deployed publicly.
-<script defer src="https://YOUR_STATSPILOT_DOMAIN/tracker.js" data-project-id="cmq53adzc0002u0tn703q6zai"></script>
--->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5999814369683510" crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Barlow+Condensed:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -1171,6 +1168,7 @@ async function fetchStats(){
     const mData=await api(`${BASE}/v3/matches/${region}/${enc(name)}/${enc(rawTag)}?size=10`);
     const matches=mData?.data||[];
     setLoad(true,'COMPUTING INTELLIGENCE...');
+    window.statspilot?.track('player_search',{region});
     render(acc.data,mmr?.data,matches,name,rawTag,region);
     document.getElementById('dash').classList.add('on');
     setTimeout(()=>document.getElementById('dash').scrollIntoView({behavior:'smooth',block:'start'}),200);
@@ -2235,6 +2233,7 @@ function downloadShareImage(){
   const base=`fragly-${(S.player?.name||'player').toLowerCase()}-${shareFormat}`.replace(/[^a-z0-9-]+/gi,'-');
   a.href=shareDataUrl; a.download=base+'.png';
   document.body.appendChild(a); a.click(); a.remove();
+  window.statspilot?.track('share_image_downloaded',{format:shareFormat});
 }
 async function nativeShareImage(){
   if(!shareDataUrl||!shareBlob){showToast('Generate the image first');return;}
@@ -2242,6 +2241,7 @@ async function nativeShareImage(){
     const file=new File([shareBlob],`fragly-${shareFormat}.png`,{type:'image/png'});
     if(navigator.canShare&&navigator.canShare({files:[file]})){
       await navigator.share({files:[file],title:'FragLy Stats',text:'My FragLy Valorant stats'});
+      window.statspilot?.track('share_image_shared',{format:shareFormat});
     }else{
       downloadShareImage();
       showToast('Downloaded PNG — upload it to Facebook feed or story');
@@ -2371,7 +2371,7 @@ function toggleAI(){
   document.getElementById('aiPanel').classList.toggle('open',aiOpen);
   // Hide FAB when panel is open so it doesn't block the send button on mobile
   document.querySelector('.ai-fab').style.display=aiOpen?'none':'';
-  if(aiOpen)initAIPanel();
+  if(aiOpen){initAIPanel();window.statspilot?.track('ai_coach_opened');}
 }
 
 function purgeOldAIKeyPrompt(){
@@ -2854,5 +2854,6 @@ window.render=function(acc,mmr,matches,name,tag,region){
   startIdleSession();
 };
 </script>
+<script src="https://statspilot.vercel.app/tracker.js" data-project-id="cmq53adzc0002u0tn703q6zai" defer></script>
 </body>
 </html>
