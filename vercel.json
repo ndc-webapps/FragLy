@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/static/insights.js", "destination": "https://statspilot.vercel.app/script.js" },
+    { "source": "/api/collect", "destination": "https://statspilot.vercel.app/api/collect" }
+  ]
+}
