@@ -322,6 +322,10 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .mode-tab{padding:5px 13px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:999px;color:var(--muted2);font-family:var(--mono);font-size:.58rem;letter-spacing:2px;cursor:pointer;transition:.2s;text-transform:uppercase;}
 .mode-tab:hover{border-color:rgba(255,70,85,.25);color:var(--txt);}
 .mode-tab.active{background:rgba(255,70,85,.15);border-color:var(--red);color:var(--red);}
+.stat-mode-tabs{margin-bottom:14px;}
+.stat-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-family:var(--mono);font-size:.72rem;letter-spacing:1px;padding:34px 16px;border:1px dashed var(--bdr);border-radius:14px;background:rgba(255,255,255,.02);}
+.share-mode-label{font-family:var(--mono);font-size:.58rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin:4px 0 6px;}
+.share-mode-pills{margin-bottom:12px;}
 
 
 .mfilters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
@@ -817,6 +821,8 @@ footer span{color:var(--red);}
     <div class="modal-title">SHARE STATS</div>
     <div class="modal-sub">Create a premium shareable PNG using the real stats currently loaded in FragLy. Choose a format, generate the image, then download or use your device share sheet.</div>
     <div class="share-player-indicator" id="sharePlayerIndicator">Current player: —</div>
+    <div class="share-mode-label">Match mode</div>
+    <div class="mode-tabs share-mode-pills" id="shareModePills"></div>
     <div class="share-size-pills">
       <button class="share-size-pill active" id="shareFmtFeed" onclick="setShareFormat('feed')">FEED · 4:5</button>
       <button class="share-size-pill" id="shareFmtStory" onclick="setShareFormat('story')">STORY · 9:16</button>
@@ -936,6 +942,7 @@ footer span{color:var(--red);}
 
   <!-- STATS GRID -->
   <div class="sh"><div class="sh-title">Performance Overview</div><div class="sh-line"></div><span class="sh-tag" id="matchCt">—</span></div>
+  <div class="mode-tabs stat-mode-tabs" id="statModeTabs"></div>
   <div class="sgrid" id="sgrid"></div>
 
   <!-- RADAR + FORM -->
@@ -1070,7 +1077,7 @@ try{
 /* ═══════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════ */
-const S={stats:null,player:null,region:null,matches:[],history:[],apiKey:'',matchFilter:'all',conversationHistory:[],matchCache:{},pendingPlayer:null};
+const S={stats:null,player:null,region:null,matches:[],history:[],apiKey:'',matchFilter:'all',statFilter:'all',rankLabel:'',conversationHistory:[],matchCache:{},pendingPlayer:null};
 // Caveman debugging — flip FRAGLY_DEBUG to false to silence. Tags every step of the
 // data pipeline so issues (e.g. matches counted but not rendered) are obvious in the
 // browser console without a debugger.
@@ -1241,17 +1248,80 @@ function render(acc,mmr,matches,name,tag,region){
   document.getElementById('rankImg').src=cur?.images?.large||cur?.images?.small||'';
   document.getElementById('rankNm').textContent=cur?.currenttierpatched||'Unranked';
   document.getElementById('rankRR').textContent=(cur?.ranking_in_tier??'?')+' RR';
+  S.rankLabel=cur?.currenttierpatched?.toLowerCase()||'';
+  S.statFilter='all';
   const st=computeStats(matches,name,tag);S.stats=st;
+  buildStatModeTabs(matches);
+  renderStatSections(st);
+  renderMapTbl(st.mapArr,matches);renderAgentTbl(st.agentArr,matches);
+  // Match-history list works off its own array (S.history) so we can deepen it with
+  // the stored-matches endpoint without disturbing overview/tables/stats above.
+  S.history=matches.slice();S._deep=new Set();
+  renderMatches(S.history,name,tag);
+  const pt=calcPlaytime(matches);
+  document.getElementById('ptToday').textContent=pt.dailyMs>0?formatPlaytime(pt.dailyMs):'None today';
+  document.getElementById('ptTodayNote').textContent=pt.dailyCount>0?`${pt.dailyCount} game${pt.dailyCount>1?'s':''} today`:'No games yet';
+  document.getElementById('ptRecent').textContent=pt.recentMs>0?formatPlaytime(pt.recentMs):'—';
+  document.getElementById('ptAvg').textContent=pt.avgMs>0?formatPlaytime(pt.avgMs):'—';
+  document.getElementById('playtimeStrip').style.display=pt.counted>0?'flex':'none';
+  resetShareExportState();
+  // Deepen match history in the background (real data only; failure keeps the live list).
+  loadFullHistory(name,tag,region);
+}
+
+/* ── STAT MODE FILTER (Overview / Radar / Recent Form + share PNG) ──
+   Reuses S.matches (no extra API calls). Filters by the same normalized
+   mode key used by the match-history tabs, so any real mode in the data
+   (Competitive, Unrated, Team Deathmatch, Deathmatch, Swiftplay, Spike Rush,
+   Premier, Escalation, etc.) shows up automatically. No fake data. */
+function statFilterLabel(){return S.statFilter==='all'?'ALL':String(S.statFilter).toUpperCase();}
+function matchesForStatFilter(){
+  const all=S.matches||[];
+  if(S.statFilter==='all')return all;
+  return all.filter(m=>String(modeOf(m)).toLowerCase()===S.statFilter);
+}
+function buildStatModeTabs(matches){
+  const el=document.getElementById('statModeTabs');if(!el)return;
+  const counts={};
+  for(const m of (matches||[])){const mo=String(modeOf(m)).toUpperCase();if(mo)counts[mo]=(counts[mo]||0)+1;}
+  const modes=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  const tabs=[['ALL',(matches||[]).length],...modes.map(mo=>[mo,counts[mo]])];
+  el.innerHTML=tabs.map(([label,n])=>{
+    const active=(S.statFilter==='all'&&label==='ALL')||S.statFilter===label.toLowerCase();
+    return`<button class="mode-tab ${active?'active':''}" onclick="setStatFilter('${label.replace(/'/g,"\\'")}')">${escapeHtml(label)} ${n}</button>`;
+  }).join('');
+}
+function setStatFilter(label){
+  S.statFilter=label==='ALL'?'all':String(label).toLowerCase();
+  const filtered=matchesForStatFilter();
+  const st=computeStats(filtered,S.player?.name||'',S.player?.tag||'');
+  S.stats=st;
+  buildStatModeTabs(S.matches);
+  renderStatSections(st);
+  setTimeout(animBars,60);
+  resetShareExportState(`Mode set to ${statFilterLabel()}. Generate a fresh preview.`);
+  syncShareModePills();
+}
+function renderStatSections(st){
+  const modeTag=S.statFilter==='all'?'GAMES ANALYZED':`${statFilterLabel()} GAMES`;
   document.getElementById('pGames').textContent=st.total;
-  document.getElementById('matchCt').textContent=st.total+' GAMES ANALYZED';
-  document.getElementById('tsVal').textContent=st.ts;
-  document.getElementById('gradeVal').textContent=st.grade;
-  const rp=cur?.currenttierpatched?.toLowerCase()||'';const bench=getRankBench(rp);
+  document.getElementById('matchCt').textContent=`${st.total} ${modeTag}`;
+  document.getElementById('tsVal').textContent=st.total?st.ts:'—';
+  document.getElementById('gradeVal').textContent=st.total?st.grade:'—';
+  const sgrid=document.getElementById('sgrid');
+  if(!st.total){
+    const msg=`No matches found for ${statFilterLabel()==='ALL'?'this player':'the '+statFilterLabel()+' mode'}.`;
+    sgrid.innerHTML=`<div class="stat-empty">${escapeHtml(msg)}</div>`;
+    document.getElementById('radarWrap').innerHTML=`<div class="stat-empty">${escapeHtml(msg)}</div>`;
+    renderForm([]);
+    return;
+  }
+  const bench=getRankBench(S.rankLabel||'');
   const hsCol=st.hsPct>=35?'g':st.hsPct>=22?'b':'r';
   const wrCol=st.winPct>=55?'gr':st.winPct>=45?'b':'r';
   const kdCol=st.kd>=1.4?'g':st.kd>=1.0?'gr':'r';
   const acsCol=st.acs>=220?'g':st.acs>=160?'b':'r';
-  document.getElementById('sgrid').innerHTML=[
+  sgrid.innerHTML=[
     scard('◎','HEADSHOT %',st.hsPct+'%',hsCol,`${bench?'Rank avg: '+bench.hs+'%':''} · Last ${st.total} games`,Math.min(st.hsPct*2.2,100),'rgba(255,70,85,.1)'),
     scard('◈','WIN RATE',st.winPct+'%',wrCol,`${st.wins}W / ${st.total-st.wins}L out of ${st.total} games`,st.winPct,'rgba(61,255,160,.08)'),
     scard('⬟','K/D RATIO',st.kd,kdCol,`${st.kills} Kills · ${st.deaths} Deaths · ${st.assists} Assists`,Math.min(st.kd*33,100),'rgba(255,70,85,.1)'),
@@ -1266,20 +1336,7 @@ function render(acc,mmr,matches,name,tag,region){
     {l:'COMBAT',v:Math.min(st.kd*50,100)},{l:'DAMAGE',v:Math.min(st.adr/2,100)},
     {l:'CLUTCH',v:Math.min(st.winPct*1.4,100)},{l:'CONSIST',v:Math.min(st.kpr*60,100)},
   ]);
-  renderForm(st.formACS);renderMapTbl(st.mapArr,matches);renderAgentTbl(st.agentArr,matches);
-  // Match-history list works off its own array (S.history) so we can deepen it with
-  // the stored-matches endpoint without disturbing overview/tables/stats above.
-  S.history=matches.slice();S._deep=new Set();
-  renderMatches(S.history,name,tag);
-  const pt=calcPlaytime(matches);
-  document.getElementById('ptToday').textContent=pt.dailyMs>0?formatPlaytime(pt.dailyMs):'None today';
-  document.getElementById('ptTodayNote').textContent=pt.dailyCount>0?`${pt.dailyCount} game${pt.dailyCount>1?'s':''} today`:'No games yet';
-  document.getElementById('ptRecent').textContent=pt.recentMs>0?formatPlaytime(pt.recentMs):'—';
-  document.getElementById('ptAvg').textContent=pt.avgMs>0?formatPlaytime(pt.avgMs):'—';
-  document.getElementById('playtimeStrip').style.display=pt.counted>0?'flex':'none';
-  resetShareExportState();
-  // Deepen match history in the background (real data only; failure keeps the live list).
-  loadFullHistory(name,tag,region);
+  renderForm(st.formACS);
 }
 
 /* SCARD */
@@ -2025,8 +2082,19 @@ let shareFormat='feed';
 let shareDataUrl='';
 let shareBlob=null;
 let shareSnapshotKey='';
-function getCurrentShareKey(){return `${S.player?.name||''}#${S.player?.tag||''}|${S.stats?.total||0}|${S.stats?.ts||0}|${S.region||''}|${shareFormat}`;}
+function getCurrentShareKey(){return `${S.player?.name||''}#${S.player?.tag||''}|${S.statFilter||'all'}|${S.stats?.total||0}|${S.stats?.ts||0}|${S.region||''}|${shareFormat}`;}
 function syncSharePlayerIndicator(){const el=document.getElementById('sharePlayerIndicator'); if(el){const who=(S.player?.name&&S.player?.tag)?`${S.player.name}#${S.player.tag}`:'—'; el.textContent=`Current player: ${who}`;}}
+function syncShareModePills(){
+  const el=document.getElementById('shareModePills');if(!el)return;
+  const counts={};
+  for(const m of (S.matches||[])){const mo=String(modeOf(m)).toUpperCase();if(mo)counts[mo]=(counts[mo]||0)+1;}
+  const modes=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  const tabs=[['ALL',(S.matches||[]).length],...modes.map(mo=>[mo,counts[mo]])];
+  el.innerHTML=tabs.map(([label,n])=>{
+    const active=(S.statFilter==='all'&&label==='ALL')||S.statFilter===label.toLowerCase();
+    return`<button class="mode-tab ${active?'active':''}" onclick="setStatFilter('${label.replace(/'/g,"\\'")}')">${escapeHtml(label)} ${n}</button>`;
+  }).join('');
+}
 function resetShareExportState(reason=''){shareDataUrl=''; shareBlob=null; shareSnapshotKey=''; const preview=document.getElementById('sharePreview'); const empty=document.getElementById('sharePreviewEmpty'); const wrap=document.getElementById('sharePreviewWrap'); if(preview){preview.removeAttribute('src'); preview.style.display='none'; preview.onload=null;} if(empty){empty.style.display='block'; const who=(S.player?.name&&S.player?.tag)?`${S.player.name}#${S.player.tag}`:'this player'; empty.textContent=reason||`Generate a fresh preview for ${who}.`; } if(wrap){wrap.scrollTop=0; wrap.scrollLeft=0;} syncSharePlayerIndicator(); }
 function openShareComposer(fmt){
   if(!S.stats||!S.player){showToast('Search a player first before generating a share image');return;}
@@ -2035,6 +2103,7 @@ function openShareComposer(fmt){
   const modal=document.getElementById('shareModal');
   const wrap=document.getElementById('sharePreviewWrap');
   syncSharePlayerIndicator();
+  syncShareModePills();
   if(shareSnapshotKey!==getCurrentShareKey()){
     resetShareExportState();
   }else if(wrap){
@@ -2114,7 +2183,7 @@ function buildShareCard(fmt){
         <div class="share-logo"><span class="a">Frag</span><span class="b">Ly</span></div>
         <div class="share-sub">Valorant Performance Snapshot</div>
       </div>
-      <div class="share-kicker">Real data · ${fmt==='story'?'Story':'Feed'} size</div>
+      <div class="share-kicker">Real data · Mode: ${escapeHtml(statFilterLabel())} · ${fmt==='story'?'Story':'Feed'} size</div>
     </div>`;
   card.appendChild(cloneForShare(document.getElementById('profBanner')));
   card.insertAdjacentHTML('beforeend',shareInsightsHTML());
@@ -2150,7 +2219,7 @@ function buildShareCard(fmt){
   }
   const overviewWrap=document.createElement('div');
   overviewWrap.className='share-section-card';
-  overviewWrap.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Performance Overview</div><div class="share-sec-line"></div><span class="share-sec-tag">${escapeHtml(String(S.stats?.total||0))} GAMES ANALYZED</span></div>`;
+  overviewWrap.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Performance Overview</div><div class="share-sec-line"></div><span class="share-sec-tag">${escapeHtml(String(S.stats?.total||0))} ${escapeHtml(statFilterLabel()==='ALL'?'GAMES ANALYZED':statFilterLabel()+' GAMES')}</span></div>`;
   overviewWrap.appendChild(cloneForShare(document.getElementById('sgrid')));
   card.appendChild(overviewWrap);
   const row=document.createElement('div');
@@ -2190,6 +2259,7 @@ async function ensureHtml2Canvas(){
 }
 async function generateSharePreview(){
   if(!S.stats||!S.player){showToast('Search a player first');return;}
+  if(!S.stats.total){showToast(`No ${statFilterLabel()} matches to put in the image`);return;}
   const preview=document.getElementById('sharePreview');
   const empty=document.getElementById('sharePreviewEmpty');
   const wrap=document.getElementById('sharePreviewWrap');
