@@ -1077,7 +1077,7 @@ try{
 /* ═══════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════ */
-const S={stats:null,player:null,region:null,matches:[],history:[],apiKey:'',matchFilter:'all',statFilter:'all',rankLabel:'',conversationHistory:[],matchCache:{},pendingPlayer:null};
+const S={stats:null,player:null,region:null,matches:[],history:[],apiKey:'',matchFilter:'all',statFilter:'all',rankLabel:'',modeCache:{},modeCount:{},statSeq:0,conversationHistory:[],matchCache:{},pendingPlayer:null};
 // Caveman debugging — flip FRAGLY_DEBUG to false to silence. Tags every step of the
 // data pipeline so issues (e.g. matches counted but not rendered) are obvious in the
 // browser console without a debugger.
@@ -1249,7 +1249,7 @@ function render(acc,mmr,matches,name,tag,region){
   document.getElementById('rankNm').textContent=cur?.currenttierpatched||'Unranked';
   document.getElementById('rankRR').textContent=(cur?.ranking_in_tier??'?')+' RR';
   S.rankLabel=cur?.currenttierpatched?.toLowerCase()||'';
-  S.statFilter='all';
+  S.statFilter='all';S.modeCache={};S.modeCount={};S.statSeq++;
   const st=computeStats(matches,name,tag);S.stats=st;
   buildStatModeTabs(matches);
   renderStatSections(st);
@@ -1280,27 +1280,65 @@ function matchesForStatFilter(){
   if(S.statFilter==='all')return all;
   return all.filter(m=>String(modeOf(m)).toLowerCase()===S.statFilter);
 }
+function modeSlug(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');}
+function statTabCount(label){
+  // Prefer the real deepened sample count once loaded; else the live v3 count.
+  const slug=modeSlug(label);
+  if(label!=='ALL'&&S.modeCount[slug]!=null)return S.modeCount[slug];
+  if(label==='ALL')return (S.matches||[]).length;
+  return (S.matches||[]).filter(m=>String(modeOf(m)).toLowerCase()===label.toLowerCase()).length;
+}
 function buildStatModeTabs(matches){
   const el=document.getElementById('statModeTabs');if(!el)return;
   const counts={};
   for(const m of (matches||[])){const mo=String(modeOf(m)).toUpperCase();if(mo)counts[mo]=(counts[mo]||0)+1;}
   const modes=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
-  const tabs=[['ALL',(matches||[]).length],...modes.map(mo=>[mo,counts[mo]])];
-  el.innerHTML=tabs.map(([label,n])=>{
+  const labels=['ALL',...modes];
+  el.innerHTML=labels.map(label=>{
     const active=(S.statFilter==='all'&&label==='ALL')||S.statFilter===label.toLowerCase();
-    return`<button class="mode-tab ${active?'active':''}" onclick="setStatFilter('${label.replace(/'/g,"\\'")}')">${escapeHtml(label)} ${n}</button>`;
+    return`<button class="mode-tab ${active?'active':''}" onclick="setStatFilter('${label.replace(/'/g,"\\'")}')">${escapeHtml(label)} ${statTabCount(label)}</button>`;
   }).join('');
+  syncShareModePills();
 }
-function setStatFilter(label){
-  S.statFilter=label==='ALL'?'all':String(label).toLowerCase();
-  const filtered=matchesForStatFilter();
-  const st=computeStats(filtered,S.player?.name||'',S.player?.tag||'');
+// Pull the largest REAL per-mode sample (stored-matches, ~20 games) so a mode
+// average isn't built from just the 2-3 of that mode inside the last-10 v3 pull.
+// 100% real data: every field comes from the API via normalizeStored. On any
+// failure or empty result we keep the real v3 subset — never fabricate.
+async function getModeSample(label){
+  const slug=modeSlug(label);
+  if(!slug)return null;
+  if(S.modeCache[slug])return S.modeCache[slug];
+  if(!S.player||!S.region)return null;
+  const res=await api(`${BASE}/v1/stored-matches/${S.region}/${enc(S.player.name)}/${enc(S.player.tag)}?size=20&mode=${slug}`);
+  const items=res?.data||[];
+  if(!items.length)return null;
+  const norm=items.map(it=>normalizeStored(it,S.player.name,S.player.tag));
+  S.modeCache[slug]=norm;
+  return norm;
+}
+function renderStatFilter(matchesForMode,note){
+  const st=computeStats(matchesForMode,S.player?.name||'',S.player?.tag||'');
   S.stats=st;
   buildStatModeTabs(S.matches);
   renderStatSections(st);
   setTimeout(animBars,60);
-  resetShareExportState(`Mode set to ${statFilterLabel()}. Generate a fresh preview.`);
-  syncShareModePills();
+  resetShareExportState(note||`Mode set to ${statFilterLabel()}. Generate a fresh preview.`);
+}
+async function setStatFilter(label){
+  S.statFilter=label==='ALL'?'all':String(label).toLowerCase();
+  const seq=++S.statSeq;
+  if(S.statFilter==='all'){renderStatFilter(S.matches||[]);return;}
+  // 1) Instant render from the real v3 subset (small but accurate, no waiting).
+  renderStatFilter(matchesForStatFilter());
+  // 2) Upgrade to the larger real stored-matches sample in the background.
+  try{
+    const sample=await getModeSample(label);
+    if(seq!==S.statSeq)return;            // user switched modes meanwhile
+    if(sample&&sample.length){
+      S.modeCount[modeSlug(label)]=sample.length;
+      renderStatFilter(sample,`Mode set to ${statFilterLabel()} · ${sample.length} games. Generate a fresh preview.`);
+    }
+  }catch(e){/* keep the real v3 subset already shown; never fabricate */}
 }
 function renderStatSections(st){
   const modeTag=S.statFilter==='all'?'GAMES ANALYZED':`${statFilterLabel()} GAMES`;
@@ -2089,10 +2127,10 @@ function syncShareModePills(){
   const counts={};
   for(const m of (S.matches||[])){const mo=String(modeOf(m)).toUpperCase();if(mo)counts[mo]=(counts[mo]||0)+1;}
   const modes=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
-  const tabs=[['ALL',(S.matches||[]).length],...modes.map(mo=>[mo,counts[mo]])];
-  el.innerHTML=tabs.map(([label,n])=>{
+  const labels=['ALL',...modes];
+  el.innerHTML=labels.map(label=>{
     const active=(S.statFilter==='all'&&label==='ALL')||S.statFilter===label.toLowerCase();
-    return`<button class="mode-tab ${active?'active':''}" onclick="setStatFilter('${label.replace(/'/g,"\\'")}')">${escapeHtml(label)} ${n}</button>`;
+    return`<button class="mode-tab ${active?'active':''}" onclick="setStatFilter('${label.replace(/'/g,"\\'")}')">${escapeHtml(label)} ${statTabCount(label)}</button>`;
   }).join('');
 }
 function resetShareExportState(reason=''){shareDataUrl=''; shareBlob=null; shareSnapshotKey=''; const preview=document.getElementById('sharePreview'); const empty=document.getElementById('sharePreviewEmpty'); const wrap=document.getElementById('sharePreviewWrap'); if(preview){preview.removeAttribute('src'); preview.style.display='none'; preview.onload=null;} if(empty){empty.style.display='block'; const who=(S.player?.name&&S.player?.tag)?`${S.player.name}#${S.player.tag}`:'this player'; empty.textContent=reason||`Generate a fresh preview for ${who}.`; } if(wrap){wrap.scrollTop=0; wrap.scrollLeft=0;} syncSharePlayerIndicator(); }
