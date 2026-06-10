@@ -8,9 +8,9 @@
 //   the token stays off the client. Still keyless for end users.
 //
 // Token: set POLLINATIONS_TOKEN in Vercel env (Project → Settings → Environment
-//   Variables). Falls back to the baked constant so it works without config.
+//   Variables). No token is shipped to the browser.
 
-const POLLINATIONS_TOKEN = process.env.POLLINATIONS_TOKEN || 'sk_B20Nen9oQEmtYvH1EOPsOqGCbwI70H4t';
+const POLLINATIONS_TOKEN = process.env.POLLINATIONS_TOKEN || '';
 const REFERRER = 'fragly.vercel.app';
 // Authenticated generation host (OpenAI-compatible). The token bypasses the
 // per-IP "Queue full" limit here — verified returning 200 from a queue-blocked

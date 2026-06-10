@@ -759,13 +759,10 @@ footer span{color:var(--red);}
 <div class="overlay hidden" id="setupModal">
   <div class="modal">
     <div class="modal-accent"></div>
-    <div class="modal-title">LIVE DATA KEY</div>
-    <div class="modal-sub">FragLy is running live — a HenrikDev key is baked in by default. You can override it with your own key below for a dedicated rate limit.</div>
-    <label class="modal-lbl">HenrikDev API Key</label>
-    <input class="modal-inp" id="keyInput" type="password" placeholder="HDEV-xxxx (leave blank to use default)" autocomplete="off">
-    <a class="modal-a" href="https://discord.com/invite/X3GaVkX2YN" target="_blank">→ Get your own key from Henrik's Discord</a>
+    <div class="modal-title">LIVE DATA</div>
+    <div class="modal-sub">FragLy routes Valorant data through a secure Vercel function. The HenrikDev key stays in server environment variables and is never sent to the browser.</div>
+    <a class="modal-a" href="https://discord.com/invite/X3GaVkX2YN" target="_blank">→ HenrikDev API access</a>
     <div class="modal-btns">
-      <button class="btn-p" onclick="saveKey()">SAVE KEY</button>
       <button class="btn-s" onclick="dismissModal()">CLOSE</button>
     </div>
   </div>
@@ -847,7 +844,7 @@ footer span{color:var(--red);}
     <div class="logo-dot"></div>
   </div>
   <div class="nav-r">
-    <div class="nav-pill" id="apiPill" onclick="document.getElementById('setupModal').classList.remove('hidden')">⚙ API KEY</div>
+    <div class="nav-pill" id="apiPill" onclick="document.getElementById('setupModal').classList.remove('hidden')">✓ LIVE</div>
   </div>
 </nav>
 
@@ -1097,35 +1094,24 @@ window.addEventListener('resize',syncAppVh,{passive:true});
 window.addEventListener('orientationchange',syncAppVh,{passive:true});
 if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppVh,{passive:true});
 
-const _BAKED_KEY='HDEV-48f17e5b-60eb-4d15-8389-9e1c25c48973';
 function initKeys(){
-  // Seed the baked key if nothing has been saved yet — plug & play for all users
-  if(!LS.get('hd_key'))LS.set('hd_key',_BAKED_KEY);
-  S.apiKey=LS.get('hd_key')||_BAKED_KEY;
+  localStorage.removeItem('hd_key');
+  S.apiKey='';
   const pill=document.getElementById('apiPill');
   pill.textContent='✓ LIVE';
   pill.classList.add('ok');
-}
-function saveKey(){
-  const k=document.getElementById('keyInput').value.trim()||_BAKED_KEY;
-  S.apiKey=k;
-  LS.set('hd_key',k);
-  const pill=document.getElementById('apiPill');
-  pill.textContent='✓ LIVE';
-  pill.classList.add('ok');
-  dismissModal();
 }
 function dismissModal(){document.getElementById('setupModal').classList.add('hidden');}
 
 /* ═══════════════════════════════════════════
    HENRIK API
 ═══════════════════════════════════════════ */
-const BASE='https://api.henrikdev.xyz/valorant';
+const BASE='/api/henrik';
 const enc=s=>encodeURIComponent(s);
 
 function apiStatusMessage(status){
-  if(status===401)return 'FragLy API key is invalid or expired. Please update the API key.';
-  if(status===403)return 'FragLy API access was blocked. Please try again later or use your own HenrikDev API key.';
+  if(status===401)return 'FragLy API key is invalid or expired. Please update the server environment key.';
+  if(status===403)return 'FragLy API access was blocked. Please try again later.';
   if(status===404)return 'Player not found. Check the Riot ID, tag, and region.';
   if(status===429)return 'Current search load is at max. The Valorant data API is temporarily limiting requests. Please wait 30–60 seconds, then try again.';
   if([500,502,503,504].includes(status))return 'Valorant data servers are busy right now. Please wait a bit and try again.';
@@ -1138,11 +1124,9 @@ function friendlyApiError(error){
   return msg||'Something went wrong. Please retry.';
 }
 async function api(url){
-  const opts={headers:{}};
-  if(S.apiKey)opts.headers['Authorization']=S.apiKey;
   let r;
   try{
-    r=await fetch(url,opts);
+    r=await fetch(url);
   }catch(e){
     throw new Error('Unable to connect to the Valorant data API. Please check your connection and try again.');
   }
@@ -2469,9 +2453,7 @@ function handleIdleActivity(){
 let aiOpen=false;
 let aiLastProvider='Pollinations Keyless AI';
 const AI_REFERRER='fragly.vercel.app';
-// Baked Pollinations token (free, from auth.pollinations.ai). Lifts the anonymous
-// 1-request queue limit so real AI works reliably. Keyless for end users — no user key.
-const AI_TOKEN='sk_B20Nen9oQEmtYvH1EOPsOqGCbwI70H4t';// Pollinations token (lifts anon limit)
+const AI_TOKEN='';
 function aiTokenQuery(){return AI_TOKEN?`&token=${encodeURIComponent(AI_TOKEN)}`:'';}
 
 function toggleAI(){

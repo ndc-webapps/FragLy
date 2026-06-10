@@ -1,2 +1,6 @@
 .claude/settings.local.json
 .claude/progress/
+.env
+.env.*
+!.env.example
+.Codex/progress/
