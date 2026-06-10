@@ -1124,6 +1124,13 @@ function friendlyApiError(error){
   return msg||'Something went wrong. Please retry.';
 }
 async function api(url){
+  if(url.startsWith(BASE)){
+    const u=new URL(url,location.origin);
+    const path=u.pathname.slice(BASE.length).replace(/^\/+/,'');
+    u.pathname=BASE;
+    u.searchParams.set('path',path);
+    url=u.pathname+u.search;
+  }
   let r;
   try{
     r=await fetch(url);

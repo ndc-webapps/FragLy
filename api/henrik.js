@@ -8,8 +8,7 @@ module.exports = async function handler(req, res) {
     return res.end(JSON.stringify({ error: 'Method not allowed' }));
   }
 
-  const rawPath = req.query?.path;
-  const path = Array.isArray(rawPath) ? rawPath.join('/') : String(rawPath || '');
+  const path = String(req.query?.path || '').replace(/^\/+/, '');
   if (!path || path.includes('..')) {
     res.statusCode = 400;
     res.setHeader('Content-Type', 'application/json');
