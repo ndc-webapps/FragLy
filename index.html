@@ -206,6 +206,11 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .ts-val{color:var(--blue);}
 .rank-nm{font-family:var(--dp);font-size:.85rem;font-weight:700;letter-spacing:1px;color:var(--gold);text-align:center;line-height:1.2;}
 .rank-img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(232,184,75,.3));}
+.peak-rank-card{border-color:rgba(75,189,255,.15);background:rgba(75,189,255,.03);}
+.peak-rank-card:hover{border-color:rgba(75,189,255,.3)!important;background:rgba(75,189,255,.06)!important;}
+.peak-rank-card .rank-nm{color:var(--blue);}
+.peak-rank-card .rank-img{filter:drop-shadow(0 0 10px rgba(75,189,255,.35));}
+.peak-season{font-family:var(--mono);font-size:.48rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;text-align:center;margin-top:2px;}
 
 /* PLAYTIME STRIP */
 .playtime-strip{display:flex;flex-wrap:wrap;gap:10px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05);}
@@ -917,6 +922,12 @@ footer span{color:var(--red);}
         <div class="rank-nm" id="rankNm">—</div>
         <div class="pstat-lbl" id="rankRR">— RR</div>
       </div>
+      <div class="pstat-card peak-rank-card">
+        <img class="rank-img" id="peakRankImg" src="" alt="Peak Rank" style="display:none">
+        <div class="rank-nm" id="peakRankNm">—</div>
+        <div class="pstat-lbl">Peak Rank</div>
+        <div class="peak-season" id="peakSeason"></div>
+      </div>
     </div>
     <div class="playtime-strip" id="playtimeStrip" style="display:none">
       <div class="pt-item">
@@ -1240,6 +1251,22 @@ function render(acc,mmr,matches,name,tag,region){
   document.getElementById('rankNm').textContent=cur?.currenttierpatched||'Unranked';
   document.getElementById('rankRR').textContent=(cur?.ranking_in_tier??'?')+' RR';
   S.rankLabel=cur?.currenttierpatched?.toLowerCase()||'';
+  // Peak rank — real data from mmr.highest_rank (already in the v2/mmr response, no extra call).
+  // Image: swap the tier number in the current rank image URL so we use the same CDN/episode set.
+  const peak=mmr?.highest_rank;
+  const peakImg=document.getElementById('peakRankImg');
+  const peakNm=document.getElementById('peakRankNm');
+  const peakSeason=document.getElementById('peakSeason');
+  if(peak?.patched_tier&&peak.patched_tier!=='Unranked'){
+    peakNm.textContent=peak.patched_tier;
+    const curImgUrl=cur?.images?.large||cur?.images?.small||'';
+    const derivedImg=curImgUrl?curImgUrl.replace(/\/tiers\/\d+\//,`/tiers/${peak.tier}/`):'';
+    if(derivedImg){peakImg.src=derivedImg;peakImg.style.display='';}
+    else peakImg.style.display='none';
+    peakSeason.textContent=peak.season_patched||peak.season||'';
+  }else{
+    peakNm.textContent='—';peakImg.style.display='none';peakSeason.textContent='';
+  }
   S.statFilter='all';S.modeCache={};S.modeCount={};S.statSeq++;
   const st=computeStats(matches,name,tag);S.stats=st;
   buildStatModeTabs(matches);
