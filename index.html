@@ -206,11 +206,14 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .ts-val{color:var(--blue);}
 .rank-nm{font-family:var(--dp);font-size:.85rem;font-weight:700;letter-spacing:1px;color:var(--gold);text-align:center;line-height:1.2;}
 .rank-img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(232,184,75,.3));}
-.peak-rank-card{border-color:rgba(75,189,255,.15);background:rgba(75,189,255,.03);}
-.peak-rank-card:hover{border-color:rgba(75,189,255,.3)!important;background:rgba(75,189,255,.06)!important;}
-.peak-rank-card .rank-nm{color:var(--blue);}
-.peak-rank-card .rank-img{filter:drop-shadow(0 0 10px rgba(75,189,255,.35));}
-.peak-season{font-family:var(--mono);font-size:.48rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;text-align:center;margin-top:2px;}
+.rank-combined-card{flex-direction:row!important;gap:0!important;padding:10px 8px!important;justify-content:space-around!important;}
+.rank-col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:1;}
+.rank-divider{width:1px;background:var(--bdr);align-self:stretch;margin:4px 4px;}
+.peak-col .rank-nm{color:var(--blue);}
+.peak-col .rank-img{filter:drop-shadow(0 0 8px rgba(75,189,255,.35));}
+.rank-img-sm{width:34px!important;height:34px!important;}
+.rank-nm-peak{font-size:.75rem!important;}
+.peak-season{font-family:var(--mono);font-size:.44rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;text-align:center;}
 
 /* PLAYTIME STRIP */
 .playtime-strip{display:flex;flex-wrap:wrap;gap:10px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05);}
@@ -917,16 +920,19 @@ footer span{color:var(--red);}
         <div class="pstat-val grade-val" id="gradeVal">—</div>
         <div class="pstat-lbl">Grade</div>
       </div>
-      <div class="pstat-card">
-        <img class="rank-img" id="rankImg" src="" alt="Rank">
-        <div class="rank-nm" id="rankNm">—</div>
-        <div class="pstat-lbl" id="rankRR">— RR</div>
-      </div>
-      <div class="pstat-card peak-rank-card">
-        <img class="rank-img" id="peakRankImg" src="" alt="Peak Rank" style="display:none">
-        <div class="rank-nm" id="peakRankNm">—</div>
-        <div class="pstat-lbl">Peak Rank</div>
-        <div class="peak-season" id="peakSeason"></div>
+      <div class="pstat-card rank-combined-card">
+        <div class="rank-col">
+          <img class="rank-img" id="rankImg" src="" alt="Rank">
+          <div class="rank-nm" id="rankNm">—</div>
+          <div class="pstat-lbl" id="rankRR">— RR</div>
+        </div>
+        <div class="rank-divider"></div>
+        <div class="rank-col peak-col">
+          <img class="rank-img rank-img-sm" id="peakRankImg" src="" alt="Peak Rank" style="display:none">
+          <div class="rank-nm rank-nm-peak" id="peakRankNm">—</div>
+          <div class="pstat-lbl">Peak</div>
+          <div class="peak-season" id="peakSeason"></div>
+        </div>
       </div>
     </div>
     <div class="playtime-strip" id="playtimeStrip" style="display:none">
