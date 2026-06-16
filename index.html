@@ -41,8 +41,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .logo-stats{background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .logo-dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red);margin-left:3px;margin-bottom:4px;flex-shrink:0;animation:rdot 2.5s ease infinite;}
 .nav-r{display:flex;align-items:center;gap:10px;}
-.nav-pill{font-family:var(--mono);font-size:.62rem;letter-spacing:2px;padding:6px 14px;border-radius:var(--r3);border:1px solid var(--bdr);color:var(--muted2);cursor:pointer;transition:.2s;background:transparent;text-transform:uppercase;}
-.nav-pill:hover,.nav-pill.active{border-color:rgba(255,70,85,.4);color:var(--txt);background:var(--red-g);}
+.nav-pill{font-family:var(--mono);font-size:.62rem;letter-spacing:2px;padding:6px 14px;border-radius:var(--r3);border:1px solid var(--bdr);color:var(--muted2);transition:.2s;background:transparent;text-transform:uppercase;}
 .nav-pill.ok{border-color:rgba(61,255,160,.3);color:var(--green);background:rgba(61,255,160,.06);}
 @keyframes rdot{0%,100%{opacity:1;box-shadow:0 0 12px var(--red);}50%{opacity:.4;box-shadow:0 0 4px var(--red);}}
 
@@ -774,19 +773,6 @@ footer span{color:var(--red);}
 <div class="grain"></div>
 <div class="W">
 
-<!-- SETUP MODAL -->
-<div class="overlay hidden" id="setupModal">
-  <div class="modal">
-    <div class="modal-accent"></div>
-    <div class="modal-title">LIVE DATA</div>
-    <div class="modal-sub">FragLy routes Valorant data through a secure Vercel function. The HenrikDev key stays in server environment variables and is never sent to the browser.</div>
-    <a class="modal-a" href="https://discord.com/invite/X3GaVkX2YN" target="_blank">→ HenrikDev API access</a>
-    <div class="modal-btns">
-      <button class="btn-s" onclick="dismissModal()">CLOSE</button>
-    </div>
-  </div>
-</div>
-
 <!-- IDLE SESSION WARNING MODAL -->
 <div class="overlay hidden idle-overlay" id="idleModal">
   <div class="modal idle-modal" onclick="event.stopPropagation()">
@@ -863,7 +849,7 @@ footer span{color:var(--red);}
     <div class="logo-dot"></div>
   </div>
   <div class="nav-r">
-    <div class="nav-pill" id="apiPill" onclick="document.getElementById('setupModal').classList.remove('hidden')">✓ LIVE</div>
+    <div class="nav-pill ok" id="apiPill">✓ LIVE</div>
   </div>
 </nav>
 
@@ -1129,7 +1115,6 @@ function initKeys(){
   pill.textContent='✓ LIVE';
   pill.classList.add('ok');
 }
-function dismissModal(){document.getElementById('setupModal').classList.add('hidden');}
 
 /* ═══════════════════════════════════════════
    HENRIK API
