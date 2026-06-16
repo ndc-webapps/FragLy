@@ -226,6 +226,14 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .pt-val.avg{color:var(--gold);}
 .pt-note{font-family:var(--mono);font-size:.46rem;color:var(--muted);letter-spacing:1.5px;margin-top:3px;opacity:.8;}
 @media(max-width:480px){.pt-item{min-width:80px;padding:10px 12px;}.pt-val{font-size:1.2rem;}}
+@media(max-width:600px){
+  .rank-combined-card{padding:8px 6px!important;}
+  .rank-col{gap:3px;}
+  .rank-img-sm{width:28px!important;height:28px!important;}
+  .rank-nm{font-size:.72rem;}
+  .rank-nm-peak{font-size:.65rem!important;}
+  .peak-season{font-size:.4rem;}
+}
 
 /* Tablet+ — side-by-side avatar/name, bigger text */
 @media(min-width:600px){
@@ -1266,7 +1274,15 @@ function render(acc,mmr,matches,name,tag,region){
   if(peak?.patched_tier&&peak.patched_tier!=='Unranked'){
     peakNm.textContent=peak.patched_tier;
     const curImgUrl=cur?.images?.large||cur?.images?.small||'';
-    const derivedImg=curImgUrl?curImgUrl.replace(/\/tiers\/\d+\//,`/tiers/${peak.tier}/`):'';
+    // HenrikDev tier numbers differ from valorant-api.com CDN tier numbers.
+    // Fix: read the actual tier number embedded in the current rank URL, compute
+    // the offset vs HenrikDev's currenttier, then apply that offset to peak.tier.
+    const urlTierMatch=curImgUrl.match(/\/tiers\/(\d+)\//);
+    const urlCurrentTier=urlTierMatch?parseInt(urlTierMatch[1]):0;
+    const henrikCurrentTier=cur?.currenttier||0;
+    const offset=(urlCurrentTier>0&&henrikCurrentTier>0)?urlCurrentTier-henrikCurrentTier:0;
+    const peakCdnTier=(peak.tier||0)+offset;
+    const derivedImg=(curImgUrl&&peakCdnTier>0)?curImgUrl.replace(/\/tiers\/\d+\//,`/tiers/${peakCdnTier}/`):'';
     if(derivedImg){peakImg.src=derivedImg;peakImg.style.display='';}
     else peakImg.style.display='none';
     peakSeason.textContent=peak.season_patched||peak.season||'';
