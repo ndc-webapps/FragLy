@@ -206,14 +206,15 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .ts-val{color:var(--blue);}
 .rank-nm{font-family:var(--dp);font-size:.85rem;font-weight:700;letter-spacing:1px;color:var(--gold);text-align:center;line-height:1.2;}
 .rank-img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 10px rgba(232,184,75,.3));}
-.rank-combined-card{flex-direction:row!important;gap:0!important;padding:10px 8px!important;justify-content:space-around!important;}
-.rank-col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:1;}
-.rank-divider{width:1px;background:var(--bdr);align-self:stretch;margin:4px 4px;}
+.rank-combined-card{flex-direction:row!important;gap:0!important;padding:10px 6px!important;justify-content:center!important;align-items:stretch!important;overflow:hidden;}
+.rank-col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:1 1 0;min-width:0;overflow:hidden;}
+.rank-combined-card .rank-nm{font-size:.78rem;letter-spacing:.3px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rank-divider{width:1px;background:var(--bdr);align-self:stretch;margin:2px 3px;flex:0 0 auto;}
 .peak-col .rank-nm{color:var(--blue);}
 .peak-col .rank-img{filter:drop-shadow(0 0 8px rgba(75,189,255,.35));}
 .rank-img-sm{width:34px!important;height:34px!important;}
-.rank-nm-peak{font-size:.75rem!important;}
-.peak-season{font-family:var(--mono);font-size:.44rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;text-align:center;}
+.rank-nm-peak{font-size:.72rem!important;}
+.peak-season{font-family:var(--mono);font-size:.44rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 /* PLAYTIME STRIP */
 .playtime-strip{display:flex;flex-wrap:wrap;gap:10px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05);}
@@ -227,12 +228,14 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .pt-note{font-family:var(--mono);font-size:.46rem;color:var(--muted);letter-spacing:1.5px;margin-top:3px;opacity:.8;}
 @media(max-width:480px){.pt-item{min-width:80px;padding:10px 12px;}.pt-val{font-size:1.2rem;}}
 @media(max-width:600px){
-  .rank-combined-card{padding:8px 6px!important;}
+  .rank-combined-card{padding:8px 4px!important;}
   .rank-col{gap:3px;}
-  .rank-img-sm{width:28px!important;height:28px!important;}
-  .rank-nm{font-size:.72rem;}
-  .rank-nm-peak{font-size:.65rem!important;}
-  .peak-season{font-size:.4rem;}
+  .rank-img{width:30px;height:30px;}
+  .rank-img-sm{width:26px!important;height:26px!important;}
+  .rank-combined-card .rank-nm{font-size:.62rem;letter-spacing:0;}
+  .rank-nm-peak{font-size:.58rem!important;}
+  .peak-season{font-size:.38rem;letter-spacing:.5px;}
+  .rank-divider{margin:2px 1px;}
 }
 
 /* Tablet+ — side-by-side avatar/name, bigger text */
@@ -1248,6 +1251,18 @@ function computeStats(matches,name,tag){
 /* ═══════════════════════════════════════════
    RENDER
 ═══════════════════════════════════════════ */
+// Standard Valorant competitive tier number for a rank name (matches the numeric
+// segment in valorant-api.com competitivetiers icon URLs). Iron1=3 … Radiant=27.
+function rankTierNumber(name){
+  const n=String(name||'').toLowerCase();
+  if(!n)return 0;
+  if(n.includes('radiant'))return 27;
+  const bases={iron:3,bronze:6,silver:9,gold:12,platinum:15,diamond:18,ascendant:21,immortal:24};
+  for(const k in bases){
+    if(n.includes(k)){const m=n.match(/([1-3])/);return bases[k]+((m?parseInt(m[1]):1)-1);}
+  }
+  return 0;
+}
 function getRankBench(rank){
   const map={'iron':{acs:75,hs:12},'bronze':{acs:100,hs:14},'silver':{acs:130,hs:17},'gold':{acs:160,hs:20},'platinum':{acs:190,hs:23},'diamond':{acs:220,hs:27},'ascendant':{acs:240,hs:29},'immortal':{acs:260,hs:31},'radiant':{acs:280,hs:33}};
   for(const k of Object.keys(map))if(rank.includes(k))return map[k];return null;
@@ -1266,23 +1281,22 @@ function render(acc,mmr,matches,name,tag,region){
   document.getElementById('rankRR').textContent=(cur?.ranking_in_tier??'?')+' RR';
   S.rankLabel=cur?.currenttierpatched?.toLowerCase()||'';
   // Peak rank — real data from mmr.highest_rank (already in the v2/mmr response, no extra call).
-  // Image: swap the tier number in the current rank image URL so we use the same CDN/episode set.
   const peak=mmr?.highest_rank;
   const peakImg=document.getElementById('peakRankImg');
   const peakNm=document.getElementById('peakRankNm');
   const peakSeason=document.getElementById('peakSeason');
-  if(peak?.patched_tier&&peak.patched_tier!=='Unranked'){
-    peakNm.textContent=peak.patched_tier;
+  const peakTierName=peak?.patched_tier||peak?.tier_name||'';
+  if(peakTierName&&!/unrated|unranked/i.test(peakTierName)){
+    peakNm.textContent=peakTierName;
+    // Icon: prefer an image the API gives us; otherwise build it from the CURRENT
+    // rank image URL (it carries the correct episode UUID + CDN path) by swapping
+    // its numeric tier segment. The tier number is derived from the human-readable
+    // name (rankTierNumber) so it is correct on EVERY account, regardless of how
+    // HenrikDev numbers its internal `tier` field.
     const curImgUrl=cur?.images?.large||cur?.images?.small||'';
-    // HenrikDev tier numbers differ from valorant-api.com CDN tier numbers.
-    // Fix: read the actual tier number embedded in the current rank URL, compute
-    // the offset vs HenrikDev's currenttier, then apply that offset to peak.tier.
-    const urlTierMatch=curImgUrl.match(/\/tiers\/(\d+)\//);
-    const urlCurrentTier=urlTierMatch?parseInt(urlTierMatch[1]):0;
-    const henrikCurrentTier=cur?.currenttier||0;
-    const offset=(urlCurrentTier>0&&henrikCurrentTier>0)?urlCurrentTier-henrikCurrentTier:0;
-    const peakCdnTier=(peak.tier||0)+offset;
-    const derivedImg=(curImgUrl&&peakCdnTier>0)?curImgUrl.replace(/\/tiers\/\d+\//,`/tiers/${peakCdnTier}/`):'';
+    const peakNum=rankTierNumber(peakTierName);
+    let derivedImg=peak?.images?.large||peak?.images?.small||'';
+    if(!derivedImg&&curImgUrl&&peakNum>0)derivedImg=curImgUrl.replace(/\/\d+\/([^/]+)$/,`/${peakNum}/$1`);
     if(derivedImg){peakImg.src=derivedImg;peakImg.style.display='';}
     else peakImg.style.display='none';
     peakSeason.textContent=peak.season_patched||peak.season||'';
