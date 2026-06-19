@@ -3168,6 +3168,16 @@ window.render=function(acc,mmr,matches,name,tag,region){
 .at-hb{flex:1;background:linear-gradient(180deg,rgba(255,70,85,.5),rgba(255,70,85,.12));border-radius:3px 3px 0 0;min-height:4px;}
 .at-hb.cur{background:linear-gradient(180deg,#FF6E7A,rgba(255,70,85,.4));box-shadow:0 0 8px rgba(255,70,85,.5);}
 
+/* ── rank badge ── */
+.at-rank{margin:-4px 0 10px;}
+.at-rank-badge{display:inline-block;font-family:var(--mono);font-size:.72rem;letter-spacing:3px;font-weight:600;padding:5px 18px;border-radius:20px;color:var(--rk);border:1px solid var(--rk);background:rgba(255,255,255,.04);box-shadow:0 0 18px -3px var(--rk);}
+/* ── warmup button + reset ── */
+.at-btn.warmup{font-size:.95rem;padding:11px 26px;background:linear-gradient(135deg,#E8B84B,#FF7A33);color:#1a1002;box-shadow:0 8px 26px rgba(232,140,60,.3);}
+.at-btn.warmup:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(232,140,60,.45);}
+.at-reset{background:transparent;border:none;color:#6a6a92;font-family:var(--mono);font-size:.58rem;letter-spacing:2px;cursor:pointer;padding:6px 10px;transition:.15s;}
+.at-reset:hover{color:#ff5b6e;}
+.atx-rank{display:inline-block;font-family:var(--mono);font-size:.7rem;letter-spacing:3px;font-weight:600;padding:5px 16px;border:1px solid;border-radius:20px;margin:0 auto 4px;}
+
 /* ── PNG export card (offscreen) ── */
 #atShareStage{position:fixed;left:-9999px;top:0;pointer-events:none;}
 .atx-card{width:600px;box-sizing:border-box;padding:42px 40px 30px;font-family:var(--body);
@@ -3240,14 +3250,18 @@ window.render=function(acc,mmr,matches,name,tag,region){
           <div class="at-row"><label>Outline</label><div class="at-tog" id="atXhOutline"></div></div>
           <div class="at-xh-prev"><canvas id="atXhPrev" width="280" height="90"></canvas></div>
         </div>
-        <div class="at-card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px;">
+        <div class="at-card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:12px;">
           <h4 style="margin:0;">READY UP</h4>
-          <p style="font-size:.78rem;color:#8a8ab5;max-width:280px;">Click <b style="color:#fff;">START</b> then click the range to lock your mouse. <b style="color:#fff;">ESC</b> pauses.</p>
+          <p style="font-size:.76rem;color:#8a8ab5;max-width:280px;">Click <b style="color:#fff;">START</b> then click the range to lock your mouse. <b style="color:#fff;">ESC</b> pauses.</p>
           <div class="at-start" style="margin:0;"><button class="at-btn primary" id="atStartBtn">START DRILL ◎</button></div>
           <div class="at-mono" id="atSelInfo" style="font-size:.58rem;color:#6a6a92;letter-spacing:1px;"></div>
+          <div style="width:100%;height:1px;background:var(--atbdr);margin:2px 0;"></div>
+          <button class="at-btn warmup" id="atWarmupBtn">🔥 DAILY WARMUP</button>
+          <div class="at-mono" id="atWarmupNote" style="font-size:.56rem;color:#8b85a8;letter-spacing:1px;"></div>
         </div>
       </div>
-      <div style="height:30px;"></div>
+      <div style="text-align:center;margin-top:14px;"><button class="at-reset" id="atResetBtn">Reset local data</button></div>
+      <div style="height:24px;"></div>
     </div>
   </section>
 
@@ -3317,6 +3331,7 @@ window.render=function(acc,mmr,matches,name,tag,region){
         <div class="at-newbest" id="atNewBest" style="display:none;">★ NEW PERSONAL BEST ★</div>
         <div class="mode-tag" id="atResMode">FLICK SHOT</div>
         <h2 id="atResScore">0</h2>
+        <div class="at-rank" id="atRank"></div>
         <div class="at-res-grid" id="atResGrid"></div>
         <div class="at-history" id="atHistory" style="display:none"></div>
         <div class="at-saved" id="atSaved"></div>
@@ -3348,7 +3363,8 @@ const DEF={
   xh:{color:'#ECE8F5',size:8,gap:4,thick:2,opacity:1,dot:true,outline:true},
   drill:{dur:30,size:'M',count:9,speed:'M',reflexSpeed:'normal',mags:3},
   best:{}, // best[mode]={score,acc}
-  history:{} // history[mode]=[{score,acc,t}]  (last 12)
+  history:{}, // history[mode]=[{score,acc,t}]  (last 12)
+  warmupLast:'',warmupStreak:0
 };
 function load(){try{const s=JSON.parse(localStorage.getItem(LSK));if(s)return Object.assign({},DEF,s,{xh:Object.assign({},DEF.xh,s.xh),drill:Object.assign({},DEF.drill,s.drill),best:s.best||{},history:s.history||{}});}catch(e){}return JSON.parse(JSON.stringify(DEF));}
 function save(){localStorage.setItem(LSK,JSON.stringify(cfg));}
@@ -3455,6 +3471,21 @@ function buildRoom(){roomCv.width=Math.max(1,Math.round(W*DPR));roomCv.height=Ma
 
 /* ---- game state ---- */
 let G=null;
+let warmup=null; // active daily-warmup session
+
+/* ---- rank from score (per mode) ---- */
+const RANKS=[['IRON','#7d7d8a'],['BRONZE','#b07a43'],['SILVER','#c3c3cf'],['GOLD','#E8B84B'],['PLATINUM','#4cc6c6'],['DIAMOND','#b083e0'],['ASCENDANT','#3DFFA0'],['IMMORTAL','#FF4655'],['RADIANT','#FFF1B8']];
+const RANK_STEP={flick:720,grid:620,track:360,reflex:520,recoil:300,warmup:2300};
+function rankFor(mode,score){const step=RANK_STEP[mode]||700;const i=clamp(Math.floor(score/step),0,RANKS.length-1);return{name:RANKS[i][0],color:RANKS[i][1],i};}
+
+/* ---- daily warmup: chained drills ---- */
+const WARMUP_PLAN=[{mode:'flick',dur:25},{mode:'grid',dur:25},{mode:'track',dur:25},{mode:'reflex',dur:25}];
+function startWarmup(){warmup={queue:WARMUP_PLAN,idx:0,totals:{score:0,hits:0,miss:0,shots:0,hsHits:0,kills:0,bestStreak:0,reactSum:0,reactN:0,bestReact:0}};audio();startWarmupSeg(false);}
+function startWarmupSeg(keepLock){const seg=warmup.queue[warmup.idx];startGame(seg.mode,seg.dur,keepLock);}
+function accWarmup(g){const t=warmup.totals;t.score+=g.score;t.hits+=g.hits;t.miss+=g.miss;t.shots+=g.shots;t.hsHits+=g.hsHits;t.kills+=g.kills;if(g.bestStreak>t.bestStreak)t.bestStreak=g.bestStreak;t.reactSum+=g.reactSum;t.reactN+=g.reactN;if(g.bestReact&&(!t.bestReact||g.bestReact<t.bestReact))t.bestReact=g.bestReact;}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function markWarmupDay(){const today=todayStr();if(cfg.warmupLast===today)return cfg.warmupStreak||1;const yest=new Date(Date.now()-864e5).toISOString().slice(0,10);cfg.warmupStreak=(cfg.warmupLast===yest)?(cfg.warmupStreak||0)+1:1;cfg.warmupLast=today;return cfg.warmupStreak;}
+
 function newGame(mode){
   const M=MODES[mode],wep=WEAPONS[cfg.weapon];
   return{mode,M,wep,
@@ -3481,23 +3512,24 @@ function spawnTrack(){const a=playArea(),r=34*szMult(),sp=rand(0.12,0.2)*(TRACK_
 function spawnReflexTarget(){const a=playArea(),r=rand(30,44)*szMult();G.targets=[{x:rand(a.x0+r,a.x1-r),y:rand(a.y0+r,a.y1-r),r,born:performance.now(),hp:1}];}
 
 /* ════ START ════ */
-function startGame(mode){
+function startGame(mode,durOverride,keepLock){
   G=newGame(mode);
+  if(warmup)G.warmup=true;
   buildGun();
-  $('atWepNm').innerHTML=G.wep.name+' <small>ACTIVE</small>';
+  $('atWepNm').innerHTML=(warmup?'WARMUP':G.wep.name)+' <small>'+(warmup?('STEP '+(warmup.idx+1)+'/'+warmup.queue.length):'ACTIVE')+'</small>';
   showScreen('atGame');
   // apply drill settings
-  G.dur=(mode==='recoil')?0:drillDur();
+  G.dur=durOverride||((mode==='recoil')?0:drillDur());
   if(mode==='flick')spawnFlick();
   else if(mode==='grid')spawnGrid(cfg.drill.count||9);
   else if(mode==='track')spawnTrack();
   else if(mode==='reflex'){G.targets=[];const rs=REFLEX_SPD[cfg.drill.reflexSpeed]||REFLEX_SPD.normal;Object.assign(G.reflex,{dmin:rs.dmin,dmax:rs.dmax,life:rs.life,nextAt:performance.now()+rand(rs.dmin,rs.dmax)});}
-  else if(mode==='recoil'){G.dur=0;setupRecoil();}
+  else if(mode==='recoil'){if(!durOverride)G.dur=0;setupRecoil();}
   $('atFallback').style.display='none';
   $('atStreakWrap').style.opacity='0';$('atStreak').textContent='0x';$('atStreak').classList.remove('hot');
   $('atLast').classList.remove('show');
   audio(); // unlock AudioContext on this user gesture
-  G.pendingLock=true; // lock on first canvas click
+  G.pendingLock=!keepLock; // keep existing lock between warmup steps
   startCountdown();
   updateHUD();loopOn();
 }
@@ -3807,40 +3839,54 @@ function updateHUD(){
 function endGame(){
   if(!G||G.over)return;G.over=true;G.running=false;
   if(G._ctI)clearInterval(G._ctI);$('atCount').className='at-count';
+  // ── warmup chaining: advance to next drill, keep loop + pointer lock ──
+  if(G.warmup&&warmup){
+    accWarmup(G);
+    if(warmup.idx<warmup.queue.length-1){warmup.idx++;startWarmupSeg(isLocked());return;}
+  }
   if(isLocked())document.exitPointerLock();
   loopOff();SFX.end();
+  const fin=(G.warmup&&warmup)?warmup.totals:null; // finalizing a warmup?
+  const src=fin||G;
+  const mode=fin?'warmup':G.mode;
+  const modeName=fin?'DAILY WARMUP':G.M.name;
   const dur=((performance.now()-G.startT)/1000);
-  const acc=accuracyOf(G);
-  const hsp=G.hits?Math.round(G.hsHits/G.hits*100):0;
-  const avgR=G.reactN?Math.round(G.reactSum/G.reactN):0;
-  const recPct=G.recoil.grpN?Math.round(G.recoil.grpSum/G.recoil.grpN*100):0;
+  const hits=src.hits,miss=src.miss,shots=src.shots,hsHits=src.hsHits,kills=src.kills,score=src.score,bestStreak=src.bestStreak;
+  const acc=(!fin&&G.mode==='track')?accuracyOf(G):(shots?Math.min(100,Math.round(hits/shots*100)):100);
+  const hsp=hits?Math.round(hsHits/hits*100):0;
+  const reactN=src.reactN,reactSum=src.reactSum,bestReact=src.bestReact;
+  const avgR=reactN?Math.round(reactSum/reactN):0;
+  const recPct=(!fin&&G.recoil.grpN)?Math.round(G.recoil.grpSum/G.recoil.grpN*100):0;
+  const summary=fin?('🔥 DAY STREAK '+markWarmupDay()):drillSummary(G.mode);
+  const rk=rankFor(mode,score);
   // best (score-based for every mode)
-  const b=cfg.best[G.mode]||{};const isBest=G.score>(b.score||-1);
+  const b=cfg.best[mode]||{};const isBest=score>(b.score||-1);
   $('atNewBest').style.display=isBest?'block':'none';
-  $('atResMode').textContent=G.M.name+' · '+drillSummary(G.mode);
-  $('atResScore').textContent=G.score;
+  $('atResMode').textContent=modeName+' · '+summary;
+  $('atResScore').textContent=score;
+  $('atRank').innerHTML='<span class="at-rank-badge" style="--rk:'+rk.color+'">'+rk.name+'</span>';
   const cells=[
-    ['SCORE',G.score],['ACCURACY',acc+'%'],
-    ['HITS',G.hits],['MISSES',G.miss],
-    ['HEADSHOT %',hsp+'%'],['KILLS',G.kills]
+    ['SCORE',score],['ACCURACY',acc+'%'],
+    ['HITS',hits],['MISSES',miss],
+    ['HEADSHOT %',hsp+'%'],['KILLS',kills],['BEST STREAK',bestStreak+'x']
   ];
-  cells.push(['BEST STREAK',G.bestStreak+'x']);
-  if(G.mode==='reflex'){cells.push(['AVG REACTION',avgR?avgR+'ms':'—'],['BEST REACTION',G.bestReact?Math.round(G.bestReact)+'ms':'—']);}
-  else if(G.mode==='recoil'){cells.push(['RECOIL CTRL',recPct+'%'],['DURATION',dur.toFixed(1)+'s']);}
-  else{cells.push(['AVG KPS',(G.kills/Math.max(dur,0.1)).toFixed(2)],['DURATION',dur.toFixed(1)+'s']);}
+  if(mode==='reflex'||fin){cells.push(['AVG REACTION',avgR?avgR+'ms':'—'],['BEST REACTION',bestReact?Math.round(bestReact)+'ms':'—']);}
+  else if(mode==='recoil'){cells.push(['RECOIL CTRL',recPct+'%'],['DURATION',dur.toFixed(1)+'s']);}
+  else{cells.push(['AVG KPS',(kills/Math.max(dur,0.1)).toFixed(2)],['DURATION',dur.toFixed(1)+'s']);}
   $('atResGrid').innerHTML=cells.map((c,i)=>'<div class="at-res-cell'+(i<2?' hi':'')+'"><div class="k">'+c[0]+'</div><div class="v">'+c[1]+'</div></div>').join('');
   $('atSaved').textContent='';
-  // prev best for delta, then push run to history
-  const prevBest=b.score||0;const hist=cfg.history[G.mode]||[];const prevRun=hist.length?hist[hist.length-1].score:null;
-  hist.push({score:G.score,acc,t:Date.now()});cfg.history[G.mode]=hist.slice(-12);
-  renderHistory(G.mode,prevRun);
+  // push run to history (+ vs-last delta)
+  const hist=cfg.history[mode]||[];const prevRun=hist.length?hist[hist.length-1].score:null;
+  hist.push({score,acc,t:Date.now()});cfg.history[mode]=hist.slice(-12);
+  renderHistory(mode,prevRun,score);
   // store full result (for PNG export) + auto-save best
-  G._summary={mode:G.mode,modeName:G.M.name,summary:drillSummary(G.mode),score:G.score,acc,hits:G.hits,miss:G.miss,hsp,kills:G.kills,bestStreak:G.bestStreak,avgR,bestReact:G.bestReact||0,recPct,kps:(G.kills/Math.max(dur,0.1)).toFixed(2),dur:dur.toFixed(1),isBest};
-  if(isBest)cfg.best[G.mode]={score:G.score,acc};
+  G._summary={mode,modeName,summary,score,acc,hits,miss,hsp,kills,bestStreak,avgR,bestReact:bestReact||0,recPct,kps:(kills/Math.max(dur,0.1)).toFixed(2),dur:dur.toFixed(1),isBest,rank:rk.name,rankColor:rk.color};
+  if(isBest)cfg.best[mode]={score,acc};
   save();
+  if(fin)warmup=null; // warmup session complete
   showScreen('atResults');
 }
-function renderHistory(mode,prevRun){
+function renderHistory(mode,prevRun,curScore){
   const el=$('atHistory');if(!el)return;
   const hist=cfg.history[mode]||[];
   if(hist.length<2){el.innerHTML='';el.style.display='none';return;}
@@ -3848,7 +3894,7 @@ function renderHistory(mode,prevRun){
   const scores=hist.map(h=>h.score),mx=Math.max(...scores),mn=Math.min(...scores);
   const bars=scores.map((s,i)=>{const h=mx===mn?60:18+(s-mn)/(mx-mn)*46;const last=i===scores.length-1;
     return '<div class="at-hb'+(last?' cur':'')+'" style="height:'+h+'%" title="'+s+'"></div>';}).join('');
-  let delta='';if(prevRun!=null){const d=G.score-prevRun;delta='<span class="at-delta '+(d>=0?'up':'down')+'">'+(d>=0?'▲ +':'▼ ')+d+' vs last</span>';}
+  let delta='';if(prevRun!=null){const d=(curScore!=null?curScore:0)-prevRun;delta='<span class="at-delta '+(d>=0?'up':'down')+'">'+(d>=0?'▲ +':'▼ ')+d+' vs last</span>';}
   el.innerHTML='<div class="at-hist-head"><span>RECENT RUNS · '+mode.toUpperCase()+'</span>'+delta+'</div><div class="at-hbars">'+bars+'</div>';
 }
 
@@ -3858,7 +3904,7 @@ function showScreen(id){document.querySelectorAll('#aimTrainer .at-screen').forE
 /* ════ PNG EXPORT (html2canvas, same as FragLy share) ════ */
 function buildShareCard(s){
   const cells=[['ACCURACY',s.acc+'%'],['HITS',s.hits],['MISSES',s.miss],['HEADSHOT %',s.hsp+'%'],['KILLS',s.kills],['BEST STREAK',(s.bestStreak||0)+'x']];
-  if(s.mode==='reflex')cells.push(['AVG REACT',s.avgR?s.avgR+'ms':'—'],['BEST REACT',s.bestReact?Math.round(s.bestReact)+'ms':'—']);
+  if(s.mode==='reflex'||s.mode==='warmup')cells.push(['AVG REACT',s.avgR?s.avgR+'ms':'—'],['BEST REACT',s.bestReact?Math.round(s.bestReact)+'ms':'—']);
   else if(s.mode==='recoil')cells.push(['RECOIL CTRL',s.recPct+'%'],['DURATION',s.dur+'s']);
   else cells.push(['AVG KPS',s.kps],['DURATION',s.dur+'s']);
   return '<div class="atx-card">'+
@@ -3866,6 +3912,7 @@ function buildShareCard(s){
     (s.isBest?'<div class="atx-best">★ NEW PERSONAL BEST ★</div>':'')+
     '<div class="atx-mode">'+s.modeName+' · '+s.summary+'</div>'+
     '<div class="atx-score">'+s.score+'<span>PTS</span></div>'+
+    (s.rank?'<div style="text-align:center"><span class="atx-rank" style="color:'+s.rankColor+';border-color:'+s.rankColor+'">'+s.rank+'</span></div>':'')+
     '<div class="atx-grid">'+cells.map(c=>'<div class="atx-cell"><div class="k">'+c[0]+'</div><div class="v">'+c[1]+'</div></div>').join('')+'</div>'+
     '<div class="atx-foot">frag-ly.vercel.app · valorant aim range</div>'+
   '</div>';
@@ -3899,7 +3946,7 @@ function buildMenu(){
     return '<button class="at-mode'+(cfg.mode===m?' sel':'')+'" data-m="'+m+'"><span class="glow"></span><span class="ic">'+M.ic+'</span><h3>'+M.name+'</h3><p>'+M.desc+'</p><div class="best">'+bt+'</div></button>';}).join('');
   $('atModes').querySelectorAll('.at-mode').forEach(el=>el.onclick=()=>{cfg.mode=el.dataset.m;save();buildMenu();});
   buildDrill();
-  updateSelInfo();drawXhPrev();buildXhPresets();
+  updateSelInfo();drawXhPrev();buildXhPresets();updateWarmupNote();
 }
 /* segmented control row */
 function segRow(key,label,opts){
@@ -3928,6 +3975,8 @@ function buildDrill(){
   });
 }
 function updateSelInfo(){$('atSelInfo').textContent=MODES[cfg.mode].name+' · '+drillSummary(cfg.mode);}
+function updateWarmupNote(){const el=$('atWarmupNote');if(!el)return;const done=cfg.warmupLast===todayStr(),st=cfg.warmupStreak||0;
+  el.innerHTML=(done?'<span style="color:var(--green)">✓ done today</span> · ':'')+(st?('🔥 '+st+'-day streak'):'4 drills · ~100s');}
 function buildGun(){/* gun viewmodel removed — crosshair-only HUD */}
 
 /* ════ SETTINGS UI ════ */
@@ -4043,14 +4092,18 @@ function init(){
   document.addEventListener('pointerlockchange',onLockChange);
   window.addEventListener('resize',()=>{if(root.classList.contains('open'))resize();});
 
-  $('atStartBtn').onclick=()=>{ if(!canPointerLock())$('atFallback').style.display='block'; startGame(cfg.mode);};
+  $('atStartBtn').onclick=()=>{ warmup=null; if(!canPointerLock())$('atFallback').style.display='block'; startGame(cfg.mode);};
+  $('atWarmupBtn').onclick=()=>{ if(!canPointerLock())$('atFallback').style.display='block'; startWarmup();};
   $('atCloseBtn').onclick=close;
   $('atResume').onclick=resumeGame;
-  $('atRestart2').onclick=()=>{$('atPause').classList.remove('show');startGame(G.mode);};
-  $('atQuit').onclick=()=>{$('atPause').classList.remove('show');G=null;showScreen('atMenu');buildMenu();};
-  $('atTryAgain').onclick=()=>startGame(G?G.mode:cfg.mode);
-  $('atChangeMode').onclick=()=>{showScreen('atMenu');buildMenu();};
+  $('atRestart2').onclick=()=>{$('atPause').classList.remove('show');warmup=null;startGame(G.mode);};
+  $('atQuit').onclick=()=>{$('atPause').classList.remove('show');warmup=null;G=null;showScreen('atMenu');buildMenu();};
+  $('atTryAgain').onclick=()=>{ if(G&&G._summary&&G._summary.mode==='warmup')startWarmup(); else {warmup=null;startGame(G?G.mode:cfg.mode);} };
+  $('atChangeMode').onclick=()=>{warmup=null;showScreen('atMenu');buildMenu();};
   $('atSavePng').onclick=saveAimPng;
+  $('atResetBtn').onclick=()=>{ if(window.confirm('Reset all aim-trainer bests, history and warmup streak?')){cfg.best={};cfg.history={};cfg.warmupStreak=0;cfg.warmupLast='';save();buildMenu();} };
+  // auto-pause when the window loses focus mid-drill (alt-tab safety)
+  window.addEventListener('blur',()=>{ if(root.classList.contains('open')&&G&&G.running&&!G.paused&&!G.over&&$('atGame').classList.contains('active'))pauseGame(); });
 
   // keyboard
   document.addEventListener('keydown',e=>{
