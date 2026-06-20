@@ -722,6 +722,25 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 /* FOOTER */
 footer{text-align:center;padding:32px;border-top:1px solid var(--bdr);font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:3px;margin-top:20px;}
 footer span{color:var(--red);}
+.foot-links{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-bottom:14px;letter-spacing:1px;}
+.foot-links a{color:var(--muted2);text-decoration:none;transition:.2s;font-size:.62rem;}
+.foot-links a:hover{color:var(--red);}
+.foot-sep{color:var(--muted);}
+.foot-meta{opacity:.85;}
+
+/* LEGAL MODAL */
+.legal-overlay{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(2,2,8,.78);backdrop-filter:blur(6px);}
+.legal-overlay.show{display:flex;}
+.legal-box{position:relative;width:min(680px,100%);max-height:86vh;overflow-y:auto;background:var(--surf);border:1px solid var(--bdr-hi);border-radius:var(--r);padding:34px 30px 30px;box-shadow:0 30px 80px rgba(0,0,0,.6);}
+.legal-x{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;border:1px solid var(--bdr);background:var(--surf2);color:var(--muted2);cursor:pointer;font-size:.85rem;transition:.2s;}
+.legal-x:hover{color:var(--red);border-color:var(--bdr-hi);}
+.legal-doc h2{font-family:var(--dp);font-size:1.5rem;font-weight:700;color:var(--txt);margin-bottom:6px;letter-spacing:.5px;}
+.legal-doc h3{font-family:var(--dp);font-size:1rem;font-weight:700;color:var(--txt);margin:20px 0 7px;letter-spacing:.4px;}
+.legal-doc p{font-size:.84rem;line-height:1.7;color:var(--muted2);margin-bottom:8px;}
+.legal-doc a{color:var(--gold);text-decoration:none;}
+.legal-doc a:hover{text-decoration:underline;}
+.legal-upd{font-family:var(--mono);font-size:.66rem;color:var(--muted);letter-spacing:1px;margin-bottom:14px;}
+@media(max-width:520px){.legal-box{padding:28px 18px 22px;}.legal-doc h2{font-size:1.3rem;}}
 
 @media(max-width:860px){
   .ai-panel{width:100%;top:0;}
@@ -922,103 +941,6 @@ footer span{color:var(--red);}
   </div>
 </section>
 
-<!-- STATIC FEATURES — visible to crawlers before any search -->
-<section class="features-static">
-  <div class="W">
-    <p class="fs-title">FRAGLY VALORANT TRACKER</p>
-    <h2 class="fs-headline">Everything You Need to Rank Up</h2>
-    <div class="fs-grid">
-      <div class="fs-card">
-        <div class="fs-card-icon">⚡</div>
-        <h3>Real-Time Stats</h3>
-        <p>Live K/D, ACS, HS%, win rates, and full match history pulled directly from the official Valorant API.</p>
-      </div>
-      <div class="fs-card">
-        <div class="fs-card-icon">🎯</div>
-        <h3>Built-in Aim Trainer</h3>
-        <p>Five FPS drill modes — Flick Shot, Grid Shot, Tracking, Reflex, and Recoil Control — with performance ranks.</p>
-      </div>
-      <div class="fs-card">
-        <div class="fs-card-icon">🤖</div>
-        <h3>AI Coach</h3>
-        <p>Personalized performance insights and coaching tips powered by AI analysis of your real match data.</p>
-      </div>
-      <div class="fs-card">
-        <div class="fs-card-icon">📊</div>
-        <h3>Deep Analytics</h3>
-        <p>Performance radar, agent pool breakdown, map win rates, recent form charts, and PNG share cards.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ABOUT + HOW IT WORKS — crawlable content -->
-<section class="content-static">
-  <div class="W">
-    <div class="cs-block">
-      <h2 class="cs-h2">What is FragLy?</h2>
-      <p class="cs-p">FragLy is a free Valorant stats tracker and performance coach built for competitive players. Enter any Riot ID and instantly pull real match data straight from the official Valorant API — no login, no setup, no cost. FragLy turns raw match history into clear, actionable insight: your true combat score, headshot percentage, win rates by agent and map, recent form trends, and a personalized AI breakdown of what's holding your rank back. Whether you're grinding from Iron to Radiant or just want to understand why you lost that last close game, FragLy gives you the numbers and the plan to improve.</p>
-    </div>
-
-    <div class="cs-block">
-      <h2 class="cs-h2">How FragLy Works</h2>
-      <div class="cs-steps">
-        <div class="cs-step">
-          <div class="cs-step-n">1</div>
-          <div>
-            <h3>Enter your Riot ID</h3>
-            <p>Type your name and tag (for example <em>PlayerName#TAG</em>) and pick your region. That's the only thing FragLy ever asks for.</p>
-          </div>
-        </div>
-        <div class="cs-step">
-          <div class="cs-step-n">2</div>
-          <div>
-            <h3>We pull your real matches</h3>
-            <p>FragLy fetches your recent competitive games from the official Valorant data API and calculates every stat from the actual rounds you played — never estimated or faked.</p>
-          </div>
-        </div>
-        <div class="cs-step">
-          <div class="cs-step-n">3</div>
-          <div>
-            <h3>Read your report & train</h3>
-            <p>Study your performance radar, map and agent breakdowns, and AI coaching notes — then jump into the built-in Aim Trainer to sharpen the exact skills your stats say you're missing.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="cs-block">
-      <h2 class="cs-h2">Frequently Asked Questions</h2>
-      <div class="cs-faq">
-        <div class="cs-faq-item">
-          <h3>Is FragLy free to use?</h3>
-          <p>Yes. FragLy is completely free. There's no account to create and no premium paywall — just enter a Riot ID and get your stats.</p>
-        </div>
-        <div class="cs-faq-item">
-          <h3>Where does the data come from?</h3>
-          <p>All stats are pulled live from the official Valorant match API. Every number you see — K/D, ACS, headshot %, win rate — is calculated from your real, completed matches.</p>
-        </div>
-        <div class="cs-faq-item">
-          <h3>Do I need to log in or share my password?</h3>
-          <p>Never. FragLy only needs your public Riot ID (name + tag). It does not ask for your password, account access, or any private credentials.</p>
-        </div>
-        <div class="cs-faq-item">
-          <h3>What is the Aim Trainer?</h3>
-          <p>It's a built-in browser FPS training range with five drill modes — flick, grid, tracking, reflex, and recoil control — plus performance ranks and custom crosshairs, so you can warm up and improve aim without leaving the site.</p>
-        </div>
-        <div class="cs-faq-item">
-          <h3>How does the AI Coach work?</h3>
-          <p>The AI Coach reads your real match stats and writes personalized feedback — your strengths, your weaknesses, and specific things to focus on to climb the ranked ladder.</p>
-        </div>
-        <div class="cs-faq-item">
-          <h3>Is FragLy affiliated with Riot Games?</h3>
-          <p>No. FragLy is an independent, fan-made tool and is not endorsed by or affiliated with Riot Games. Valorant is a trademark of Riot Games, Inc.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- DASHBOARD -->
 <section class="dash" id="dash">
 
@@ -1168,6 +1090,106 @@ footer span{color:var(--red);}
 
 </section>
 
+<!-- STATIC CONTENT — rendered BELOW the dashboard so a searched profile shows
+     right under the hero. On first load #dash is hidden, so this appears at top. -->
+
+<!-- FEATURES -->
+<section class="features-static">
+  <div class="W">
+    <p class="fs-title">FRAGLY VALORANT TRACKER</p>
+    <h2 class="fs-headline">Everything You Need to Rank Up</h2>
+    <div class="fs-grid">
+      <div class="fs-card">
+        <div class="fs-card-icon">⚡</div>
+        <h3>Real-Time Stats</h3>
+        <p>Live K/D, ACS, HS%, win rates, and full match history pulled directly from the official Valorant API.</p>
+      </div>
+      <div class="fs-card">
+        <div class="fs-card-icon">🎯</div>
+        <h3>Built-in Aim Trainer</h3>
+        <p>Five FPS drill modes — Flick Shot, Grid Shot, Tracking, Reflex, and Recoil Control — with performance ranks.</p>
+      </div>
+      <div class="fs-card">
+        <div class="fs-card-icon">🤖</div>
+        <h3>AI Coach</h3>
+        <p>Personalized performance insights and coaching tips powered by AI analysis of your real match data.</p>
+      </div>
+      <div class="fs-card">
+        <div class="fs-card-icon">📊</div>
+        <h3>Deep Analytics</h3>
+        <p>Performance radar, agent pool breakdown, map win rates, recent form charts, and PNG share cards.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT + HOW IT WORKS + FAQ — crawlable content -->
+<section class="content-static">
+  <div class="W">
+    <div class="cs-block">
+      <h2 class="cs-h2">What is FragLy?</h2>
+      <p class="cs-p">FragLy is a free Valorant stats tracker and performance coach built for competitive players. Enter any Riot ID and instantly pull real match data straight from the official Valorant API — no login, no setup, no cost. FragLy turns raw match history into clear, actionable insight: your true combat score, headshot percentage, win rates by agent and map, recent form trends, and a personalized AI breakdown of what's holding your rank back. Whether you're grinding from Iron to Radiant or just want to understand why you lost that last close game, FragLy gives you the numbers and the plan to improve.</p>
+    </div>
+
+    <div class="cs-block">
+      <h2 class="cs-h2">How FragLy Works</h2>
+      <div class="cs-steps">
+        <div class="cs-step">
+          <div class="cs-step-n">1</div>
+          <div>
+            <h3>Enter your Riot ID</h3>
+            <p>Type your name and tag (for example <em>PlayerName#TAG</em>) and pick your region. That's the only thing FragLy ever asks for.</p>
+          </div>
+        </div>
+        <div class="cs-step">
+          <div class="cs-step-n">2</div>
+          <div>
+            <h3>We pull your real matches</h3>
+            <p>FragLy fetches your recent competitive games from the official Valorant data API and calculates every stat from the actual rounds you played — never estimated or faked.</p>
+          </div>
+        </div>
+        <div class="cs-step">
+          <div class="cs-step-n">3</div>
+          <div>
+            <h3>Read your report & train</h3>
+            <p>Study your performance radar, map and agent breakdowns, and AI coaching notes — then jump into the built-in Aim Trainer to sharpen the exact skills your stats say you're missing.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cs-block">
+      <h2 class="cs-h2">Frequently Asked Questions</h2>
+      <div class="cs-faq">
+        <div class="cs-faq-item">
+          <h3>Is FragLy free to use?</h3>
+          <p>Yes. FragLy is completely free. There's no account to create and no premium paywall — just enter a Riot ID and get your stats.</p>
+        </div>
+        <div class="cs-faq-item">
+          <h3>Where does the data come from?</h3>
+          <p>All stats are pulled live from the official Valorant match API. Every number you see — K/D, ACS, headshot %, win rate — is calculated from your real, completed matches.</p>
+        </div>
+        <div class="cs-faq-item">
+          <h3>Do I need to log in or share my password?</h3>
+          <p>Never. FragLy only needs your public Riot ID (name + tag). It does not ask for your password, account access, or any private credentials.</p>
+        </div>
+        <div class="cs-faq-item">
+          <h3>What is the Aim Trainer?</h3>
+          <p>It's a built-in browser FPS training range with five drill modes — flick, grid, tracking, reflex, and recoil control — plus performance ranks and custom crosshairs, so you can warm up and improve aim without leaving the site.</p>
+        </div>
+        <div class="cs-faq-item">
+          <h3>How does the AI Coach work?</h3>
+          <p>The AI Coach reads your real match stats and writes personalized feedback — your strengths, your weaknesses, and specific things to focus on to climb the ranked ladder.</p>
+        </div>
+        <div class="cs-faq-item">
+          <h3>Is FragLy affiliated with Riot Games?</h3>
+          <p>No. FragLy is an independent, fan-made tool and is not endorsed by or affiliated with Riot Games. Valorant is a trademark of Riot Games, Inc.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- AI COACH FAB -->
 <div class="ai-fab">
   <button class="ai-btn" onclick="toggleAI()" title="AI Coach">
@@ -1195,7 +1217,86 @@ footer span{color:var(--red);}
 
 <div id="shareStage" aria-hidden="true"></div>
 
-<footer><span>FragLy</span> &nbsp;v3 &nbsp;·&nbsp; KEYLESS BY DEFAULT &nbsp;·&nbsp; REAL AI COACH &nbsp;·&nbsp; UNOFFICIAL</footer>
+<footer>
+  <div class="foot-links">
+    <a href="#" onclick="openLegal('privacy');return false;">Privacy Policy</a>
+    <span class="foot-sep">·</span>
+    <a href="#" onclick="openLegal('terms');return false;">Terms of Use</a>
+    <span class="foot-sep">·</span>
+    <a href="#" onclick="openLegal('contact');return false;">Contact</a>
+  </div>
+  <div class="foot-meta"><span>FragLy</span> &nbsp;v3 &nbsp;·&nbsp; KEYLESS BY DEFAULT &nbsp;·&nbsp; REAL AI COACH &nbsp;·&nbsp; UNOFFICIAL</div>
+</footer>
+
+<!-- LEGAL MODAL (Privacy / Terms / Contact) — full text in DOM for crawlers -->
+<div class="legal-overlay" id="legalOverlay" onclick="if(event.target===this)closeLegal()">
+  <div class="legal-box" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+    <button class="legal-x" onclick="closeLegal()" aria-label="Close">✕</button>
+
+    <article class="legal-doc" id="legal-privacy">
+      <h2 id="legalTitle-privacy">Privacy Policy</h2>
+      <p class="legal-upd">Last updated: June 2026</p>
+      <p>FragLy ("we", "us") operates the website frag-ly.vercel.app. This page explains what information we handle and how. By using FragLy you agree to this policy.</p>
+      <h3>Information We Use</h3>
+      <p>FragLy does not require an account, login, or password. The only input we process is the public Riot ID (name and tag) you type, which is sent to the official Valorant data API to retrieve publicly available match statistics. We do not collect, store, or sell personal information.</p>
+      <h3>Local Storage</h3>
+      <p>FragLy stores some preferences (such as Aim Trainer settings and your last search) in your browser's local storage. This data never leaves your device and can be cleared at any time from your browser settings.</p>
+      <h3>Cookies & Third-Party Advertising</h3>
+      <p>FragLy uses Google AdSense to display ads. Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this and other websites. Google's use of advertising cookies enables it and its partners to serve ads to you based on your visit to FragLy and/or other sites on the Internet.</p>
+      <p>You may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google Ads Settings</a>. You can also opt out of some third-party vendors' use of cookies for personalized advertising at <a href="https://www.aboutads.info" target="_blank" rel="noopener">aboutads.info</a>. For more information on how Google uses data, see <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google's Privacy & Terms</a>.</p>
+      <h3>Analytics</h3>
+      <p>We use privacy-friendly analytics to understand aggregate, anonymous usage (such as page views). No personally identifying information is collected.</p>
+      <h3>Children's Privacy</h3>
+      <p>FragLy is not directed at children under 13 and we do not knowingly collect data from them.</p>
+      <h3>Changes</h3>
+      <p>We may update this policy from time to time. Continued use of FragLy after changes constitutes acceptance of the revised policy.</p>
+      <h3>Contact</h3>
+      <p>Questions about this policy? Email <a href="mailto:nadelacruz0@gmail.com">nadelacruz0@gmail.com</a>.</p>
+    </article>
+
+    <article class="legal-doc" id="legal-terms" hidden>
+      <h2>Terms of Use</h2>
+      <p class="legal-upd">Last updated: June 2026</p>
+      <p>By accessing FragLy you agree to these terms. If you do not agree, please do not use the site.</p>
+      <h3>Service</h3>
+      <p>FragLy is a free, fan-made tool that displays publicly available Valorant statistics and provides aim-training and coaching features. It is provided "as is" without warranty of any kind. Statistics depend on third-party APIs and may occasionally be unavailable, delayed, or inaccurate.</p>
+      <h3>Acceptable Use</h3>
+      <p>You agree not to abuse, scrape, overload, or attempt to disrupt the service, and not to use it for any unlawful purpose.</p>
+      <h3>Intellectual Property</h3>
+      <p>FragLy is not affiliated with, endorsed by, or sponsored by Riot Games. Valorant and all related marks are trademarks of Riot Games, Inc. All Valorant content belongs to Riot Games.</p>
+      <h3>Limitation of Liability</h3>
+      <p>FragLy and its creators are not liable for any damages arising from the use of, or inability to use, the service.</p>
+      <h3>Contact</h3>
+      <p>For questions, email <a href="mailto:nadelacruz0@gmail.com">nadelacruz0@gmail.com</a>.</p>
+    </article>
+
+    <article class="legal-doc" id="legal-contact" hidden>
+      <h2>Contact</h2>
+      <p>FragLy is built and maintained by an independent developer. We'd love your feedback, bug reports, and feature requests.</p>
+      <h3>Email</h3>
+      <p><a href="mailto:nadelacruz0@gmail.com">nadelacruz0@gmail.com</a></p>
+      <h3>About</h3>
+      <p>FragLy is a free, unofficial Valorant stats tracker, AI coach, and aim trainer. It is not affiliated with Riot Games.</p>
+    </article>
+  </div>
+</div>
+
+<script>
+function openLegal(which){
+  var ov=document.getElementById('legalOverlay');
+  ['privacy','terms','contact'].forEach(function(k){
+    document.getElementById('legal-'+k).hidden = (k!==which);
+  });
+  ov.classList.add('show');
+  document.body.style.overflow='hidden';
+  ov.querySelector('.legal-box').scrollTop=0;
+}
+function closeLegal(){
+  document.getElementById('legalOverlay').classList.remove('show');
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLegal();});
+</script>
 </div><!-- /.W -->
 
 <!-- Search suggestions are portaled to <body> so no card/hero overflow:hidden (or
