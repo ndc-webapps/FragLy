@@ -903,6 +903,7 @@ footer span{color:var(--red);}
     <div class="logo-dot"></div>
   </div>
   <div class="nav-r">
+    <button class="nav-pill nav-compare" id="compareNavBtn" onclick="openCompare()">⚔ COMPARE</button>
     <button class="nav-pill nav-lineups" id="lineupsNavBtn" onclick="openLineups()">▶ LINEUPS</button>
     <button class="nav-pill nav-aim" id="aimNavBtn" onclick="openAimTrainer()">◎ AIM TRAINER</button>
     <div class="nav-pill ok" id="apiPill">✓ LIVE</div>
@@ -4764,6 +4765,275 @@ window.openLineups=open;
 window.closeLineups=close;
 if(location.hash==='#lineups')setTimeout(open,80);
 window.addEventListener('hashchange',()=>{if(location.hash==='#lineups'&&!root.classList.contains('open'))open();else if(location.hash!=='#lineups'&&root.classList.contains('open'))close();});
+})();
+</script>
+
+<!-- ════════════════════════════════════════
+     COMPARE PLAYERS  (isolated module, prefix cmp-)
+════════════════════════════════════════ -->
+<style>
+.nav-compare{cursor:pointer;color:#F5D06E!important;border-color:rgba(232,184,75,.45)!important;background:rgba(232,184,75,.08)!important;font-weight:600;}
+.nav-compare:hover{background:rgba(232,184,75,.18)!important;box-shadow:0 0 18px rgba(232,184,75,.3);}
+@media(max-width:560px){.nav-r{flex-wrap:wrap;justify-content:flex-end;gap:6px;}}
+
+#compare{position:fixed;inset:0;z-index:906;display:none;font-family:var(--body);color:var(--txt);
+  background:radial-gradient(120% 90% at 50% -10%,#0e0e1f 0%,#080812 55%,#050509 100%);overflow-y:auto;overflow-x:hidden;}
+#compare.open{display:block;}
+#compare *{box-sizing:border-box;}
+.cmp-wrap{max-width:920px;margin:0 auto;padding:64px 18px 80px;}
+.cmp-x{position:fixed;top:18px;right:20px;z-index:30;width:42px;height:42px;border-radius:10px;border:1px solid rgba(232,184,75,.25);
+  background:rgba(12,12,28,.85);color:#c9c2dc;font-size:1.2rem;cursor:pointer;transition:.18s;}
+.cmp-x:hover{color:#fff;border-color:var(--gold);box-shadow:0 0 16px rgba(232,184,75,.3);}
+.cmp-eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:4px;color:var(--muted2);text-align:center;margin-bottom:12px;text-transform:uppercase;}
+.cmp-title{font-family:var(--dp);font-weight:800;text-align:center;font-size:clamp(2rem,5vw+1rem,3.2rem);line-height:.95;letter-spacing:1px;
+  background:linear-gradient(180deg,#fff 0%,#F5D06E 55%,#E8B84B 100%);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:10px;}
+.cmp-sub{text-align:center;color:var(--muted2);font-size:.9rem;max-width:520px;margin:0 auto 28px;line-height:1.6;}
+
+/* input rows */
+.cmp-inputs{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;max-width:760px;margin:0 auto 16px;}
+.cmp-pcard{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;}
+.cmp-pcard .lbl{font-family:var(--mono);font-size:.6rem;letter-spacing:2px;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;}
+.cmp-pcard.a .lbl{color:#FF6E7A;}
+.cmp-pcard.b .lbl{color:#4BBDFF;}
+.cmp-irow{display:flex;gap:8px;}
+.cmp-irow input{flex:1;min-width:0;padding:11px 12px;border-radius:var(--r3);border:1px solid var(--bdr);background:var(--bg2);color:var(--txt);font-family:var(--body);font-size:.86rem;outline:none;transition:.2s;}
+.cmp-irow input:focus{border-color:var(--bdr-hi);box-shadow:0 0 0 3px var(--red-g);}
+.cmp-irow select{padding:11px 8px;border-radius:var(--r3);border:1px solid var(--bdr);background:var(--bg2);color:var(--muted2);font-family:var(--mono);font-size:.66rem;cursor:pointer;outline:none;}
+.cmp-vs{font-family:var(--dp);font-weight:800;font-size:1.3rem;color:var(--gold);text-align:center;}
+.cmp-go{display:block;margin:0 auto 8px;padding:13px 40px;border:none;border-radius:var(--r2);cursor:pointer;
+  background:linear-gradient(120deg,#E8B84B,#F5D06E);color:#1a1408;font-family:var(--dp);font-weight:700;font-size:1rem;letter-spacing:1px;transition:.2s;text-transform:uppercase;}
+.cmp-go:hover{box-shadow:0 8px 26px rgba(232,184,75,.4);transform:translateY(-1px);}
+.cmp-go:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none;}
+.cmp-err{display:none;max-width:760px;margin:8px auto 0;padding:11px 14px;border-radius:var(--r3);border:1px solid rgba(255,70,85,.4);background:rgba(255,70,85,.08);color:#FF6E7A;font-size:.82rem;text-align:center;}
+.cmp-err.show{display:block;}
+.cmp-load{display:none;text-align:center;color:var(--muted2);font-family:var(--mono);font-size:.74rem;letter-spacing:1px;margin-top:18px;}
+.cmp-load.show{display:block;}
+
+/* results */
+.cmp-results{display:none;margin-top:26px;}
+.cmp-results.show{display:block;}
+.cmp-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;}
+.cmp-heads{display:grid;grid-template-columns:1fr 56px 1fr;}
+.cmp-head{position:relative;padding:20px 16px;background-size:cover;background-position:center;min-height:128px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;}
+.cmp-head::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,8,18,.55),rgba(8,8,18,.9));}
+.cmp-head>*{position:relative;z-index:2;}
+.cmp-rank{width:54px;height:54px;object-fit:contain;}
+.cmp-pname{font-family:var(--dp);font-weight:700;font-size:1.15rem;color:var(--txt);line-height:1.1;}
+.cmp-pname span{color:var(--muted2);font-weight:400;font-size:.8rem;}
+.cmp-ranknm{font-family:var(--mono);font-size:.64rem;letter-spacing:.5px;color:var(--muted2);}
+.cmp-headmeta{font-family:var(--mono);font-size:.58rem;letter-spacing:1px;color:var(--muted);margin-top:2px;}
+.cmp-vsmid{display:flex;align-items:center;justify-content:center;font-family:var(--dp);font-weight:800;font-size:1.1rem;color:var(--gold);background:var(--bg2);border-left:1px solid var(--bdr);border-right:1px solid var(--bdr);}
+.cmp-banner{text-align:center;padding:12px;font-family:var(--dp);font-weight:700;font-size:1.05rem;letter-spacing:.5px;border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);background:var(--surf2);}
+.cmp-banner .a{color:#FF6E7A;}.cmp-banner .b{color:#4BBDFF;}
+.cmp-rows{padding:6px 0;}
+.cmp-row{display:grid;grid-template-columns:1fr 130px 1fr;align-items:center;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.04);}
+.cmp-row:last-child{border-bottom:none;}
+.cmp-v{font-family:var(--dp);font-weight:700;font-size:1.15rem;color:var(--muted2);transition:.2s;}
+.cmp-v.a{text-align:right;}.cmp-v.b{text-align:left;}
+.cmp-v.win{color:var(--txt);}
+.cmp-v.win.a{color:#FF6E7A;}.cmp-v.win.b{color:#4BBDFF;}
+.cmp-lbl{text-align:center;font-family:var(--mono);font-size:.58rem;letter-spacing:1px;color:var(--muted2);text-transform:uppercase;}
+.cmp-foot{text-align:center;padding:12px;font-family:var(--mono);font-size:.58rem;letter-spacing:2px;color:var(--muted);border-top:1px solid var(--bdr);}
+.cmp-foot b{color:var(--red);}
+.cmp-actions{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap;}
+.cmp-btn{padding:11px 22px;border-radius:var(--r2);border:1px solid var(--bdr);background:var(--surf);color:var(--txt);font-family:var(--mono);font-size:.68rem;letter-spacing:1.5px;cursor:pointer;transition:.2s;text-transform:uppercase;}
+.cmp-btn:hover{border-color:var(--bdr-hi);}
+.cmp-btn.gold{background:linear-gradient(120deg,#E8B84B,#F5D06E);color:#1a1408;border:none;font-family:var(--dp);font-weight:700;letter-spacing:1px;}
+
+@media(max-width:560px){
+  .cmp-wrap{padding:58px 12px 60px;}
+  .cmp-inputs{grid-template-columns:1fr;gap:8px;}
+  .cmp-vs{padding:2px 0;}
+  .cmp-row{grid-template-columns:1fr 88px 1fr;padding:8px 8px;}
+  .cmp-v{font-size:.98rem;}
+  .cmp-rank{width:44px;height:44px;}
+  .cmp-pname{font-size:1rem;}
+}
+</style>
+
+<div id="compare" aria-hidden="true">
+  <button class="cmp-x" id="cmpClose" aria-label="Close compare">✕</button>
+  <div class="cmp-wrap">
+    <p class="cmp-eyebrow">FragLy · Head to Head</p>
+    <h1 class="cmp-title">COMPARE PLAYERS</h1>
+    <p class="cmp-sub">Put two Riot IDs side by side. Real stats from the last 10 games — share the result.</p>
+
+    <div class="cmp-inputs">
+      <div class="cmp-pcard a">
+        <div class="lbl">Player A</div>
+        <div class="cmp-irow">
+          <input type="text" id="cmpA" placeholder="PlayerName#TAG" autocomplete="off" spellcheck="false">
+          <select id="cmpAReg"><option value="na">NA</option><option value="eu">EU</option><option value="ap" selected>AP</option><option value="kr">KR</option><option value="latam">LATAM</option><option value="br">BR</option></select>
+        </div>
+      </div>
+      <div class="cmp-vs">VS</div>
+      <div class="cmp-pcard b">
+        <div class="lbl">Player B</div>
+        <div class="cmp-irow">
+          <input type="text" id="cmpB" placeholder="PlayerName#TAG" autocomplete="off" spellcheck="false">
+          <select id="cmpBReg"><option value="na">NA</option><option value="eu">EU</option><option value="ap" selected>AP</option><option value="kr">KR</option><option value="latam">LATAM</option><option value="br">BR</option></select>
+        </div>
+      </div>
+    </div>
+
+    <button class="cmp-go" id="cmpGo">Compare</button>
+    <div class="cmp-err" id="cmpErr"></div>
+    <div class="cmp-load" id="cmpLoad">Pulling real stats…</div>
+
+    <div class="cmp-results" id="cmpResults">
+      <div class="cmp-card" id="cmpCard">
+        <div class="cmp-heads">
+          <div class="cmp-head" id="cmpHeadA"></div>
+          <div class="cmp-vsmid">VS</div>
+          <div class="cmp-head" id="cmpHeadB"></div>
+        </div>
+        <div class="cmp-banner" id="cmpBanner"></div>
+        <div class="cmp-rows" id="cmpRows"></div>
+        <div class="cmp-foot"><b>FragLy</b> · frag-ly.vercel.app</div>
+      </div>
+      <div class="cmp-actions">
+        <button class="cmp-btn gold" id="cmpShare">⬇ Save / Share PNG</button>
+        <button class="cmp-btn" id="cmpReset">New Compare</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════ FRAGLY COMPARE PLAYERS ════════ */
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const root=$('compare');
+
+const METRICS=[
+  {k:'ts',label:'Tracker Score',fmt:v=>Math.round(v)},
+  {k:'winPct',label:'Win %',fmt:v=>v+'%'},
+  {k:'kd',label:'K / D',fmt:v=>(+v).toFixed(2)},
+  {k:'kda',label:'KDA',fmt:v=>(+v).toFixed(2)},
+  {k:'acs',label:'ACS',fmt:v=>Math.round(v)},
+  {k:'adr',label:'ADR',fmt:v=>Math.round(v)},
+  {k:'hsPct',label:'Headshot %',fmt:v=>v+'%'},
+  {k:'kpr',label:'Kills / Round',fmt:v=>(+v).toFixed(2)},
+  {k:'avgKills',label:'Avg Kills',fmt:v=>v},
+];
+
+function parseId(raw){
+  raw=String(raw||'').trim();
+  if(!raw.includes('#'))return null;
+  const s=raw.split('#');const name=s[0].trim(),tag=(s[1]||'').trim();
+  if(!name||!tag)return null;return{name,tag};
+}
+
+async function pull(name,tag,region){
+  // reuse the main app's global api()/computeStats()/enc/BASE
+  const acc=await api(`${BASE}/v1/account/${enc(name)}/${enc(tag)}`);
+  if(!acc?.data)throw new Error('Player not found: '+name+'#'+tag);
+  const mmr=await api(`${BASE}/v2/mmr/${region}/${enc(name)}/${enc(tag)}`).catch(()=>null);
+  const mData=await api(`${BASE}/v3/matches/${region}/${enc(name)}/${enc(tag)}?size=10`);
+  const matches=mData?.data||[];
+  const st=computeStats(matches,acc.data.name||name,acc.data.tag||tag);
+  return{acc:acc.data,mmr:mmr?.data,st,n:matches.length};
+}
+
+function headHTML(p,side){
+  const cur=p.mmr?.current_data;
+  const card=p.acc?.card;
+  const bg=card?.wide||card?.large||'';
+  return `<div class="cmp-head" style="${bg?`background-image:url('${esc(bg)}')`:''}">
+    ${cur?.images?.large||cur?.images?.small?`<img class="cmp-rank" src="${esc(cur.images.large||cur.images.small)}" alt="">`:''}
+    <div class="cmp-pname">${esc(p.acc.name)}<span> #${esc(p.acc.tag)}</span></div>
+    <div class="cmp-ranknm">${esc(cur?.currenttierpatched||'Unranked')}${cur?.ranking_in_tier!=null?' · '+cur.ranking_in_tier+' RR':''}</div>
+    <div class="cmp-headmeta">LVL ${esc(p.acc.account_level||'?')} · ${p.n} GAMES · GRADE ${esc(p.st.grade)}</div>
+  </div>`;
+}
+
+function renderCompare(A,B){
+  $('cmpHeadA').outerHTML=headHTML(A,'a').replace('cmp-head"','cmp-head" id="cmpHeadA"');
+  $('cmpHeadB').outerHTML=headHTML(B,'b').replace('cmp-head"','cmp-head" id="cmpHeadB"');
+  let aWins=0,bWins=0;
+  const rows=METRICS.map(m=>{
+    const av=A.st[m.k]??0, bv=B.st[m.k]??0;
+    const aw=av>bv, bw=bv>av; if(aw)aWins++; if(bw)bWins++;
+    return `<div class="cmp-row">
+      <div class="cmp-v a ${aw?'win':''}">${m.fmt(av)}</div>
+      <div class="cmp-lbl">${m.label}</div>
+      <div class="cmp-v b ${bw?'win':''}">${m.fmt(bv)}</div>
+    </div>`;
+  }).join('');
+  $('cmpRows').innerHTML=rows;
+  let banner;
+  if(aWins>bWins)banner=`<span class="a">${esc(A.acc.name)}</span> leads &nbsp;${aWins} – ${bWins}`;
+  else if(bWins>aWins)banner=`<span class="b">${esc(B.acc.name)}</span> leads &nbsp;${bWins} – ${aWins}`;
+  else banner=`Dead even &nbsp;${aWins} – ${bWins}`;
+  $('cmpBanner').innerHTML=banner;
+  $('cmpResults').classList.add('show');
+}
+
+async function go(){
+  hideErr();
+  const a=parseId($('cmpA').value), b=parseId($('cmpB').value);
+  if(!a||!b){return err('Enter both Riot IDs with tags, e.g. TenZ#NA1');}
+  const btn=$('cmpGo');btn.disabled=true;$('cmpLoad').classList.add('show');$('cmpResults').classList.remove('show');
+  try{
+    const [A,B]=await Promise.all([
+      pull(a.name,a.tag,$('cmpAReg').value),
+      pull(b.name,b.tag,$('cmpBReg').value)
+    ]);
+    if(!A.n||!B.n)throw new Error('No recent matches found for one of the players.');
+    renderCompare(A,B);
+    setTimeout(()=>$('cmpResults').scrollIntoView({behavior:'smooth',block:'start'}),120);
+  }catch(e){err(String(e?.message||e||'Compare failed. Try again.'));}
+  finally{btn.disabled=false;$('cmpLoad').classList.remove('show');}
+}
+function err(m){const e=$('cmpErr');e.textContent='⚠ '+m;e.classList.add('show');}
+function hideErr(){$('cmpErr').classList.remove('show');}
+
+/* share PNG (reuse html2canvas already loaded by FragLy) */
+function sharePng(){
+  const node=$('cmpCard');if(!node||typeof html2canvas!=='function'){err('Image export unavailable.');return;}
+  const btn=$('cmpShare');const old=btn.textContent;btn.textContent='RENDERING…';btn.disabled=true;
+  html2canvas(node,{backgroundColor:'#0C0C1C',scale:2,useCORS:true,logging:false}).then(canvas=>{
+    canvas.toBlob(blob=>{
+      if(!blob){btn.textContent=old;btn.disabled=false;return;}
+      const file=new File([blob],'fragly-compare.png',{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:'FragLy Compare'}).catch(()=>{}).finally(()=>{btn.textContent='✓ PNG SAVED';setTimeout(()=>{btn.textContent=old;btn.disabled=false;},1600);});
+      }else{
+        const url=URL.createObjectURL(blob);const aEl=document.createElement('a');aEl.href=url;aEl.download='fragly-compare.png';aEl.click();
+        setTimeout(()=>URL.revokeObjectURL(url),1500);btn.textContent='✓ PNG SAVED';setTimeout(()=>{btn.textContent=old;btn.disabled=false;},1600);
+      }
+    },'image/png');
+  }).catch(()=>{btn.textContent=old;btn.disabled=false;err('Could not render image.');});
+}
+
+function reset(){$('cmpResults').classList.remove('show');hideErr();$('cmpA').focus();}
+
+/* open / close */
+function open(){
+  // prefill Player A with the currently scanned player, if any
+  try{if(typeof S!=='undefined'&&S.player&&!$('cmpA').value){$('cmpA').value=S.player.name+'#'+S.player.tag;if(S.region)$('cmpAReg').value=S.region;}}catch(e){}
+  root.classList.add('open');root.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';root.scrollTop=0;
+  if(location.hash!=='#compare')history.replaceState(null,'','#compare');
+}
+function close(){
+  root.classList.remove('open');root.setAttribute('aria-hidden','true');document.body.style.overflow='';
+  if(location.hash==='#compare')history.replaceState(null,'',location.pathname+location.search);
+}
+
+/* wire */
+$('cmpGo').addEventListener('click',go);
+$('cmpShare').addEventListener('click',sharePng);
+$('cmpReset').addEventListener('click',reset);
+$('cmpClose').addEventListener('click',close);
+[$('cmpA'),$('cmpB')].forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter')go();}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&root.classList.contains('open'))close();});
+
+window.openCompare=open;
+window.closeCompare=close;
+if(location.hash==='#compare')setTimeout(open,80);
+window.addEventListener('hashchange',()=>{if(location.hash==='#compare'&&!root.classList.contains('open'))open();else if(location.hash!=='#compare'&&root.classList.contains('open'))close();});
 })();
 </script>
 
