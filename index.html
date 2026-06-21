@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FragLy — Valorant Intelligence</title>
+<!-- PWA / installable app -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#FF4655">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FragLy">
+<link rel="apple-touch-icon" href="/logo.png">
+<link rel="icon" href="/logo.png">
 <!-- build: fragly-ai-coach-no-key-hardfix-2026-06-01 -->
 <script defer src="/_vercel/insights/script.js"></script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5999814369683510" crossorigin="anonymous"></script>
@@ -903,9 +912,11 @@ footer span{color:var(--red);}
     <div class="logo-dot"></div>
   </div>
   <div class="nav-r">
+    <button class="nav-pill nav-install" id="installBtn" onclick="fraglyInstall()">⤓ GET APP</button>
     <button class="nav-pill nav-compare" id="compareNavBtn" onclick="openCompare()">⚔ COMPARE</button>
     <button class="nav-pill nav-lineups" id="lineupsNavBtn" onclick="openLineups()">▶ LINEUPS</button>
     <button class="nav-pill nav-aim" id="aimNavBtn" onclick="openAimTrainer()">◎ AIM TRAINER</button>
+    <button class="nav-pill nav-xhair" id="xhairNavBtn" onclick="openCrosshairs()">✛ CROSSHAIRS</button>
     <div class="nav-pill ok" id="apiPill">✓ LIVE</div>
   </div>
 </nav>
@@ -3275,6 +3286,8 @@ window.render=function(acc,mmr,matches,name,tag,region){
 <style>
 .nav-aim{cursor:pointer;color:#FF6E7A!important;border-color:rgba(255,70,85,.4)!important;background:rgba(255,70,85,.07)!important;font-weight:600;}
 .nav-aim:hover{background:rgba(255,70,85,.16)!important;box-shadow:0 0 18px rgba(255,70,85,.3);}
+.nav-install{cursor:pointer;color:#3DFFA0!important;border-color:rgba(61,255,160,.45)!important;background:rgba(61,255,160,.1)!important;font-weight:700;}
+.nav-install:hover{background:rgba(61,255,160,.2)!important;box-shadow:0 0 18px rgba(61,255,160,.35);}
 #aimTrainer{position:fixed;inset:0;z-index:900;display:none;font-family:var(--body);color:#ECE8F5;
   background:radial-gradient(120% 90% at 50% -10%,#0e0e1f 0%,#080812 55%,#050509 100%);overflow:hidden;}
 #aimTrainer.open{display:block;}
@@ -5034,6 +5047,596 @@ window.openCompare=open;
 window.closeCompare=close;
 if(location.hash==='#compare')setTimeout(open,80);
 window.addEventListener('hashchange',()=>{if(location.hash==='#compare'&&!root.classList.contains('open'))open();else if(location.hash!=='#compare'&&root.classList.contains('open'))close();});
+})();
+</script>
+
+<!-- ════════════════════════════════════════
+     CROSSHAIR DATABASE  (isolated module, prefix xh-)
+════════════════════════════════════════ -->
+<style>
+.nav-xhair{cursor:pointer;color:#7CE7E7!important;border-color:rgba(75,189,255,.4)!important;background:rgba(75,189,255,.08)!important;font-weight:600;}
+.nav-xhair:hover{background:rgba(75,189,255,.18)!important;box-shadow:0 0 18px rgba(75,189,255,.3);}
+
+#xhairs{position:fixed;inset:0;z-index:907;display:none;font-family:var(--body);color:var(--txt);
+  background:radial-gradient(120% 90% at 50% -10%,#0e0e1f 0%,#080812 55%,#050509 100%);overflow-y:auto;overflow-x:hidden;}
+#xhairs.open{display:block;}
+#xhairs *{box-sizing:border-box;}
+.xh-wrap{max-width:1100px;margin:0 auto;padding:64px 18px 80px;}
+.xh-x{position:fixed;top:18px;right:20px;z-index:30;width:42px;height:42px;border-radius:10px;border:1px solid rgba(75,189,255,.25);
+  background:rgba(12,12,28,.85);color:#c9c2dc;font-size:1.2rem;cursor:pointer;transition:.18s;}
+.xh-x:hover{color:#fff;border-color:#4BBDFF;box-shadow:0 0 16px rgba(75,189,255,.3);}
+.xh-eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:4px;color:var(--muted2);text-align:center;margin-bottom:12px;text-transform:uppercase;}
+.xh-title{font-family:var(--dp);font-weight:800;text-align:center;font-size:clamp(2rem,5vw+1rem,3.2rem);line-height:.95;letter-spacing:1px;
+  background:linear-gradient(180deg,#fff 0%,#7CE7E7 55%,#4BBDFF 100%);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:10px;}
+.xh-sub{text-align:center;color:var(--muted2);font-size:.9rem;max-width:540px;margin:0 auto 26px;line-height:1.6;}
+.xh-search{position:relative;max-width:560px;margin:0 auto 14px;}
+.xh-search input{width:100%;padding:13px 16px 13px 42px;border-radius:var(--r2);border:1px solid var(--bdr);background:var(--surf);color:var(--txt);font-family:var(--body);font-size:.9rem;outline:none;transition:.2s;}
+.xh-search input:focus{border-color:rgba(75,189,255,.5);box-shadow:0 0 0 3px rgba(75,189,255,.12);}
+.xh-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:17px;height:17px;fill:var(--muted2);}
+.xh-cats{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:18px;}
+.xh-cat{font-family:var(--mono);font-size:.64rem;letter-spacing:1px;padding:8px 14px;border-radius:20px;border:1px solid var(--bdr);background:var(--surf);color:var(--muted2);cursor:pointer;transition:.2s;text-transform:uppercase;}
+.xh-cat:hover{color:var(--txt);border-color:rgba(75,189,255,.4);}
+.xh-cat.on{color:#7CE7E7;border-color:rgba(75,189,255,.5);background:rgba(75,189,255,.1);}
+.xh-count{text-align:center;font-family:var(--mono);font-size:.66rem;letter-spacing:1px;color:var(--muted2);margin-bottom:16px;}
+.xh-count b{color:#7CE7E7;}
+.xh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+.xh-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,box-shadow .2s,transform .2s var(--ease);}
+.xh-card:hover{border-color:rgba(75,189,255,.4);box-shadow:0 14px 36px rgba(0,0,0,.4);transform:translateY(-3px);}
+.xh-prev{position:relative;aspect-ratio:1/1;background:linear-gradient(135deg,#23232f,#15151f 60%,#0d0d15);display:flex;align-items:center;justify-content:center;}
+.xh-prev canvas{width:100%;height:100%;display:block;}
+.xh-body{padding:12px 13px 13px;display:flex;flex-direction:column;gap:8px;flex:1;}
+.xh-name{font-family:var(--dp);font-weight:600;font-size:1rem;color:var(--txt);line-height:1.2;}
+.xh-by{font-family:var(--mono);font-size:.58rem;letter-spacing:.8px;color:var(--muted2);text-transform:uppercase;}
+.xh-code{font-family:var(--mono);font-size:.6rem;color:var(--muted2);background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r3);padding:7px 9px;word-break:break-all;line-height:1.4;max-height:46px;overflow:hidden;}
+.xh-copy{margin-top:auto;width:100%;padding:10px;border-radius:var(--r3);border:1px solid rgba(75,189,255,.35);background:rgba(75,189,255,.1);color:#7CE7E7;font-family:var(--mono);font-size:.66rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:.2s;}
+.xh-copy:hover{background:#4BBDFF;color:#06121c;border-color:#4BBDFF;}
+.xh-copy.done{background:var(--green);color:#04130b;border-color:var(--green);}
+.xh-empty{display:none;text-align:center;padding:60px 20px;}
+.xh-empty.show{display:block;}
+.xh-empty-ic{font-size:2.2rem;margin-bottom:12px;opacity:.6;}
+.xh-empty h3{font-family:var(--dp);font-size:1.3rem;color:var(--txt);margin-bottom:6px;}
+.xh-empty p{color:var(--muted2);font-size:.85rem;}
+.xh-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:20px;}
+.xh-tab{font-family:var(--dp);font-weight:600;font-size:.85rem;letter-spacing:.5px;padding:10px 22px;border-radius:30px;border:1px solid var(--bdr);background:var(--surf);color:var(--muted2);cursor:pointer;transition:.2s;}
+.xh-tab:hover{color:var(--txt);border-color:rgba(75,189,255,.4);}
+.xh-tab.on{color:#7CE7E7;border-color:rgba(75,189,255,.5);background:rgba(75,189,255,.1);}
+/* builder */
+.xb-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start;}
+.xb-stage{position:relative;background:#0a0a14;border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;aspect-ratio:1/1;}
+.xb-stage canvas{position:absolute;inset:0;width:100%;height:100%;}
+.xb-bgbar{position:absolute;top:10px;left:10px;z-index:3;display:flex;gap:6px;}
+.xb-bg{font-family:var(--mono);font-size:.56rem;letter-spacing:1px;padding:5px 10px;border-radius:14px;border:1px solid var(--bdr);background:rgba(12,12,28,.7);color:var(--muted2);cursor:pointer;text-transform:uppercase;}
+.xb-bg.on{color:#7CE7E7;border-color:rgba(75,189,255,.5);background:rgba(75,189,255,.12);}
+.xb-controls{display:flex;flex-direction:column;gap:14px;}
+.xb-row{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:13px 14px;}
+.xb-rh{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+.xb-rh label{font-family:var(--dp);font-weight:600;font-size:.9rem;color:var(--txt);letter-spacing:.3px;}
+.xb-toggle{position:relative;width:38px;height:21px;border-radius:20px;background:var(--bdr);border:none;cursor:pointer;transition:.2s;flex:0 0 auto;}
+.xb-toggle.on{background:#4BBDFF;}
+.xb-toggle::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.2s;}
+.xb-toggle.on::after{transform:translateX(17px);}
+.xb-sliders{display:grid;gap:7px;margin-top:9px;}
+.xb-sliders.off{display:none;}
+.xb-sl{display:grid;grid-template-columns:64px 1fr 30px;align-items:center;gap:8px;}
+.xb-sl span{font-family:var(--mono);font-size:.6rem;letter-spacing:.5px;color:var(--muted2);text-transform:uppercase;}
+.xb-sl input[type=range]{width:100%;accent-color:#4BBDFF;}
+.xb-sl b{font-family:var(--mono);font-size:.64rem;color:#7CE7E7;text-align:right;}
+.xb-color{display:flex;align-items:center;gap:10px;}
+.xb-color input[type=color]{width:42px;height:30px;border:1px solid var(--bdr);border-radius:8px;background:none;cursor:pointer;padding:0;}
+.xb-color code{font-family:var(--mono);font-size:.72rem;color:var(--muted2);}
+.xb-out{margin-top:16px;}
+.xb-code{font-family:var(--mono);font-size:.74rem;color:#7CE7E7;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r2);padding:13px 15px;word-break:break-all;line-height:1.5;}
+.xb-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+.xb-btn{flex:1;min-width:120px;padding:12px;border-radius:var(--r2);border:1px solid var(--bdr);background:var(--surf);color:var(--txt);font-family:var(--mono);font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:.2s;}
+.xb-btn:hover{border-color:rgba(75,189,255,.4);}
+.xb-btn.primary{background:#4BBDFF;color:#06121c;border-color:#4BBDFF;font-weight:700;}
+.xb-btn.done{background:var(--green);color:#04130b;border-color:var(--green);}
+.xh-edit{margin-top:6px;width:100%;padding:7px;border-radius:var(--r3);border:1px solid var(--bdr);background:transparent;color:var(--muted2);font-family:var(--mono);font-size:.6rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:.2s;}
+.xh-edit:hover{color:#7CE7E7;border-color:rgba(75,189,255,.4);}
+@media(max-width:640px){.xb-grid{grid-template-columns:1fr;}.xb-stage{max-width:320px;margin:0 auto;width:100%;}}
+.xh-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--green);color:#04130b;font-family:var(--mono);font-size:.72rem;letter-spacing:1px;padding:11px 20px;border-radius:30px;pointer-events:none;transition:.25s;z-index:40;font-weight:600;}
+.xh-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@media(max-width:560px){.xh-wrap{padding:58px 12px 60px;}.xh-grid{grid-template-columns:1fr 1fr;gap:12px;}.xh-name{font-size:.9rem;}}
+@media(max-width:380px){.xh-grid{grid-template-columns:1fr;}}
+</style>
+
+<div id="xhairs" aria-hidden="true">
+  <button class="xh-x" id="xhClose" aria-label="Close crosshairs">✕</button>
+  <div class="xh-wrap">
+    <p class="xh-eyebrow">FragLy · Crosshair Database</p>
+    <h1 class="xh-title">CROSSHAIRS</h1>
+    <p class="xh-sub">Browse 200+ pro &amp; fun crosshairs, or build your own — then copy the code into Valorant (Settings → Crosshair → Import Profile Code).</p>
+
+    <div class="xh-tabs">
+      <button class="xh-tab on" id="xhTabDb" onclick="xhView('db')">🗂 Database</button>
+      <button class="xh-tab" id="xhTabBuild" onclick="xhView('build')">✎ Builder</button>
+    </div>
+
+    <div id="xhDbView">
+      <div class="xh-search">
+        <svg viewBox="0 0 24 24"><path d="M21 20l-5.6-5.6a7 7 0 1 0-1.4 1.4L20 21zM5 10a5 5 0 1 1 10 0 5 5 0 0 1-10 0z"/></svg>
+        <input type="text" id="xhQ" placeholder="Search — TenZ, aspas, ScreaM, dot, cyan…" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="xh-cats" id="xhCats"></div>
+      <div class="xh-count" id="xhCount"></div>
+      <div class="xh-grid" id="xhGrid"></div>
+      <div class="xh-empty" id="xhEmpty"><div class="xh-empty-ic">🔍</div><h3>No crosshair found.</h3><p>Try a different keyword or category.</p></div>
+    </div>
+
+    <div id="xhBuildView" style="display:none">
+      <div class="xb-grid">
+        <div class="xb-stage" id="xbStage">
+          <div class="xb-bgbar">
+            <button class="xb-bg on" data-bg="dark" onclick="xbBg('dark')">Dark</button>
+            <button class="xb-bg" data-bg="grid" onclick="xbBg('grid')">Grid</button>
+            <button class="xb-bg" data-bg="light" onclick="xbBg('light')">Light</button>
+          </div>
+          <canvas id="xbCanvas"></canvas>
+        </div>
+        <div class="xb-controls" id="xbControls"></div>
+      </div>
+      <div class="xb-out">
+        <div class="xb-code" id="xbCode"></div>
+        <div class="xb-actions">
+          <button class="xb-btn primary" id="xbCopy">⧉ Copy Code</button>
+          <button class="xb-btn" id="xbRandom">🎲 Random</button>
+          <button class="xb-btn" id="xbReset">↺ Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="xh-toast" id="xhToast">✓ Code copied — import in Valorant</div>
+</div>
+
+<script>
+/* ════════ FRAGLY CROSSHAIR DATABASE ════════ */
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const root=$('xhairs');
+const DPR=Math.min(window.devicePixelRatio||1,2);
+
+/* ---- real, verbatim pro/streamer crosshair codes (copy imports as-is in Valorant) ----
+   Add more: just append {n:'Name',c:'CODE'} — preview is parsed from the code. */
+const CATS=['All','Dot','Cross','Outer','Custom Color'];
+const PRESET={'0':'#FFFFFF','1':'#22FF22','2':'#BFFF00','3':'#33FF99','4':'#00FFC8','5':'#00FFFF','6':'#FFFF00','7':'#FF2DA0'};
+const D=[
+  {n:'AAAAY',c:'0;P;h;0;0t;1;0l;4;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Afajer',c:'0;s;1;P;c;5;o;1;d;1;z;3;0b;0;1b;0;S;s;0.628;o;1'},
+  {n:'ANGE1',c:'0;P;h;0;d;1;f;0;0l;3;0o;1;0a;1;0f;0;1b;0'},
+  {n:'ardiis',c:'0;s;1;P;h;0;s;0;0l;3;0o;0;0a;1;0f;0;1b;0'},
+  {n:'aspas',c:'0;P;c;5;o;1;d;1;z;3;f;0;0b;0;1b;0'},
+  {n:'aspas (2)',c:'0;s;1;P;c;7;h;0;0l;4;0o;0;0a;1;0f;0;1b;0;S;c;1;o;1'},
+  {n:'Asuna',c:'0;P;o;1;0t;1;0l;2;0a;1;0f;0;1b;0'},
+  {n:'AvovA',c:'0;P;c;5;h;0;f;0;s;0;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'AYRIN',c:'0;P;c;1;h;0;f;0;s;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0'},
+  {n:'bang',c:'0;P;h;0;0l;4;0o;0;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0'},
+  {n:'Boaster',c:'0;p;0;s;1;P;c;1;t;2;o;1;f;0;0o;2;0a;1;0f;0;1b;0;A;d;1;0b;0;1b;0;S;o;0.502'},
+  {n:'BONECOLD',c:'0;P;c;1;h;0;f;0;s;0;0l;2;0o;1;0a;1;0f;0;1b;0'},
+  {n:'Boostio',c:'0;P;h;0;0t;1;0l;2;0a;1;0f;0;1l;5;1o;2;1a;1;1m;0;1f;0'},
+  {n:'C0M',c:'0;P;o;1;f;0;s;0;0t;1;0l;3;0o;2;0a;1;0f;0;1b;0'},
+  {n:'CHICHOO',c:'0;s;1;P;c;5;u;1B29C1FF;h;0;f;0;s;0;0l;4;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Chronicle',c:'0;P;c;7;o;1;f;0;0t;1;0l;2;0v;2;0g;1;0o;2;0a;1;0f;0;1b;0'},
+  {n:'cNed',c:'0;P;c;1;u;7FFFD4FF;o;1;d;1;0b;0;1b;0'},
+  {n:'cNed (2)',c:'0;P;h;0;f;0;0l;5;0o;0;0a;1;0f;0;1b;0'},
+  {n:'crashies',c:'0;s;1;P;c;1;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'crow',c:'0;s;1;P;o;1;f;0;0t;1;0l;1;0o;1;0a;1;0f;0;1b;0;S;c;0;s;0.5;o;1'},
+  {n:'Cryocells',c:'0;s;1;P;h;0;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'d4v41',c:'0;s;1;P;c;1;h;0;0l;3;0o;2;0a;1;0f;0;1b;0;S;d;0'},
+  {n:'Demon1',c:'0;P;o;1;0t;1;0l;3;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Demon1 (2)',c:'0;s;1;P;o;1;d;1;m;1;0b;0;1b;0'},
+  {n:'Dep',c:'0;s;1;P;o;0.1;f;0;s;0;0t;1;0l;2;0o;1;0a;1;0f;0;1b;0'},
+  {n:'Derke',c:'0;s;1;P;u;FFA500FF;o;1;d;1;f;0;s;0;0b;0;1t;0;1l;1;1o;0;1a;1;1m;0;1f;0;S;o;1'},
+  {n:'Derrek',c:'0;s;1;P;c;1;o;1;0t;1;0l;3;0a;1;0f;0;1b;0;S;s;0.652'},
+  {n:'dimasick',c:'0;P;c;5;o;1;d;1;z;3;0t;1;0l;1;0o;1;0a;1;0f;0;1b;0'},
+  {n:'Ethan',c:'0;P;h;0;0l;4;0o;0;0a;1;0f;0;1b;0'},
+  {n:'FiNESSE',c:'0;P;c;1;o;1;0l;3;0o;5;0a;1;0f;0;1b;0'},
+  {n:'foxz',c:'0;c;1;s;1;P;c;5;h;0;0l;3;0o;0;0a;1;0f;0;1b;0;S;c;5;s;0.812;o;1'},
+  {n:'foxz (2)',c:'0;s;1;P;c;5;u;FFFF00FF;o;1;d;1;z;3;0b;0;1b;0'},
+  {n:'garnetS',c:'0;s;1;P;h;0;d;1;z;1;f;0;m;1;0t;1;0l;3;0o;1;0a;1;0f;0;1b;0;S;c;4;o;1'},
+  {n:'Grimm',c:'0;s;1;P;c;7;u;C900FFFF;f;0;0l;3;0o;0;0a;1;0f;0;1t;6;1l;1;1o;0;1a;1;1m;0;1f;0;S;s;0.9;o;1'},
+  {n:'Haodong',c:'0;s;1;P;c;5;o;1;f;0;0t;1;0l;2;0a;1;0f;0;1b;0;S;s;0.64;o;1'},
+  {n:'Hiko',c:'0;P;c;1;h;0;d;1;z;1;0t;1;0l;2;0a;1;0f;0;1l;5;1o;4;1a;1;1m;0;1f;0'},
+  {n:'hoody',c:'0;P;o;1;d;1;f;0;s;0;0b;0;1b;0'},
+  {n:'iiTzTimmy',c:'0;P;h;0;0l;3;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Jamppi',c:'0;s;1;P;o;1;d;1;f;0;0b;0;1b;0'},
+  {n:'jawgemo',c:'0;c;1;s;1;P;c;7;h;0;f;0;0t;3;0l;9;0o;2;0a;1;0f;0;1b;0;S;c;1;o;1'},
+  {n:'Jinggg',c:'0;s;1;P;c;1;o;1;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0;S;c;5'},  {n:'Klaus',c:'0;P;c;1;o;1;0t;1;0l;3;0o;1;0a;1;0f;0;1t;0;1l;0;1a;0'},
+  {n:'Kyedae',c:'0;P;c;8;u;FFFFCCFF;h;0;b;1;f;0;0l;4;0v;4;0o;0;0a;1;0f;0;1b;0'},
+  {n:'leaf',c:'0;P;c;8;u;FF99FFFF;h;0;b;1;0l;4;0o;1;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;1m;0;1f;0'},
+  {n:'Leo',c:'0;s;1;P;h;0;0l;3;0v;4;0o;0;0a;1;0f;0;1b;0;S;c;0;s;0.64'},
+  {n:'Less',c:'0;P;o;0;0t;1;0l;2;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Marved',c:'0;P;c;1;h;0;f;0;0l;3;0o;2;0a;1;0f;0;1b;0'},
+  {n:'mazin',c:'0;P;h;0;f;0;0l;4;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Mazino',c:'0;P;c;1;h;0;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Melser',c:'0;P;c;1;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'mindfreak',c:'0;P;c;1;h;0;d;1;0l;5;0o;0;0a;1;1b;0'},
+  {n:'Mixwell',c:'0;P;c;1;o;1;d;1;0b;0;1b;0'},
+  {n:'mwzera',c:'0;P;c;4;h;0;f;0;0l;2;0o;2;0a;1;0f;0;1b;0'},
+  {n:'NagZ',c:'0;s;1;P;c;1;o;1;d;1;0l;0;0o;2;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;S;c;1;o;1'},
+  {n:'nAts',c:'0;P;c;1;o;1;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Ninja',c:'0;P;c;5;u;FFFFCCFF;h;0;f;0;0l;7;0v;7;0a;1;0f;0;1b;0'},
+  {n:'Nivera',c:'0;s;1;P;c;1;o;1;f;0;0t;1;0l;2;0o;2;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;1m;0;1f;0;S;c;5;o;0.5'},
+  {n:'nobody',c:'0;s;1;P;c;8;u;000000FF;h;0;b;1;f;0;0b;0;1t;3;1l;4;1o;2;1a;1;1m;0;1f;0;S;d;0'},
+  {n:'nukkye',c:'0;P;o;1;f;0;s;0;0l;3;0o;2;0a;1;0f;0;1b;0'},
+  {n:'nzr',c:'0;s;1;P;c;5;h;0;f;0;0l;3;0o;1;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;1m;0;1f;0'},  {n:'Patiphan',c:'0;P;c;1;h;0;d;1;z;1;f;0;s;0;0t;6;0l;1;0a;1;0f;0;1t;0;1l;0;1o;0;1a;0;1m;0;1f;0'},
+  {n:'QuarterJade',c:'0;P;c;8;u;00FF00FF;h;0;b;1;0t;3;0l;1;0v;1;0o;1;0a;1;0f;0;1b;0'},
+  {n:'Rb',c:'0;s;1;P;c;5;h;0;f;0;0l;4;0o;2;0a;1;0f;0;1b;0;S;o;1'},
+  {n:'Redgar',c:'0;P;c;1;h;0;0t;1;0l;4;0o;0;0a;1;0f;0;1b;0'},
+  {n:'rhyme',c:'0;P;c;4;h;0;d;1;z;1;f;0;s;0;0l;5;0o;2;0a;1;0f;0;1t;3;1o;3;1a;1;1m;0;1f;0'},
+  {n:'runi',c:'0;s;1;P;h;0;f;0;0t;1;0l;4;0v;4;0o;0;0a;1;0f;0;1b;0;S;d;0'},
+  {n:'s0m',c:'0;P;h;0;0l;4;0v;5;0o;0;0a;1;0f;0;1b;0'},
+  {n:'S1mple',c:'0;P;c;1;o;1;f;0;0l;5;0v;5;0o;2;0a;1;1b;0'},
+  {n:'Saadhak',c:'0;P;c;1;o;1;f;0;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Sacy',c:'0;s;1;P;h;0;f;0;0t;1;0l;4;0o;1;0a;1;0f;0;1t;3;1o;2;1a;1;1m;0;1f;0'},
+  {n:'Sayaplayer',c:'0;s;1;P;c;1;0t;1;0l;3;0o;1;0a;1;0f;0;1b;0;S;c;1;s;0.75;o;1'},
+  {n:'Sayf',c:'0;P;c;7;h;0;d;1;z;3;0b;0;1b;0'},
+  {n:'ScreaM',c:'0;s;1;P;c;5;o;1;d;1;z;3;f;0;0t;6;0l;0;0a;1;0f;0;1b;0;S;c;6;s;0.949;o;1'},
+  {n:'ShahZam',c:'0;P;c;1;o;1;f;0;0l;5;0a;0.5;0f;0;1b;0'},
+  {n:'Shao',c:'0;P;c;7;h;0;f;0;m;1;0l;4;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Shroud',c:'0;P;u;FFFFCCFF;h;0;f;0;0l;5;0v;5;0o;0;0a;1;0f;0;1m;0;1f;0'},
+  {n:'Sinatraa',c:'0;s;1;P;c;5;o;1;0t;1;0l;3;0a;1;0f;0;1b;0;S;c;5;s;1.178'},
+  {n:'SkRossi',c:'0;s;1;P;c;8;u;C0C0C0FF;o;1;d;1;b;1;0b;0;1l;0;1a;0;S;c;0;o;1'},
+  {n:'Smoggy',c:'0;s;1;P;c;2;o;1;d;1;f;0;0b;0;1b;0;S;c;0;o;1'},
+  {n:'Soulcas',c:'0;s;1;P;c;1;h;0;0l;3;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Stax',c:'0;P;c;4;h;0;f;0;s;0;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'stellar',c:'0;P;c;4;u;001331FF;h;0;0l;3;0v;3;0o;2;0a;1;0f;0;1b;0'},  {n:'Suygetsu',c:'0;P;c;5;h;0;d;1;f;0;s;0;0l;1;0o;1;0a;1;0f;0;1b;0'},
+  {n:'Tacolilla',c:'0;s;1;P;h;0;0l;4;0o;0;0a;1;0f;0;1b;0;S;c;5;s;0.75'},
+  {n:'Tarik',c:'0;P;u;FFFFCCFF;o;1;d;1;f;0;0b;0;1b;0'},  {n:'TenZ',c:'0;s;1;P;c;5;h;0;m;1;0l;4;0o;2;0a;1;0f;0;1b;0;S;c;4;o;1'},
+  {n:'TenZ (2)',c:'0;s;1;P;c;5;h;0;0l;5;0v;0;0g;1;0a;1;0f;0;1l;0;1v;4;1g;1;1o;2;1a;1;1m;0;1f;0;S;c;5;o;1'},  {n:'TZH',c:'0;P;h;0;0l;5;0o;0;0f;0;1b;0'},
+  {n:'Valkyrae',c:'0;P;c;7;h;0;d;1;z;4;f;0;0b;0;1b;0'},
+  {n:'Victor',c:'0;P;h;0;f;0;0l;4;0a;1;0f;0;1b;0'},
+  {n:'Wardell',c:'0;s;1;P;h;0;0t;1;0l;4;0o;1;0a;1;0f;0;1b;0;S;o;1'},
+  {n:'xeta',c:'0;P;c;1;o;1;f;0;s;0;0l;3;0o;6;0a;1;0f;0;1b;0'},  {n:'yay',c:'0;s;1;P;c;7;u;FF0000FF;h;0;0l;20;0o;0;0a;1;0f;0;1b;0'},  {n:'Yuicaw',c:'0;P;h;0;0l;3;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Zeek',c:'0;P;o;1;f;0;s;0;0l;3;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Zekken',c:'0;s;1;P;c;8;u;D099E2FF;o;1;d;1;b;1;0l;0;0o;0;0a;0;0f;0;1b;0;S;c;0;s;0.5;o;1'},
+  {n:'Zellsis',c:'0;P;c;4;h;0;m;1;0a;1.000;0l;4;0o;2;0f;0;1b;0;1m;0;1f;0'},
+  {n:'Zeppa',c:'0;P;c;5;o;1;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Zest',c:'0;s;1;P;c;1;o;1;f;0;0l;4;0a;1;0f;0;1b;0;S;c;1;o;1'},
+  {n:'ZmjjKK',c:'0;p;0;P;u;000000FF;o;1;d;1;z;1;f;0;s;0;0t;0;0l;4;0v;2;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Zyppan',c:'0;s;1;P;h;0;0l;4;0o;0;0a;1;0f;0;1t;1;1l;0;1o;0;1m;0;1f;0'},
+  /* ---- FragLy custom & funny crosshairs (valid grammar, import-ready) ---- */
+  {n:'Absolute Unit',c:'0;P;c;0;o;1;0t;6;0l;18;0o;5;0a;1;0f;0;1b;0'},
+  {n:'Thicc Boi',c:'0;P;c;0;o;1;0t;8;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Big Chungus',c:'0;P;c;8;u;FF00FFFF;o;1;0t;7;0l;16;0o;6;0a;1;0f;0;1b;0'},
+  {n:'The Brick',c:'0;P;c;0;o;1;d;1;z;6;a;1;0b;0;1b;0'},
+  {n:"Can't Miss This",c:'0;P;c;8;u;FF0000FF;o;1;d;1;z;5;a;1;0t;5;0l;14;0o;4;0a;1;0f;0;1b;0'},
+  {n:'Where Is It',c:'0;P;c;0;h;0;0t;1;0l;1;0o;0;0a;0.3;0f;0;1b;0'},
+  {n:'Blind Mode',c:'0;P;c;0;h;0;0t;1;0l;1;0o;0;0a;0.12;0f;0;1b;0'},
+  {n:'Speck of Dust',c:'0;P;c;0;o;1;d;1;z;1;a;0.5;0b;0;1b;0'},
+  {n:'Galaxy Brain',c:'0;P;c;8;u;9D00FFFF;o;1;0t;6;0l;17;0o;7;0a;1;0f;0;1b;0'},
+  {n:'404 Not Found',c:'0;P;c;0;o;1;0b;0;1t;2;1l;6;1o;14;1a;1;1m;0;1f;0'},
+  {n:'Stop Sign',c:'0;P;c;8;u;FF1A1AFF;o;1;0t;7;0l;7;0o;3;0a;1;0f;0;1b;0'},
+  {n:'The Wall',c:'0;P;c;0;o;1;0t;10;0l;10;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Eye of Sauron',c:'0;P;c;8;u;FF6F00FF;o;1;d;1;z;4;a;1;0t;2;0l;10;0o;3;0a;1;0f;0;1b;0'},
+  {n:'Pixel Pete',c:'0;P;c;0;h;0;0t;1;0l;1;0o;1;0a;1;0f;0;1b;0'},
+  {n:'Hot Pink Disaster',c:'0;P;c;8;u;FF1493FF;o;1;0t;5;0l;12;0o;5;0a;1;0f;0;1b;0'},
+  {n:'Toxic Waste',c:'0;P;c;8;u;39FF14FF;o;1;0t;4;0l;9;0o;3;0a;1;0f;0;1b;0'},
+  {n:'Baby Shark',c:'0;P;c;8;u;00BFFFFF;o;1;d;1;z;3;a;1;0t;2;0l;5;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Lemon Squeeze',c:'0;P;c;8;u;FFFF00FF;o;1;0t;3;0l;8;0o;4;0a;1;0f;0;1b;0'},
+  {n:'Ghost Protocol',c:'0;P;c;0;h;0;0t;2;0l;6;0o;3;0a;0.25;0f;0;1b;0'},
+  {n:"Sniper's Dream",c:'0;P;c;8;u;00FFFFFF;o;1;d;1;z;1;a;1;0b;0;1b;0'},
+  {n:'Disco Dot',c:'0;P;c;8;u;FF00FFFF;o;1;d;1;z;4;a;1;0b;0;1b;0'},
+  {n:'Mega Mind',c:'0;P;c;8;u;9D00FFFF;o;1;d;1;z;5;a;1;0t;4;0l;12;0o;5;0a;1;0f;0;1b;0'},
+  {n:'Tiny Tim',c:'0;P;c;0;o;1;0t;1;0l;2;0o;1;0a;1;0f;0;1b;0'},
+  {n:'The Plus One',c:'0;P;c;0;o;1;0t;3;0l;6;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Big Red Button',c:'0;P;c;8;u;FF0000FF;o;1;d;1;z;7;a;1;0b;0;1b;0'},
+  {n:'Neon Nightmare',c:'0;P;c;8;u;BFFF00FF;o;1;0t;5;0l;13;0o;6;0a;1;0f;0;1b;0'},
+  {n:'Smol Bean',c:'0;P;c;8;u;98FF98FF;o;1;d;1;z;1;a;1;0t;1;0l;2;0o;1;0a;1;0f;0;1b;0'},
+  {n:'Chonky',c:'0;P;c;0;o;1;0t;9;0l;6;0o;3;0a;1;0f;0;1b;0'},
+  {n:'The Equator',c:'0;P;c;8;u;00FFFFFF;o;1;0t;2;0l;20;0o;8;0a;1;0f;0;1b;0'},
+  {n:'Laser Pointer',c:'0;P;c;8;u;FF0000FF;o;1;d;1;z;2;a;1;0b;0;1b;0'},
+  {n:'Confetti Cannon',c:'0;P;c;8;u;FF69B4FF;o;1;0t;3;0l;3;0o;9;0a;1;0f;0;1b;0'},
+  {n:'Goggles',c:'0;P;c;8;u;00BFFFFF;o;1;0b;0;1t;3;1l;5;1o;10;1a;1;1m;0;1f;0'},
+  {n:'Bubble Tea',c:'0;P;c;8;u;E0B0FFFF;o;1;d;1;z;5;a;1;0b;0;1b;0'},
+  {n:'Hard to See',c:'0;P;c;0;h;0;0t;1;0l;2;0o;0;0a;0.2;0f;0;1b;0'},
+  {n:'Easy Mode',c:'0;P;c;8;u;39FF14FF;o;1;d;1;z;5;a;1;0t;5;0l;16;0o;5;0a;1;0f;0;1b;0'},
+  {n:'Sweaty Tryhard',c:'0;P;c;5;o;1;0t;1;0l;3;0o;1;0a;1;0f;0;1b;0'},
+  {n:"Grandma's Glasses",c:'0;P;c;0;o;1;0t;6;0l;12;0o;8;0a;1;0f;0;1b;0'},
+  {n:'Radioactive',c:'0;P;c;8;u;CCFF00FF;o;1;d;1;z;3;a;1;0t;3;0l;7;0o;3;0a;1;0f;0;1b;0'},
+  {n:'Cotton Candy',c:'0;P;c;8;u;FFB6E6FF;o;1;0t;4;0l;8;0o;4;0a;1;0f;0;1b;0'},
+  {n:'The Dorito',c:'0;P;c;8;u;FF6F00FF;o;1;0t;5;0l;5;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Plus Ultra',c:'0;P;c;8;u;FF2D9BFF;o;1;0t;4;0l;15;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Microscope',c:'0;P;c;0;o;1;d;1;z;1;a;1;0t;1;0l;1;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Telescope',c:'0;P;c;8;u;00FFFFFF;o;1;0b;0;1t;2;1l;8;1o;16;1a;1;1m;0;1f;0'},
+  {n:'Just a Dot',c:'0;P;c;0;o;1;d;1;z;2;a;1;0b;0;1b;0'},
+  {n:"Big Ol' Dot",c:'0;P;c;8;u;FFD700FF;o;1;d;1;z;6;a;1;0b;0;1b;0'},
+  {n:'Boss-hair',c:'0;P;c;8;u;DC143CFF;o;1;0t;6;0l;14;0o;6;0a;1;0f;0;1b;0'},
+  {n:'Wide Load',c:'0;P;c;0;o;1;0t;2;0l;4;0o;12;0a;1;0f;0;1b;0'},
+  {n:'Slim Shady',c:'0;P;c;0;o;1;0t;1;0l;14;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Thin Ice',c:'0;P;c;8;u;ADD8E6FF;h;0;0t;1;0l;6;0o;2;0a;1;0f;0;1b;0'},
+  {n:'The Fat Cross',c:'0;P;c;0;o;1;0t;7;0l;9;0o;4;0a;1;0f;0;1b;0'},
+  {n:'Bubblegum',c:'0;P;c;8;u;FF77FFFF;o;1;d;1;z;3;a;1;0t;2;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Mango Tango',c:'0;P;c;8;u;FFA500FF;o;1;0t;4;0l;7;0o;3;0a;1;0f;0;1b;0'},
+  {n:'Electric Lime',c:'0;P;c;8;u;CCFF00FF;o;1;0t;2;0l;11;0o;5;0a;1;0f;0;1b;0'},
+  {n:'Purple Rain',c:'0;P;c;8;u;8A2BE2FF;o;1;0t;3;0l;10;0o;4;0a;1;0f;0;1b;0'},
+  {n:'Cyber Cyan',c:'0;P;c;8;u;00FFE0FF;o;1;d;1;z;2;a;1;0t;1;0l;3;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Molten Core',c:'0;P;c;8;u;FF4500FF;o;1;0t;5;0l;6;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Frostbite',c:'0;P;c;8;u;BFEFFFFF;o;1;0t;3;0l;9;0o;5;0a;1;0f;0;1b;0'},
+  {n:'Sunset Strip',c:'0;P;c;8;u;FF7F50FF;o;1;0t;4;0l;12;0o;6;0a;1;0f;0;1b;0'},
+  {n:'Midnight Snack',c:'0;P;c;8;u;4B0082FF;o;1;d;1;z;4;a;1;0b;0;1b;0'},
+  {n:'The Avocado',c:'0;P;c;8;u;568203FF;o;1;d;1;z;3;a;1;0t;2;0l;6;0o;3;0a;1;0f;0;1b;0'},
+  {n:'Spicy Salsa',c:'0;P;c;8;u;E32636FF;o;1;0t;5;0l;8;0o;3;0a;1;0f;0;1b;0'},
+  {n:'Lava Lamp',c:'0;P;c;8;u;FF6347FF;o;1;d;1;z;5;a;1;0b;0;1b;0'},
+  {n:'Glow Stick',c:'0;P;c;8;u;39FF14FF;o;1;0t;2;0l;13;0o;1;0a;1;0f;0;1b;0'},
+  {n:'Highlighter',c:'0;P;c;8;u;F0FF00FF;o;1;0t;6;0l;6;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Traffic Cone',c:'0;P;c;8;u;FF7300FF;o;1;d;1;z;4;a;1;0t;3;0l;8;0o;4;0a;1;0f;0;1b;0'},
+  {n:'The Mosquito',c:'0;P;c;0;h;0;0t;1;0l;1;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Sasquatch',c:'0;P;c;0;o;1;0t;9;0l;15;0o;8;0a;1;0f;0;1b;0'},
+  {n:'Itty Bitty',c:'0;P;c;8;u;FFFFFFFF;o;1;d;1;z;1;a;1;0b;0;1b;0'},
+  {n:'The Anchor',c:'0;P;c;8;u;004080FF;o;1;0t;4;0l;10;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Compass Rose',c:'0;P;c;8;u;C0C0C0FF;o;1;0t;2;0l;7;0o;6;0a;1;0f;0;1t;2;1l;3;1o;14;1a;1;1m;0;1f;0'},
+  {n:'Crosshair of Theseus',c:'0;P;c;8;u;7FFFD4FF;o;1;0t;3;0l;9;0o;4;0a;1;0f;0;1b;0'},
+  {n:'Pew Pew',c:'0;P;c;8;u;FF1493FF;o;1;d;1;z;2;a;1;0t;1;0l;4;0o;3;0a;1;0f;0;1b;0'},
+  {n:'No Scope Needed',c:'0;P;c;8;u;00FF7FFF;o;1;d;1;z;1;a;1;0b;0;1b;0'},
+  {n:'Headshot Machine',c:'0;P;c;5;o;1;d;1;z;1;a;1;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Whiff King',c:'0;P;c;8;u;FF00FFFF;o;1;0t;1;0l;3;0o;20;0a;1;0f;0;1b;0'},
+  {n:'One Tap Wonder',c:'0;P;c;8;u;FFD700FF;o;1;d;1;z;1;a;1;0b;0;1b;0'},
+  {n:'Spray n Pray',c:'0;P;c;8;u;FF6F00FF;o;1;0t;5;0l;5;0o;10;0a;1;0f;0;1b;0'},
+  {n:'The Lighthouse',c:'0;P;c;8;u;FFFFE0FF;o;1;d;1;z;5;a;1;0t;2;0l;14;0o;6;0a;1;0f;0;1b;0'},
+  {n:'Bee Sting',c:'0;P;c;8;u;FFC400FF;o;1;0t;3;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Flashbang',c:'0;P;c;0;o;1;0t;8;0l;14;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Glow Up',c:'0;P;c;8;u;DA70D6FF;o;1;0t;4;0l;9;0o;5;0a;1;0f;0;1b;0'},
+  {n:'The Donut Hole',c:'0;P;c;8;u;FFA6C9FF;o;1;0b;0;1t;3;1l;2;1o;8;1a;1;1m;0;1f;0'},
+  {n:'Big Sneeze',c:'0;P;c;0;o;1;0t;6;0l;3;0o;14;0a;1;0f;0;1b;0'},
+  {n:'Caffeine Shakes',c:'0;P;c;8;u;6F4E37FF;o;1;0t;2;0l;5;0o;7;0a;1;0f;0;1b;0'},
+  {n:'Steady Hands',c:'0;P;c;1;o;1;0t;1;0l;4;0o;2;0a;1;0f;0;1b;0'},
+  {n:'The Bonk',c:'0;P;c;8;u;FF0000FF;o;1;d;1;z;8;a;1;0b;0;1b;0'},
+  {n:'Wholesome 100',c:'0;P;c;8;u;FFB6C1FF;o;1;d;1;z;3;a;1;0t;2;0l;5;0o;3;0a;1;0f;0;1b;0'},
+  {n:'Touch Grass',c:'0;P;c;8;u;7CFC00FF;o;1;0t;3;0l;10;0o;3;0a;1;0f;0;1b;0'},
+  {n:'Sussy Dot',c:'0;P;c;8;u;FF3030FF;o;1;d;1;z;4;a;1;0b;0;1b;0'},
+  {n:'Among Us',c:'0;P;c;8;u;C51111FF;o;1;0t;5;0l;7;0o;4;0a;1;0f;0;1b;0'},
+  {n:'Gigachad Cross',c:'0;P;c;0;o;1;0t;5;0l;11;0o;3;0a;1;0f;0;1b;0'},
+  {n:'NPC Vision',c:'0;P;c;0;h;0;0t;2;0l;3;0o;1;0a;0.6;0f;0;1b;0'},
+  {n:'Final Boss',c:'0;P;c;8;u;8B0000FF;o;1;d;1;z;5;a;1;0t;5;0l;13;0o;5;0a;1;0f;0;1b;0'},
+  {n:'Speedrun',c:'0;P;c;8;u;00E5FFFF;o;1;0t;1;0l;5;0o;1;0a;1;0f;0;1b;0'},
+  {n:'Cracked',c:'0;P;c;8;u;39FF14FF;o;1;d;1;z;2;a;1;0t;2;0l;3;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Built Different',c:'0;P;c;8;u;FFD700FF;o;1;0t;4;0l;8;0o;3;0a;1;0f;0;1b;0'},
+  {n:'Diff Andy',c:'0;P;c;8;u;FF4655FF;o;1;0t;3;0l;6;0o;2;0a;1;0f;0;1b;0'},
+  {n:'Aimbot (Legal)',c:'0;P;c;8;u;00FF00FF;o;1;d;1;z;1;a;1;0t;1;0l;1;0o;0;0a;1;0f;0;1b;0'},
+  {n:'Just Vibes',c:'0;P;c;8;u;B57EDCFF;o;1;0t;2;0l;7;0o;4;0a;1;0f;0;1b;0'},
+  {n:'The Closer',c:'0;P;c;8;u;FF1493FF;o;1;d;1;z;3;a;1;0t;3;0l;9;0o;0;0a;1;0f;0;1b;0'},
+];
+
+/* parse a code's PRIMARY profile into render settings (ADS/secondary sections ignored) */
+function parse(code){
+  const t=String(code).split(';');let i=t.indexOf('P');if(i<0)i=1;const kv={};
+  for(let j=i+1;j<t.length;j++){const k=t[j];if(k==='A'||k==='S')break;const v=t[j+1];if(v===undefined)break;kv[k]=v;j++;}
+  return kv;
+}
+function settingsFor(code){
+  const kv=parse(code),num=(k,d)=>(kv[k]!=null&&kv[k]!=='')?parseFloat(kv[k]):d;
+  const iL=num('0l',6),iT=num('0t',2),iO=num('0o',3),oL=num('1l',0),oT=num('1t',2),oO=num('1o',10);
+  return{
+    color: kv.u?('#'+String(kv.u).slice(0,6)):(PRESET[kv.c]||PRESET['0']),
+    outline: kv.h!=='0',
+    dot:{on:kv.d==='1',size:num('z',1)},
+    inner:{on:kv['0b']!=='0'&&iL>0,len:iL,thick:Math.max(iT,1),off:iO},
+    outer:{on:(kv['1b']==='1')||(kv['1b']!=='0'&&oL>0),len:oL,thick:Math.max(oT,1),off:oO},
+    custom:!!kv.u
+  };
+}
+function kindOf(s){const k=[];if(s.dot.on)k.push('Dot');if(s.inner.on)k.push('Cross');if(s.outer.on)k.push('Outer');if(s.custom)k.push('Custom Color');if(!k.length)k.push('Cross');return k;}
+D.forEach(d=>{d._s=settingsFor(d.c);d._k=kindOf(d._s);});
+
+/* ---- preview renderer (parsed from the real code) ---- */
+function draw(cv,s){
+  const W=cv.clientWidth||200,H=cv.clientHeight||200;
+  cv.width=W*DPR;cv.height=H*DPR;
+  const ctx=cv.getContext('2d');ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
+  const cx=W/2,cy=H/2,SC=2.0; // scale valorant units -> px
+  function bar(x,y,w,h){
+    if(s.outline){ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(x-1,y-1,w+2,h+2);}
+    ctx.fillStyle=s.color;ctx.fillRect(x,y,w,h);
+  }
+  function arms(len,thick,off){
+    const L=len*SC,T=Math.max(thick*SC,1.5),O=off*SC;
+    bar(cx+O,cy-T/2,L,T); bar(cx-O-L,cy-T/2,L,T);        // right / left
+    bar(cx-T/2,cy+O,T,L); bar(cx-T/2,cy-O-L,T,L);        // down / up
+  }
+  if(s.inner.on)arms(s.inner.len,s.inner.thick,s.inner.off);
+  if(s.outer.on)arms(s.outer.len,s.outer.thick,s.outer.off);
+  if(s.dot.on){const d=Math.max(s.dot.size*SC,2.5);bar(cx-d/2,cy-d/2,d,d);}
+}
+
+/* ---- render grid ---- */
+let cat='All',q='';
+function render(){
+  const list=[];
+  D.forEach((d,i)=>{
+    if(cat!=='All'&&!d._k.includes(cat))return;
+    if(q){const hay=(d.n+' '+d.c+' '+d._s.color+' '+d._k.join(' ')).toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return;}
+    list.push([d,i]);
+  });
+  $('xhGrid').innerHTML=list.map(([d,i])=>`<div class="xh-card">
+      <div class="xh-prev"><canvas data-i="${i}"></canvas></div>
+      <div class="xh-body">
+        <div class="xh-name">${d.n}</div>
+        <div class="xh-by">${d._k.join(' · ')}</div>
+        <div class="xh-code">${d.c}</div>
+        <button class="xh-copy" data-code="${d.c}">⧉ Copy Code</button>
+        <button class="xh-edit" data-edit="${i}">✎ Edit in Builder</button>
+      </div>
+    </div>`).join('');
+  list.forEach(([d,i])=>{const cv=$('xhGrid').querySelector('canvas[data-i="'+i+'"]');if(cv)draw(cv,d._s);});
+  $('xhCount').innerHTML='<b>'+list.length+'</b> crosshair'+(list.length===1?'':'s');
+  $('xhEmpty').classList.toggle('show',list.length===0);
+  $('xhGrid').style.display=list.length===0?'none':'';
+}
+
+function copyCode(code,btn){
+  const done=()=>{const o=btn.textContent;btn.textContent='✓ Copied';btn.classList.add('done');toast();setTimeout(()=>{btn.textContent=o;btn.classList.remove('done');},1400);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(done).catch(()=>fallback(code,done));}
+  else fallback(code,done);
+}
+function fallback(code,cb){const t=document.createElement('textarea');t.value=code;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(t);cb();}
+let toastT;function toast(){const el=$('xhToast');el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),1700);}
+
+/* ════ CROSSHAIR BUILDER (create your own → valid importable code) ════ */
+const DEFB={color:'#00FFFF',outline:true,oOp:1,dot:false,dSize:2,dOp:1,inner:true,iLen:4,iThick:2,iOff:3,iOp:1,outer:false,oLen:2,oThick:2,oOff:10,oOp2:1};
+let B=Object.assign({},DEFB),bg='dark';
+const SLIDERS={
+  outline:[['oOp','Opacity',0,1,0.1]],
+  dot:[['dSize','Size',1,6,1],['dOp','Opacity',0,1,0.1]],
+  inner:[['iLen','Length',0,20,1],['iThick','Thick',1,10,1],['iOff','Gap',0,20,1],['iOp','Opacity',0,1,0.1]],
+  outer:[['oLen','Length',0,20,1],['oThick','Thick',1,10,1],['oOff','Gap',0,30,1],['oOp2','Opacity',0,1,0.1]]
+};
+function hex8(h){return h.replace('#','').toUpperCase()+'FF';}
+function buildCode(){
+  const p=['0','P','c','8','u',hex8(B.color)];
+  if(B.outline)p.push('o',String(B.oOp));else p.push('h','0');
+  if(B.dot)p.push('d','1','z',String(B.dSize),'a',String(B.dOp));
+  if(B.inner)p.push('0t',String(B.iThick),'0l',String(B.iLen),'0o',String(B.iOff),'0a',String(B.iOp),'0f','0');
+  else p.push('0b','0');
+  if(B.outer)p.push('1t',String(B.oThick),'1l',String(B.oLen),'1o',String(B.oOff),'1a',String(B.oOp2),'1m','0','1f','0');
+  else p.push('1b','0');
+  return p.join(';');
+}
+function bgFill(ctx,W,H){
+  if(bg==='light'){ctx.fillStyle='#8c8c95';ctx.fillRect(0,0,W,H);return;}
+  if(bg==='grid'){ctx.fillStyle='#14141f';ctx.fillRect(0,0,W,H);ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=1;
+    for(let x=0;x<=W;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<=H;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}return;}
+  const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#1b1b28');g.addColorStop(1,'#0a0a12');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+function bPreview(){
+  const cv=$('xbCanvas');if(!cv)return;
+  const W=cv.clientWidth||320,H=cv.clientHeight||320;cv.width=W*DPR;cv.height=H*DPR;
+  const ctx=cv.getContext('2d');ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);bgFill(ctx,W,H);
+  const s=settingsFor(buildCode()),cx=W/2,cy=H/2,SC=3.2; // preview = parsed generated code
+  function bar(x,y,w,h){if(s.outline){ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(x-1.5,y-1.5,w+3,h+3);}ctx.fillStyle=s.color;ctx.fillRect(x,y,w,h);}
+  function arms(len,thick,off){const L=len*SC,T=Math.max(thick*SC,1.5),O=off*SC;bar(cx+O,cy-T/2,L,T);bar(cx-O-L,cy-T/2,L,T);bar(cx-T/2,cy+O,T,L);bar(cx-T/2,cy-O-L,T,L);}
+  if(s.inner.on)arms(s.inner.len,s.inner.thick,s.inner.off);
+  if(s.outer.on)arms(s.outer.len,s.outer.thick,s.outer.off);
+  if(s.dot.on){const d=Math.max(s.dot.size*SC,2.5);bar(cx-d/2,cy-d/2,d,d);}
+}
+function bUpdate(){bPreview();$('xbCode').textContent=buildCode();}
+function bControls(){
+  const sl=s=>{const[k,lbl,mn,mx,st]=s;return '<div class="xb-sl"><span>'+lbl+'</span><input type="range" min="'+mn+'" max="'+mx+'" step="'+st+'" value="'+B[k]+'" data-k="'+k+'"><b>'+B[k]+'</b></div>';};
+  const row=(key,label)=>'<div class="xb-row"><div class="xb-rh"><label>'+label+'</label><button class="xb-toggle '+(B[key]?'on':'')+'" data-tg="'+key+'"></button></div><div class="xb-sliders '+(B[key]?'':'off')+'">'+SLIDERS[key].map(sl).join('')+'</div></div>';
+  $('xbControls').innerHTML=
+    '<div class="xb-row"><div class="xb-rh"><label>Color</label></div><div class="xb-color"><input type="color" id="xbColor" value="'+B.color+'"><code>'+B.color.toUpperCase()+'</code></div></div>'
+    +row('outline','Outline')+row('dot','Center Dot')+row('inner','Inner Lines')+row('outer','Outer Lines');
+  $('xbColor').addEventListener('input',e=>{B.color=e.target.value;e.target.nextElementSibling.textContent=B.color.toUpperCase();bUpdate();});
+  $('xbControls').querySelectorAll('.xb-toggle').forEach(t=>t.addEventListener('click',()=>{B[t.dataset.tg]=!B[t.dataset.tg];bControls();bUpdate();}));
+  $('xbControls').querySelectorAll('input[type=range]').forEach(r=>r.addEventListener('input',e=>{B[e.target.dataset.k]=parseFloat(e.target.value);e.target.nextElementSibling.textContent=B[e.target.dataset.k];bUpdate();}));
+}
+function bRandom(){
+  const rc=()=>'#'+[0,0,0].map(()=>('0'+Math.floor(Math.random()*256).toString(16)).slice(-2)).join('').toUpperCase();
+  B.color=rc();B.outline=Math.random()<0.7;B.oOp=1;
+  B.dot=Math.random()<0.5;B.dSize=1+Math.floor(Math.random()*4);B.dOp=1;
+  B.inner=Math.random()<0.85;B.iLen=1+Math.floor(Math.random()*10);B.iThick=1+Math.floor(Math.random()*3);B.iOff=Math.floor(Math.random()*8);B.iOp=1;
+  B.outer=Math.random()<0.25;B.oLen=1+Math.floor(Math.random()*6);B.oThick=1+Math.floor(Math.random()*3);B.oOff=6+Math.floor(Math.random()*12);B.oOp2=1;
+  if(!B.inner&&!B.dot)B.dot=true;
+  bControls();bUpdate();
+}
+function editInBuilder(code){
+  const s=settingsFor(code);
+  B.color=(s.color&&s.color[0]==='#'&&s.color.length>=7)?s.color.slice(0,7).toUpperCase():'#FFFFFF';
+  B.outline=s.outline;B.oOp=1;
+  B.dot=s.dot.on;B.dSize=Math.min(Math.max(Math.round(s.dot.size)||1,1),6);B.dOp=1;
+  B.inner=s.inner.on;B.iLen=Math.min(Math.round(s.inner.len),20);B.iThick=Math.min(Math.max(Math.round(s.inner.thick),1),10);B.iOff=Math.min(Math.round(s.inner.off),20);B.iOp=1;
+  B.outer=s.outer.on;B.oLen=Math.min(Math.round(s.outer.len),20);B.oThick=Math.min(Math.max(Math.round(s.outer.thick),1),10);B.oOff=Math.min(Math.round(s.outer.off),30);B.oOp2=1;
+  xhView('build');
+}
+window.xhView=function(v){
+  const db=v==='db';
+  $('xhDbView').style.display=db?'':'none';$('xhBuildView').style.display=db?'none':'';
+  $('xhTabDb').classList.toggle('on',db);$('xhTabBuild').classList.toggle('on',!db);
+  if(!db){bControls();bUpdate();}
+};
+window.xbBg=function(b){bg=b;document.querySelectorAll('.xb-bg').forEach(x=>x.classList.toggle('on',x.dataset.bg===b));bPreview();};
+
+/* ---- cats + events ---- */
+function buildCats(){
+  $('xhCats').innerHTML=CATS.map(c=>`<button class="xh-cat ${c===cat?'on':''}" data-cat="${c}">${c}</button>`).join('');
+}
+function bind(){
+  buildCats();
+  $('xhCats').addEventListener('click',e=>{const b=e.target.closest('.xh-cat');if(!b)return;cat=b.dataset.cat;buildCats();render();});
+  $('xhQ').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();render();});
+  $('xhGrid').addEventListener('click',e=>{
+    const cp=e.target.closest('.xh-copy');if(cp){copyCode(cp.dataset.code,cp);return;}
+    const ed=e.target.closest('.xh-edit');if(ed){editInBuilder(D[+ed.dataset.edit].c);}
+  });
+  $('xbCopy').addEventListener('click',()=>copyCode(buildCode(),$('xbCopy')));
+  $('xbRandom').addEventListener('click',bRandom);
+  $('xbReset').addEventListener('click',()=>{B=Object.assign({},DEFB);bControls();bUpdate();});
+  $('xhClose').addEventListener('click',close);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&root.classList.contains('open'))close();});
+}
+bind();
+
+let inited=false;
+function open(){root.classList.add('open');root.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';root.scrollTop=0;if(!inited){render();inited=true;}if(location.hash!=='#crosshairs')history.replaceState(null,'','#crosshairs');}
+function close(){root.classList.remove('open');root.setAttribute('aria-hidden','true');document.body.style.overflow='';if(location.hash==='#crosshairs')history.replaceState(null,'',location.pathname+location.search);}
+
+window.openCrosshairs=open;window.closeCrosshairs=close;
+if(location.hash==='#crosshairs')setTimeout(open,80);
+window.addEventListener('hashchange',()=>{if(location.hash==='#crosshairs'&&!root.classList.contains('open'))open();else if(location.hash!=='#crosshairs'&&root.classList.contains('open'))close();});
+})();
+</script>
+
+<!-- PWA INSTALL MODAL -->
+<style>
+.pwa-overlay{position:fixed;inset:0;z-index:9500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(2,2,8,.82);backdrop-filter:blur(7px);}
+.pwa-overlay.show{display:flex;}
+.pwa-box{position:relative;width:min(440px,100%);background:var(--surf);border:1px solid var(--bdr-hi);border-radius:var(--r);padding:30px 26px 26px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.6);}
+.pwa-x{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1px solid var(--bdr);background:var(--surf2);color:var(--muted2);cursor:pointer;font-size:.85rem;transition:.2s;}
+.pwa-x:hover{color:var(--red);border-color:var(--bdr-hi);}
+.pwa-ic{font-size:2.4rem;margin-bottom:8px;}
+.pwa-box h2{font-family:var(--dp);font-size:1.6rem;font-weight:700;color:var(--txt);margin-bottom:8px;letter-spacing:.5px;}
+.pwa-sub{color:var(--muted2);font-size:.85rem;line-height:1.6;margin-bottom:18px;}
+.pwa-now{display:none;width:100%;margin-bottom:16px;padding:14px;border:none;border-radius:var(--r2);cursor:pointer;background:linear-gradient(120deg,#3DFFA0,#2BE38C);color:#04130b;font-family:var(--dp);font-weight:700;font-size:1.05rem;letter-spacing:1px;text-transform:uppercase;transition:.2s;}
+.pwa-now:hover{box-shadow:0 8px 26px rgba(61,255,160,.4);transform:translateY(-1px);}
+.pwa-steps{text-align:left;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px 18px;}
+.pwa-steps h4{font-family:var(--mono);font-size:.62rem;letter-spacing:1.5px;color:#3DFFA0;text-transform:uppercase;margin-bottom:10px;}
+.pwa-steps ol{margin:0;padding-left:18px;}
+.pwa-steps li{color:var(--muted2);font-size:.85rem;line-height:1.7;margin-bottom:5px;}
+.pwa-steps b{color:var(--txt);}
+.pwa-note{margin-top:12px;font-size:.74rem;color:var(--muted);line-height:1.5;}
+</style>
+<div class="pwa-overlay" id="pwaModal" onclick="if(event.target===this)closePwa()">
+  <div class="pwa-box" role="dialog" aria-modal="true" aria-label="Install FragLy">
+    <button class="pwa-x" onclick="closePwa()" aria-label="Close">✕</button>
+    <div class="pwa-ic">📲</div>
+    <h2>Install FragLy</h2>
+    <p class="pwa-sub">Add FragLy to your device — it launches full-screen like a real app, with its own icon and no browser bars.</p>
+    <button class="pwa-now" id="pwaNow" onclick="pwaInstallNow()">⤓ Install Now</button>
+    <div class="pwa-steps" id="pwaSteps"></div>
+  </div>
+</div>
+
+<script>
+/* ════════ FRAGLY PWA INSTALL (add to home screen / desktop app) ════════ */
+(function(){
+  "use strict";
+  var deferred=null;
+  var ua=navigator.userAgent||'';
+  var isIOS=/iphone|ipad|ipod/i.test(ua)||(/Macintosh/i.test(ua)&&'ontouchend' in document);
+  var isAndroid=/android/i.test(ua);
+  function $(id){return document.getElementById(id);}
+  function standalone(){return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;}
+  function showBtn(){var b=$('installBtn');if(b)b.style.display=standalone()?'none':'';}
+
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;showBtn();var n=$('pwaNow');if(n)n.style.display='block';});
+  window.addEventListener('appinstalled',function(){deferred=null;var b=$('installBtn');if(b)b.style.display='none';closePwa();});
+
+  function steps(){
+    if(isIOS)return '<h4>On iPhone / iPad — Safari</h4><ol><li>Tap the <b>Share</b> button (the square with an up-arrow ⎙) in Safari\'s bottom bar.</li><li>Scroll down and tap <b>“Add to Home Screen”</b>.</li><li>Tap <b>Add</b> — FragLy lands on your home screen like an app.</li></ol><div class="pwa-note">iOS only allows this from Safari, and Apple requires these manual steps for every website.</div>';
+    if(isAndroid)return '<h4>On Android — Chrome</h4><ol><li>Tap the <b>⋮</b> menu (top-right of the browser).</li><li>Tap <b>“Install app”</b> or <b>“Add to Home screen”</b>.</li><li>Tap <b>Install</b> — done.</li></ol><div class="pwa-note">If a green “Install Now” button shows above, just tap that instead.</div>';
+    return '<h4>On Desktop — Chrome / Edge / Brave</h4><ol><li>Look for the <b>install icon</b> (a monitor with a ⊕) at the right edge of the address bar — or open the <b>⋮</b> menu.</li><li>Choose <b>“Install FragLy…”</b>.</li><li>Click <b>Install</b> — it opens in its own window with a taskbar/desktop icon.</li></ol><div class="pwa-note">If a green “Install Now” button shows above, just tap that instead.</div>';
+  }
+  window.openPwa=function(){$('pwaSteps').innerHTML=steps();$('pwaNow').style.display=deferred?'block':'none';$('pwaModal').classList.add('show');document.body.style.overflow='hidden';};
+  window.closePwa=function(){$('pwaModal').classList.remove('show');document.body.style.overflow='';};
+  window.pwaInstallNow=function(){ if(!deferred){return;} deferred.prompt(); (deferred.userChoice||Promise.resolve()).finally(function(){deferred=null;closePwa();var b=$('installBtn');if(b)b.style.display='none';}); };
+  // Tapping GET APP: install instantly if the browser supports it, else show device steps
+  window.fraglyInstall=function(){ if(deferred){window.pwaInstallNow();} else {window.openPwa();} };
+
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closePwa();});
+  document.addEventListener('DOMContentLoaded',showBtn);
+  showBtn();
+  if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
 })();
 </script>
 

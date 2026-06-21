@@ -1,0 +1,17 @@
+{
+  "name": "FragLy — Valorant Intelligence",
+  "short_name": "FragLy",
+  "description": "Valorant stats tracker, AI coach, aim trainer, agent lineups and a pro crosshair database — all in one.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#050509",
+  "theme_color": "#FF4655",
+  "categories": ["games", "sports", "utilities"],
+  "icons": [
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/logo.png", "sizes": "any", "type": "image/png", "purpose": "maskable" }
+  ]
+}
