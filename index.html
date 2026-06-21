@@ -4447,10 +4447,10 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#aim'&&!root.class
   background:rgba(12,12,28,.85);color:#c9c2dc;font-size:1.2rem;cursor:pointer;transition:.18s;}
 .ln-x:hover{color:#fff;border-color:var(--red);box-shadow:0 0 16px rgba(255,70,85,.3);}
 
-/* header */
-.ln-eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:4px;color:var(--muted2);text-align:center;margin-bottom:12px;text-transform:uppercase;}
-.ln-title{font-family:var(--dp);font-weight:800;text-align:center;font-size:clamp(2rem,5vw+1rem,3.4rem);line-height:.95;letter-spacing:1px;
-  background:linear-gradient(180deg,#fff 0%,#FF6E7A 60%,#FF4655 100%);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:12px;}
+/* header (matches Aim Trainer) */
+.ln-eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:5px;color:var(--red);opacity:.85;text-align:center;margin-bottom:6px;text-transform:uppercase;}
+.ln-title{font-family:var(--dp);font-weight:900;text-align:center;font-size:clamp(2.4rem,7vw,4.4rem);line-height:.95;letter-spacing:3px;margin:6px 0;
+  background:linear-gradient(180deg,#fff,#FF8089);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .ln-sub{text-align:center;color:var(--muted2);font-size:.9rem;max-width:560px;margin:0 auto 30px;line-height:1.6;}
 
 /* search + filters */
@@ -4552,7 +4552,7 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#aim'&&!root.class
 <div id="lineups" aria-hidden="true">
   <button class="ln-x" id="lnClose" aria-label="Close lineups">✕</button>
   <div class="ln-wrap">
-    <p class="ln-eyebrow">FragLy · Tactical Library</p>
+    <p class="ln-eyebrow">FRAGLY // TACTICAL LIBRARY</p>
     <h1 class="ln-title">AGENT LINEUPS</h1>
     <p class="ln-sub">Learn attack, defense, retake, and post-plant setups without leaving FragLy.</p>
 
@@ -4813,12 +4813,12 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#lineups'&&!root.c
 #compare.open{display:block;}
 #compare *{box-sizing:border-box;}
 .cmp-wrap{max-width:920px;margin:0 auto;padding:64px 18px 80px;}
-.cmp-x{position:fixed;top:18px;right:20px;z-index:30;width:42px;height:42px;border-radius:10px;border:1px solid rgba(232,184,75,.25);
+.cmp-x{position:fixed;top:18px;right:20px;z-index:30;width:42px;height:42px;border-radius:10px;border:1px solid rgba(255,70,85,.22);
   background:rgba(12,12,28,.85);color:#c9c2dc;font-size:1.2rem;cursor:pointer;transition:.18s;}
-.cmp-x:hover{color:#fff;border-color:var(--gold);box-shadow:0 0 16px rgba(232,184,75,.3);}
-.cmp-eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:4px;color:var(--muted2);text-align:center;margin-bottom:12px;text-transform:uppercase;}
-.cmp-title{font-family:var(--dp);font-weight:800;text-align:center;font-size:clamp(2rem,5vw+1rem,3.2rem);line-height:.95;letter-spacing:1px;
-  background:linear-gradient(180deg,#fff 0%,#F5D06E 55%,#E8B84B 100%);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:10px;}
+.cmp-x:hover{color:#fff;border-color:var(--red);box-shadow:0 0 16px rgba(255,70,85,.3);}
+.cmp-eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:5px;color:var(--red);opacity:.85;text-align:center;margin-bottom:6px;text-transform:uppercase;}
+.cmp-title{font-family:var(--dp);font-weight:900;text-align:center;font-size:clamp(2.4rem,7vw,4.4rem);line-height:.95;letter-spacing:3px;margin:6px 0;
+  background:linear-gradient(180deg,#fff,#FF8089);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .cmp-sub{text-align:center;color:var(--muted2);font-size:.9rem;max-width:520px;margin:0 auto 28px;line-height:1.6;}
 
 /* input rows */
@@ -4886,7 +4886,7 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#lineups'&&!root.c
 <div id="compare" aria-hidden="true">
   <button class="cmp-x" id="cmpClose" aria-label="Close compare">✕</button>
   <div class="cmp-wrap">
-    <p class="cmp-eyebrow">FragLy · Head to Head</p>
+    <p class="cmp-eyebrow">FRAGLY // HEAD TO HEAD</p>
     <h1 class="cmp-title">COMPARE PLAYERS</h1>
     <p class="cmp-sub">Put two Riot IDs side by side. Real stats from the last 10 games — share the result.</p>
 
@@ -5081,12 +5081,12 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#compare'&&!root.c
 #xhairs.open{display:block;}
 #xhairs *{box-sizing:border-box;}
 .xh-wrap{max-width:1100px;margin:0 auto;padding:64px 18px 80px;}
-.xh-x{position:fixed;top:18px;right:20px;z-index:30;width:42px;height:42px;border-radius:10px;border:1px solid rgba(75,189,255,.25);
+.xh-x{position:fixed;top:18px;right:20px;z-index:30;width:42px;height:42px;border-radius:10px;border:1px solid rgba(255,70,85,.22);
   background:rgba(12,12,28,.85);color:#c9c2dc;font-size:1.2rem;cursor:pointer;transition:.18s;}
-.xh-x:hover{color:#fff;border-color:#4BBDFF;box-shadow:0 0 16px rgba(75,189,255,.3);}
-.xh-eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:4px;color:var(--muted2);text-align:center;margin-bottom:12px;text-transform:uppercase;}
-.xh-title{font-family:var(--dp);font-weight:800;text-align:center;font-size:clamp(2rem,5vw+1rem,3.2rem);line-height:.95;letter-spacing:1px;
-  background:linear-gradient(180deg,#fff 0%,#7CE7E7 55%,#4BBDFF 100%);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:10px;}
+.xh-x:hover{color:#fff;border-color:var(--red);box-shadow:0 0 16px rgba(255,70,85,.3);}
+.xh-eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:5px;color:var(--red);opacity:.85;text-align:center;margin-bottom:6px;text-transform:uppercase;}
+.xh-title{font-family:var(--dp);font-weight:900;text-align:center;font-size:clamp(2.4rem,7vw,4.4rem);line-height:.95;letter-spacing:3px;margin:6px 0;
+  background:linear-gradient(180deg,#fff,#FF8089);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .xh-sub{text-align:center;color:var(--muted2);font-size:.9rem;max-width:540px;margin:0 auto 26px;line-height:1.6;}
 .xh-search{position:relative;max-width:560px;margin:0 auto 14px;}
 .xh-search input{width:100%;padding:13px 16px 13px 42px;border-radius:var(--r2);border:1px solid var(--bdr);background:var(--surf);color:var(--txt);font-family:var(--body);font-size:.9rem;outline:none;transition:.2s;}
@@ -5162,7 +5162,7 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#compare'&&!root.c
 <div id="xhairs" aria-hidden="true">
   <button class="xh-x" id="xhClose" aria-label="Close crosshairs">✕</button>
   <div class="xh-wrap">
-    <p class="xh-eyebrow">FragLy · Crosshair Database</p>
+    <p class="xh-eyebrow">FRAGLY // CROSSHAIR DATABASE</p>
     <h1 class="xh-title">CROSSHAIRS</h1>
     <p class="xh-sub">Browse 200+ pro &amp; fun crosshairs, or build your own — then copy the code into Valorant (Settings → Crosshair → Import Profile Code).</p>
 
