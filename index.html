@@ -51,6 +51,13 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:20px 3
 .logo-stats{background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .logo-dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red);margin-left:3px;margin-bottom:4px;flex-shrink:0;animation:rdot 2.5s ease infinite;}
 .nav-r{display:flex;align-items:center;gap:10px;}
+/* hamburger (mobile only) */
+.nav-burger{display:none;width:40px;height:40px;border-radius:10px;border:1px solid var(--bdr);background:var(--surf);cursor:pointer;flex-direction:column;justify-content:center;align-items:center;gap:5px;transition:.2s;padding:0;}
+.nav-burger:hover{border-color:var(--bdr-hi);}
+.nav-burger span{display:block;width:18px;height:2px;background:var(--txt);border-radius:2px;transition:.25s var(--ease);}
+.nav-burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.nav-burger.open span:nth-child(2){opacity:0;}
+.nav-burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
 .nav-pill{font-family:var(--mono);font-size:.62rem;letter-spacing:2px;padding:6px 14px;border-radius:var(--r3);border:1px solid var(--bdr);color:var(--muted2);transition:.2s;background:transparent;text-transform:uppercase;}
 .nav-pill.ok{border-color:rgba(61,255,160,.3);color:var(--green);background:rgba(61,255,160,.06);}
 @keyframes rdot{0%,100%{opacity:1;box-shadow:0 0 12px var(--red);}50%{opacity:.4;box-shadow:0 0 4px var(--red);}}
@@ -757,8 +764,11 @@ footer span{color:var(--red);}
   body{padding-bottom:20px;}
   .dash{padding:20px 0 40px;}
   .W{padding:0 14px;}
-  nav{padding:14px 16px;}
-  .nav-r{display:flex;}
+  nav{padding:14px 16px;position:relative;}
+  .nav-burger{display:flex;}
+  .nav-r{position:absolute;top:calc(100% + 8px);right:14px;left:auto;flex-direction:column;align-items:stretch;gap:6px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px;min-width:200px;box-shadow:0 18px 50px rgba(0,0,0,.55);opacity:0;transform:translateY(-8px);pointer-events:none;transition:.2s var(--ease);z-index:50;}
+  .nav-r.open{opacity:1;transform:translateY(0);pointer-events:auto;}
+  .nav-r .nav-pill{width:100%;text-align:center;padding:11px 14px;font-size:.7rem;}
   .nav-r .nav-pill.ok{display:none;}
   .sgrid{grid-template-columns:repeat(2,1fr)!important;}
   .tcol{grid-template-columns:1fr!important;}
@@ -913,14 +923,23 @@ footer span{color:var(--red);}
     <div class="logo-dot"></div>
     <div class="nav-pill ok nav-live" id="apiPill">✓ LIVE</div>
   </div>
-  <div class="nav-r">
-    <button class="nav-pill nav-xhair" id="xhairNavBtn" onclick="openCrosshairs()">✛ CROSSHAIRS</button>
-    <button class="nav-pill nav-aim" id="aimNavBtn" onclick="openAimTrainer()">◎ AIM TRAINER</button>
-    <button class="nav-pill nav-lineups" id="lineupsNavBtn" onclick="openLineups()">▶ LINEUPS</button>
-    <button class="nav-pill nav-compare" id="compareNavBtn" onclick="openCompare()">⚔ COMPARE</button>
-    <button class="nav-pill nav-install" id="installBtn" onclick="fraglyInstall()">⤓ GET APP</button>
+  <button class="nav-burger" id="navBurger" aria-label="Open menu" aria-expanded="false" onclick="toggleNav()"><span></span><span></span><span></span></button>
+  <div class="nav-r" id="navR">
+    <button class="nav-pill nav-xhair" id="xhairNavBtn" onclick="openCrosshairs();closeNav()">✛ CROSSHAIRS</button>
+    <button class="nav-pill nav-aim" id="aimNavBtn" onclick="openAimTrainer();closeNav()">◎ AIM TRAINER</button>
+    <button class="nav-pill nav-lineups" id="lineupsNavBtn" onclick="openLineups();closeNav()">▶ LINEUPS</button>
+    <button class="nav-pill nav-compare" id="compareNavBtn" onclick="openCompare();closeNav()">⚔ COMPARE</button>
+    <button class="nav-pill nav-install" id="installBtn" onclick="fraglyInstall();closeNav()">⤓ GET APP</button>
   </div>
 </nav>
+<script>
+(function(){
+  var b=document.getElementById('navBurger'),r=document.getElementById('navR');
+  window.toggleNav=function(){var o=!r.classList.contains('open');r.classList.toggle('open',o);b.classList.toggle('open',o);b.setAttribute('aria-expanded',o);};
+  window.closeNav=function(){r.classList.remove('open');b.classList.remove('open');b.setAttribute('aria-expanded','false');};
+  document.addEventListener('click',function(e){if(r.classList.contains('open')&&!r.contains(e.target)&&!b.contains(e.target))window.closeNav();});
+})();
+</script>
 
 <!-- HERO -->
 <section class="hero">
@@ -4788,7 +4807,6 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#lineups'&&!root.c
 <style>
 .nav-compare{cursor:pointer;color:#F5D06E!important;border-color:rgba(232,184,75,.45)!important;background:rgba(232,184,75,.08)!important;font-weight:600;}
 .nav-compare:hover{background:rgba(232,184,75,.18)!important;box-shadow:0 0 18px rgba(232,184,75,.3);}
-@media(max-width:560px){.nav-r{flex-wrap:wrap;justify-content:flex-end;gap:6px;}}
 
 #compare{position:fixed;inset:0;z-index:906;display:none;font-family:var(--body);color:var(--txt);
   background:radial-gradient(120% 90% at 50% -10%,#0e0e1f 0%,#080812 55%,#050509 100%);overflow-y:auto;overflow-x:hidden;}
