@@ -45,7 +45,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--body);min-height:10
 
 /* ── NAV ── */
 nav{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--bdr);backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);background:rgba(5,5,9,.85);position:sticky;top:0;z-index:400;}
-.logo{display:flex;align-items:baseline;gap:2px;font-family:var(--dp);font-size:1.9rem;font-weight:900;letter-spacing:4px;line-height:1;}
+.logo{display:flex;align-items:center;gap:2px;font-family:var(--dp);font-size:1.9rem;font-weight:900;letter-spacing:4px;line-height:1;}
+.nav-live{margin-left:14px;align-self:center;}
 .logo-val{color:var(--txt);}
 .logo-stats{background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .logo-dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red);margin-left:3px;margin-bottom:4px;flex-shrink:0;animation:rdot 2.5s ease infinite;}
@@ -910,14 +911,14 @@ footer span{color:var(--red);}
   <div class="logo">
     <span class="logo-val">Frag</span><span class="logo-stats">Ly</span>
     <div class="logo-dot"></div>
+    <div class="nav-pill ok nav-live" id="apiPill">✓ LIVE</div>
   </div>
   <div class="nav-r">
-    <button class="nav-pill nav-install" id="installBtn" onclick="fraglyInstall()">⤓ GET APP</button>
-    <button class="nav-pill nav-compare" id="compareNavBtn" onclick="openCompare()">⚔ COMPARE</button>
-    <button class="nav-pill nav-lineups" id="lineupsNavBtn" onclick="openLineups()">▶ LINEUPS</button>
-    <button class="nav-pill nav-aim" id="aimNavBtn" onclick="openAimTrainer()">◎ AIM TRAINER</button>
     <button class="nav-pill nav-xhair" id="xhairNavBtn" onclick="openCrosshairs()">✛ CROSSHAIRS</button>
-    <div class="nav-pill ok" id="apiPill">✓ LIVE</div>
+    <button class="nav-pill nav-aim" id="aimNavBtn" onclick="openAimTrainer()">◎ AIM TRAINER</button>
+    <button class="nav-pill nav-lineups" id="lineupsNavBtn" onclick="openLineups()">▶ LINEUPS</button>
+    <button class="nav-pill nav-compare" id="compareNavBtn" onclick="openCompare()">⚔ COMPARE</button>
+    <button class="nav-pill nav-install" id="installBtn" onclick="fraglyInstall()">⤓ GET APP</button>
   </div>
 </nav>
 
