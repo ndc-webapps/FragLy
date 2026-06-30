@@ -1,4 +1,4 @@
-// FragLy AI Coach — server-side proxy (Vercel serverless function).
+// FragLy AI Coach — server-side proxy (Cloudflare Pages Function).
 //
 // Why this exists:
 //   Calling text.pollinations.ai directly from the browser failed in prod
@@ -7,11 +7,10 @@
 //   (no CORS), a clean datacenter IP (not the user's throttled/shared IP), and
 //   the token stays off the client. Still keyless for end users.
 //
-// Token: set POLLINATIONS_TOKEN in Vercel env (Project → Settings → Environment
-//   Variables). No token is shipped to the browser.
+// Token: set POLLINATIONS_TOKEN in Cloudflare Pages env (Settings →
+//   Environment variables). No token is shipped to the browser.
 
-const POLLINATIONS_TOKEN = process.env.POLLINATIONS_TOKEN || '';
-const REFERRER = 'fragly.vercel.app';
+const REFERRER = 'fragly.pages.dev';
 // Authenticated generation host (OpenAI-compatible). The token bypasses the
 // per-IP "Queue full" limit here — verified returning 200 from a queue-blocked
 // IP. The legacy text.pollinations.ai ignored the token; gen.* honors it.
@@ -32,36 +31,22 @@ function extractText(data) {
   return '';
 }
 
-async function readJsonBody(req) {
-  if (req.body) {
-    if (typeof req.body === 'string') { try { return JSON.parse(req.body); } catch (e) { return {}; } }
-    return req.body;
-  }
-  return await new Promise((resolve) => {
-    let raw = '';
-    req.on('data', (c) => { raw += c; });
-    req.on('end', () => { try { resolve(JSON.parse(raw || '{}')); } catch (e) { resolve({}); } });
-    req.on('error', () => resolve({}));
-  });
-}
-
-module.exports = async function handler(req, res) {
-  res.setHeader('Content-Type', 'application/json');
-  if (req.method !== 'POST') {
-    res.statusCode = 405;
-    return res.end(JSON.stringify({ error: 'Method not allowed' }));
-  }
+export async function onRequestPost(context) {
+  const { request, env } = context;
+  const POLLINATIONS_TOKEN = env.POLLINATIONS_TOKEN || '';
 
   let messages;
   try {
-    const body = await readJsonBody(req);
+    const body = await request.json();
     messages = Array.isArray(body.messages) ? body.messages : null;
   } catch (e) {
     messages = null;
   }
   if (!messages || !messages.length) {
-    res.statusCode = 400;
-    return res.end(JSON.stringify({ error: 'messages array required' }));
+    return new Response(JSON.stringify({ error: 'messages array required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   const headers = { 'Content-Type': 'application/json' };
@@ -89,8 +74,10 @@ module.exports = async function handler(req, res) {
         const data = await r.json();
         const text = extractText(data);
         if (text && text.trim()) {
-          res.statusCode = 200;
-          return res.end(JSON.stringify({ text: text.trim(), provider: 'pollinations-gen' }));
+          return new Response(JSON.stringify({ text: text.trim(), provider: 'pollinations-gen' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
         }
       }
       // 4xx (other than 429) won't improve on retry
@@ -114,14 +101,28 @@ module.exports = async function handler(req, res) {
     if (r.ok) {
       const text = (await r.text()).trim();
       if (text) {
-        res.statusCode = 200;
-        return res.end(JSON.stringify({ text, provider: 'pollinations-legacy' }));
+        return new Response(JSON.stringify({ text, provider: 'pollinations-legacy' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
     }
   } catch (e) {
     upstreamStatus = upstreamStatus || 599;
   }
 
-  res.statusCode = 502;
-  return res.end(JSON.stringify({ error: 'Upstream AI unavailable', upstreamStatus }));
-};
+  return new Response(JSON.stringify({ error: 'Upstream AI unavailable', upstreamStatus }), {
+    status: 502,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+export async function onRequest(context) {
+  if (context.request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  return onRequestPost(context);
+}

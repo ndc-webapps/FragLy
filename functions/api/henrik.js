@@ -1,21 +1,18 @@
-const HENRIK_API_KEY = process.env.HENRIK_API_KEY || process.env.HDEV_API_KEY || '';
 const HENRIK_BASE = 'https://api.henrikdev.xyz/valorant';
 
-module.exports = async function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.statusCode = 405;
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ error: 'Method not allowed' }));
-  }
+export async function onRequestGet(context) {
+  const { request, env } = context;
+  const HENRIK_API_KEY = env.HENRIK_API_KEY || env.HDEV_API_KEY || '';
 
-  const path = String(req.query?.path || '').replace(/^\/+/, '');
+  const incoming = new URL(request.url);
+  const path = String(incoming.searchParams.get('path') || '').replace(/^\/+/, '');
   if (!path || path.includes('..')) {
-    res.statusCode = 400;
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ error: 'Invalid HenrikDev path' }));
+    return new Response(JSON.stringify({ error: 'Invalid HenrikDev path' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
-  const incoming = new URL(req.url, 'https://fragly.local');
   const upstream = new URL(`${HENRIK_BASE}/${path}`);
   incoming.searchParams.forEach((value, key) => {
     if (key !== 'path') upstream.searchParams.append(key, value);
@@ -27,13 +24,27 @@ module.exports = async function handler(req, res) {
   try {
     const r = await fetch(upstream, { headers });
     const body = await r.text();
-    res.statusCode = r.status;
-    res.setHeader('Content-Type', r.headers.get('content-type') || 'application/json');
-    res.setHeader('Cache-Control', 'no-store');
-    return res.end(body);
+    return new Response(body, {
+      status: r.status,
+      headers: {
+        'Content-Type': r.headers.get('content-type') || 'application/json',
+        'Cache-Control': 'no-store'
+      }
+    });
   } catch (e) {
-    res.statusCode = 502;
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ error: 'HenrikDev upstream unavailable' }));
+    return new Response(JSON.stringify({ error: 'HenrikDev upstream unavailable' }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
-};
+}
+
+export async function onRequest(context) {
+  if (context.request.method !== 'GET') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+  return onRequestGet(context);
+}
