@@ -1946,7 +1946,7 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
       var data=await r.json();
       if(!data || !data.acc || window.__realSearchStarted) return;
       if(typeof render!=='function') return; // main app script not loaded yet — skip quietly
-      render(data.acc, data.mmr, data.matches||[], data.name, data.tag, data.region);
+      render(data.acc, data.mmr, data.matches||[], data.name, data.tag, data.region, data.mmrHistory||[]);
       if(window.__realSearchStarted) return; // real search won the race mid-render
       dash.classList.add('on');
       void dash.offsetWidth;
@@ -2129,6 +2129,13 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
         <div class="share-note">Generate a premium PNG in Facebook feed (4:5) or story (9:16) size using the real stats currently on screen.</div>
       </div>
     </div>
+  </div>
+
+  <!-- RANK HISTORY -->
+  <div class="panel reveal" style="margin-bottom:24px;">
+    <div class="sh"><h2 class="sh-title">Rank History</h2><div class="sh-line"></div><span class="sh-tag" id="rankHistTag">LAST 20 · RR</span></div>
+    <div class="form-chart-wrap" id="rankHistChart"></div>
+    <div class="form-lbl" id="rankHistLbl"></div>
   </div>
 
   <!-- MAP + AGENT (tabbed by mode) -->
@@ -2534,10 +2541,17 @@ async function fetchStats(){
     setLoad(true,'PULLING MATCH HISTORY...');
     const mData=await api(`${BASE}/v3/matches/${region}/${enc(name)}/${enc(rawTag)}?size=10`);
     const matches=mData?.data||[];
+    // Real rank-history chart data. Never fatal — unranked players or a transient
+    // upstream hiccup here shouldn't break the rest of the dashboard.
+    let mmrHistory=[];
+    try{
+      const mh=await api(`${BASE}/v1/mmr-history/${region}/${enc(name)}/${enc(rawTag)}`);
+      mmrHistory=mh?.data||[];
+    }catch(e){ DBG('[RankHistory] unavailable',e?.message||e); }
     setLoad(true,'COMPUTING INTELLIGENCE...');
     window.statspilot?.track('player_search',{region});
     beginDashboardReveal();
-    render(acc.data,mmr?.data,matches,name,rawTag,region);
+    render(acc.data,mmr?.data,matches,name,rawTag,region,mmrHistory);
     finishDashboardReveal();
     setTimeout(animBars,400);
     setTimeout(initAdSlots,500);
@@ -2623,7 +2637,7 @@ function getRankBench(rank){
   for(const k of Object.keys(map))if(rank.includes(k))return map[k];return null;
 }
 
-function render(acc,mmr,matches,name,tag,region){
+function render(acc,mmr,matches,name,tag,region,mmrHistory){
   S.matches=matches;S.player={name:acc.name||name,tag:acc.tag||tag};S.region=region;S.matchCache={};
   // Avatar is handled by the render patch wrapper below
   document.getElementById('pName').textContent=acc.name||name;
@@ -2674,6 +2688,7 @@ function render(acc,mmr,matches,name,tag,region){
   document.getElementById('ptAvg').textContent=pt.avgMs>0?formatPlaytime(pt.avgMs):'—';
   document.getElementById('playtimeStrip').style.display=pt.counted>0?'flex':'none';
   resetShareExportState();
+  renderRankHistory(mmrHistory||[]);
   // Deepen match history in the background (real data only; failure keeps the live list).
   loadFullHistory(name,tag,region);
 }
@@ -2831,8 +2846,9 @@ function animateCounters(){
 }
 
 /* ── SVG self-draw: Recent Form line traces itself in via stroke-dashoffset ── */
-function animateFormLine(){
-  const line=document.getElementById('formLine');
+function animateFormLine(){animateSelfDrawLine('formLine');}
+function animateSelfDrawLine(id){
+  const line=document.getElementById(id);
   if(!line)return;
   /* chart self-draw always runs — motion is core to FragLy */
   try{
@@ -2936,6 +2952,95 @@ function renderForm(arr){
   `;
   lblEl.innerHTML=`<span>Older matches</span><span>ACS per match</span><span>Recent matches</span>`;
   animateFormLine();
+}
+
+/* RANK HISTORY — real RR over your last ranked games, from HenrikDev's mmr-history
+   endpoint. Plots ranking_in_tier (the RR number players actually see in-client), and
+   marks the points where currenttier changed (promotion/demotion) so a big jump in the
+   line reads as "you ranked up," not a fake data spike. Same self-draw SVG pattern as
+   the Recent Form chart above. */
+function renderRankHistory(historyRaw){
+  const chartEl=document.getElementById('rankHistChart');
+  const lblEl=document.getElementById('rankHistLbl');
+  if(!chartEl||!lblEl)return;
+
+  // API returns newest-first; reverse to oldest→newest so the chart reads left-to-right.
+  const clean=(historyRaw||[])
+    .filter(m=>m&&Number.isFinite(m.ranking_in_tier))
+    .slice()
+    .reverse();
+
+  if(!clean.length){
+    chartEl.innerHTML=`<div class="form-insight flat">No ranked history available yet — play some competitive matches to build a trend.</div>`;
+    lblEl.innerHTML='';
+    return;
+  }
+
+  const rr=clean.map(m=>m.ranking_in_tier);
+  const netChange=clean.reduce((sum,m)=>sum+(Number(m.mmr_change_to_last_game)||0),0);
+  const current=clean[clean.length-1];
+  const peakEntry=clean.reduce((best,m)=>((m.currenttier||0)>(best.currenttier||0)||((m.currenttier||0)===(best.currenttier||0)&&m.ranking_in_tier>best.ranking_in_tier))?m:best,clean[0]);
+  const trendCls=netChange>15?'up':netChange<-15?'down':'flat';
+  const trendWord=trendCls==='up'?'Climbing':trendCls==='down'?'Dropping':'Stable';
+  const trendText=netChange===0?'0':`${netChange>0?'+':''}${netChange}`;
+
+  const maxRaw=Math.max(...rr,1);
+  const minRaw=Math.min(...rr,0);
+  const yMax=Math.max(50,Math.ceil((maxRaw+10)/50)*50);
+  const yMin=Math.max(0,Math.floor(Math.max(0,minRaw-10)/50)*50);
+  const range=yMax-yMin||1;
+  const W=360,H=168,padL=42,padR=18,padT=24,padB=38;
+  const innerW=W-padL-padR,innerH=H-padT-padB;
+  const xAt=i=>padL+(i/(clean.length-1||1))*innerW;
+  const yAt=v=>padT+(yMax-v)/range*innerH;
+  const pts=clean.map((m,i)=>`${xAt(i)},${yAt(m.ranking_in_tier)}`);
+  const area=`M${pts[0]} `+pts.slice(1).map(p=>`L${p}`).join(' ')+` L${xAt(clean.length-1)},${H-padB} L${padL},${H-padB} Z`;
+  const ticks=[yMin,Math.round((yMin+yMax)/2),yMax].filter((v,i,a)=>a.indexOf(v)===i);
+  const grid=ticks.map(v=>{
+    const y=yAt(v);
+    return `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="rgba(255,255,255,.06)" stroke-width="1"/>`+
+           `<text x="${padL-8}" y="${y+3}" text-anchor="end" fill="#7070A0" font-size="8" font-family="DM Mono, monospace">${Math.round(v)}</text>`;
+  }).join('');
+  const valueLabels=clean.map((m,i)=>{
+    const x=xAt(i),y=yAt(m.ranking_in_tier);
+    const labelY=Math.max(10,y-9);
+    const prevTier=i>0?clean[i-1].currenttier:m.currenttier;
+    const tierChanged=m.currenttier!==prevTier;
+    const dotFill=tierChanged?(m.currenttier>prevTier?'#3DFFA0':'#FF4655'):'#A855F7';
+    const title=`${escapeHtml(m.currenttierpatched||'')} · ${m.ranking_in_tier} RR${tierChanged?(m.currenttier>prevTier?' · Ranked up!':' · Ranked down'):''}`;
+    return `<g><title>${title}</title>`
+      + (tierChanged?`<circle cx="${x}" cy="${y}" r="5.5" fill="none" stroke="${dotFill}" stroke-width="1.4"/>`:'')
+      + `<circle cx="${x}" cy="${y}" r="3" fill="${dotFill}" stroke="rgba(255,255,255,.65)" stroke-width=".7"/>`
+      + `<text x="${x}" y="${labelY}" text-anchor="middle" fill="#ECE8F5" font-size="8.5" font-weight="700" font-family="DM Mono, monospace">${m.ranking_in_tier}</text></g>`;
+  }).join('');
+  const xLabels=clean.map((m,i)=>{
+    if(clean.length>7 && i%2!==0 && i!==clean.length-1)return'';
+    const x=xAt(i);
+    return `<text x="${x}" y="${H-14}" text-anchor="middle" fill="#4E4E72" font-size="7.5" font-family="DM Mono, monospace">M${i+1}</text>`;
+  }).join('');
+
+  chartEl.innerHTML=`
+    <div class="form-stats">
+      <div class="form-stat"><div class="k">Starting RR</div><div class="v">${clean[0].ranking_in_tier}</div></div>
+      <div class="form-stat best"><div class="k">Peak Rank</div><div class="v" style="font-size:1.05rem">${escapeHtml(peakEntry.currenttierpatched||'—')}</div></div>
+      <div class="form-stat ${trendCls}"><div class="k">Current RR</div><div class="v">${current.ranking_in_tier}</div></div>
+      <div class="form-stat ${trendCls}"><div class="k">Net Change</div><div class="v">${trendText}</div></div>
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rank history chart. Starting RR ${clean[0].ranking_in_tier}, current RR ${current.ranking_in_tier}, net change ${trendText}.">
+      <defs>
+        <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#EC4899" stop-opacity=".26"/><stop offset="100%" stop-color="#EC4899" stop-opacity="0"/></linearGradient>
+      </defs>
+      ${grid}
+      <line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="rgba(255,255,255,.09)" stroke-width="1"/>
+      <path id="rankArea" class="form-area" d="${area}" fill="url(#rg)"/>
+      <polyline id="rankLine" points="${pts.join(' ')}" fill="none" stroke="#EC4899" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <g class="form-dots">${valueLabels}</g>
+      ${xLabels}
+    </svg>
+    <div class="form-insight ${trendCls}">${trendWord}: ${netChange>=0?'+':''}${netChange} RR net across the last ${clean.length} ranked games. Rings mark rank promotions/demotions — a big jump there is a tier change, not a fluke.</div>
+  `;
+  lblEl.innerHTML=`<span>Older games</span><span>RR per game</span><span>Recent games</span>`;
+  animateSelfDrawLine('rankLine');
 }
 
 /* MAP TABLE — tabbed by mode */
@@ -4408,7 +4513,7 @@ initKeys();updateWishCount();
 
 // Patch render to also handle avatar + save history
 const _origRender=window.render;
-window.render=function(acc,mmr,matches,name,tag,region){
+window.render=function(acc,mmr,matches,name,tag,region,mmrHistory){
   // Avatar: try small → large → wide card art (all from media.valorant-api.com)
   const avatarUrl=acc.card?.small||acc.card?.large||acc.card?.wide||'';
   const initials=(acc.name||name||'?').charAt(0).toUpperCase();
@@ -4427,7 +4532,7 @@ window.render=function(acc,mmr,matches,name,tag,region){
   // Save to search history
   addToHistory(acc.name||name,acc.tag||tag,region,avatarUrl);
   // Call original (skip its avatar line since we handle it)
-  _origRender(acc,mmr,matches,name,tag,region);
+  _origRender(acc,mmr,matches,name,tag,region,mmrHistory);
   startIdleSession();
 };
 </script>

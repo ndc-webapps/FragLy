@@ -56,15 +56,16 @@ export async function onRequestGet(context) {
     if (!top || !top.gameName || !top.tagLine) throw new Error('leaderboard empty');
     const name = top.gameName, tag = top.tagLine;
 
-    const [acc, mmr, mData] = await Promise.all([
+    const [acc, mmr, mData, mmrHistory] = await Promise.all([
       fetchJson(`${HENRIK_BASE}/v1/account/${enc(name)}/${enc(tag)}`, headers),
       fetchJson(`${HENRIK_BASE}/v2/mmr/${SAMPLE_REGION}/${enc(name)}/${enc(tag)}`, headers),
-      fetchJson(`${HENRIK_BASE}/v3/matches/${SAMPLE_REGION}/${enc(name)}/${enc(tag)}?size=10`, headers)
+      fetchJson(`${HENRIK_BASE}/v3/matches/${SAMPLE_REGION}/${enc(name)}/${enc(tag)}?size=10`, headers),
+      fetchJson(`${HENRIK_BASE}/v1/mmr-history/${SAMPLE_REGION}/${enc(name)}/${enc(tag)}`, headers).catch(function(){ return { data: [] }; })
     ]);
     const matches = mData.data || [];
     if (!matches.length) throw new Error('no match history for current #1 — will retry next request');
 
-    const payload = { acc: acc.data, mmr: mmr.data, matches, name, tag, region: SAMPLE_REGION };
+    const payload = { acc: acc.data, mmr: mmr.data, matches, mmrHistory: mmrHistory.data || [], name, tag, region: SAMPLE_REGION };
     if (env.FRAGLY_ADS) {
       await env.FRAGLY_ADS.put(CACHE_KEY, JSON.stringify({ cachedAt: Date.now(), payload }));
     }
