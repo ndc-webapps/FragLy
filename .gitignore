@@ -4,3 +4,4 @@
 .env.*
 !.env.example
 .Codex/progress/
+.wrangler/

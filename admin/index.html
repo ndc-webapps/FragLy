@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>FragLy — Ads Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#A855F7;--gold:#FB923C;--pink:#EC4899;
+  --bg:#0B0C10;--surf:#14161C;--surf2:rgba(255,255,255,.04);
+  --bdr:rgba(255,255,255,.09);--txt:#ECE8F5;--muted:#6a6a8a;--muted2:#9a93b8;
+  --mono:'DM Mono',monospace;--dp:'Barlow Condensed',sans-serif;--body:'Syne',sans-serif;
+  --r:16px;--r2:10px;--ease:cubic-bezier(.16,1,.3,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);min-height:100vh;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse 60% 40% at 20% 0%,rgba(168,85,247,.14),transparent 60%),
+             radial-gradient(ellipse 50% 40% at 100% 100%,rgba(236,72,153,.1),transparent 60%);}
+.wrap{max-width:980px;margin:0 auto;padding:40px 20px 80px;}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 10px var(--red);}
+.brand-name{font-family:var(--dp);font-weight:900;font-size:1.4rem;letter-spacing:1px;}
+.brand-name b{background:linear-gradient(135deg,var(--red),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.brand-sub{font-family:var(--mono);font-size:.68rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:36px;}
+
+/* ── LOGIN ── */
+.login-shell{min-height:70vh;display:flex;align-items:center;justify-content:center;}
+.login-card{width:min(380px,100%);background:linear-gradient(155deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid var(--bdr);border-radius:var(--r);padding:32px 28px;backdrop-filter:blur(20px);}
+.login-card h1{font-family:var(--dp);font-size:1.6rem;font-weight:800;letter-spacing:.5px;margin-bottom:6px;}
+.login-card p{font-size:.82rem;color:var(--muted2);margin-bottom:22px;line-height:1.6;}
+.field label{display:block;font-family:var(--mono);font-size:.6rem;letter-spacing:2px;color:var(--red);text-transform:uppercase;margin-bottom:8px;}
+.field input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--r2);padding:12px 14px;color:var(--txt);font-family:var(--body);font-size:.9rem;outline:none;transition:.2s;}
+.field input:focus{border-color:rgba(168,85,247,.5);box-shadow:0 0 0 3px rgba(168,85,247,.1);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:var(--r2);cursor:pointer;font-family:var(--dp);font-weight:700;letter-spacing:1.5px;transition:.2s var(--ease);}
+.btn-p{width:100%;margin-top:18px;padding:13px;background:linear-gradient(135deg,var(--red),var(--pink));color:#fff;font-size:.95rem;}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(168,85,247,.35);}
+.btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;}
+.err-msg{margin-top:14px;padding:10px 12px;border-radius:var(--r2);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;font-size:.78rem;line-height:1.5;display:none;}
+.err-msg.on{display:block;}
+
+/* ── APP ── */
+.app{display:none;}
+.app.on{display:block;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px;flex-wrap:wrap;gap:12px;}
+.btn-ghost{padding:9px 16px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);color:var(--muted2);font-family:var(--mono);font-size:.66rem;letter-spacing:1.5px;}
+.btn-ghost:hover{color:var(--txt);border-color:rgba(255,255,255,.2);}
+
+.slot-block{margin-bottom:44px;}
+.slot-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap;}
+.slot-title{font-family:var(--dp);font-size:1.3rem;font-weight:800;letter-spacing:1px;}
+.slot-dims{font-family:var(--mono);font-size:.62rem;color:var(--muted);letter-spacing:1px;}
+.slot-count{font-family:var(--mono);font-size:.68rem;color:var(--muted2);letter-spacing:1px;}
+.slot-count.full{color:var(--gold);}
+
+.ad-list{display:flex;flex-direction:column;gap:10px;margin:16px 0 18px;}
+.ad-row{display:flex;align-items:center;gap:14px;background:linear-gradient(155deg,rgba(255,255,255,.04),rgba(255,255,255,.015));border:1px solid var(--bdr);border-radius:var(--r2);padding:12px;transition:.2s;}
+.ad-row.inactive{opacity:.5;}
+.ad-thumb{flex:none;border-radius:8px;overflow:hidden;background:#000;border:1px solid var(--bdr);}
+.ad-row[data-slot="banner"] .ad-thumb{width:120px;height:24px;}
+.ad-row[data-slot="square"] .ad-thumb{width:56px;height:56px;}
+.ad-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.ad-info{flex:1;min-width:0;}
+.ad-title{font-size:.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ad-link{font-family:var(--mono);font-size:.62rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:3px;}
+.ad-actions{display:flex;align-items:center;gap:6px;flex:none;}
+.icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--bdr);background:rgba(255,255,255,.03);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:.15s;}
+.icon-btn:hover{color:var(--txt);border-color:rgba(255,255,255,.25);}
+.icon-btn.danger:hover{color:#fca5a5;border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08);}
+.tog{position:relative;width:38px;height:22px;border-radius:20px;background:#1a1a2e;border:1px solid var(--bdr);cursor:pointer;transition:.2s;flex:none;}
+.tog.on{background:rgba(168,85,247,.35);border-color:var(--red);}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#ECE8F5;transition:.2s;}
+.tog.on::after{left:18px;background:#fff;}
+.empty-note{font-family:var(--mono);font-size:.7rem;color:var(--muted);letter-spacing:1px;padding:14px;text-align:center;border:1px dashed var(--bdr);border-radius:var(--r2);}
+
+/* ── ADD FORM ── */
+.add-card{background:linear-gradient(155deg,rgba(255,255,255,.04),rgba(255,255,255,.015));border:1px solid var(--bdr);border-radius:var(--r);padding:20px;}
+.add-card h3{font-family:var(--mono);font-size:.66rem;letter-spacing:3px;color:var(--pink);margin-bottom:16px;text-transform:uppercase;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:640px){.grid2{grid-template-columns:1fr;}}
+.field{margin-bottom:14px;}
+.field-row{display:flex;gap:8px;}
+.field-row input{flex:1;}
+.hint{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:.5px;margin-top:6px;line-height:1.5;}
+.preview-strip{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px;border-radius:var(--r2);border:1px solid var(--bdr);background:rgba(0,0,0,.25);}
+.preview-strip img{border-radius:6px;background:#000;object-fit:cover;flex:none;}
+.preview-strip.banner img{width:160px;height:32px;}
+.preview-strip.square img{width:64px;height:64px;}
+.preview-strip .ptxt{font-family:var(--mono);font-size:.62rem;color:var(--muted2);word-break:break-all;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:12px 20px;font-size:.82rem;box-shadow:0 20px 60px rgba(0,0,0,.5);transition:.3s var(--ease);pointer-events:none;z-index:999;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.err{border-color:rgba(239,68,68,.4);color:#fca5a5;}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;animation:sp .7s linear infinite;display:inline-block;}
+@keyframes sp{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><span class="brand-dot"></span><span class="brand-name">Frag<b>Ly</b></span></div>
+  <div class="brand-sub">Sponsored placements — admin only</div>
+
+  <!-- LOGIN -->
+  <div class="login-shell" id="loginShell">
+    <div class="login-card">
+      <h1>Sign in</h1>
+      <p>This page manages the sponsored image slots shown on FragLy. It isn't linked from the site — bookmark it.</p>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="pwInput" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-p" id="loginBtn" onclick="doLogin()">SIGN IN</button>
+      <div class="err-msg" id="loginErr"></div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div class="app" id="app">
+    <div class="topbar">
+      <div class="slot-count" id="statusLine">Loaded</div>
+      <button class="btn btn-ghost" onclick="doLogout()">LOG OUT</button>
+    </div>
+
+    <div class="slot-block">
+      <div class="slot-head">
+        <div>
+          <div class="slot-title">Banner slot</div>
+          <div class="slot-dims">Long horizontal strip, above the hero · fixed container, images auto-crop to fit</div>
+        </div>
+        <div class="slot-count" id="bannerCount">0 / 5</div>
+      </div>
+      <div class="ad-list" id="bannerList"></div>
+      <form class="add-card" data-slot="banner" onsubmit="return submitAd(event,'banner')">
+        <h3>Add banner ad</h3>
+        <div id="bannerFields"></div>
+      </form>
+    </div>
+
+    <div class="slot-block">
+      <div class="slot-head">
+        <div>
+          <div class="slot-title">Square slot</div>
+          <div class="slot-dims">Square card, above GET APP in the sidebar · fixed container, images auto-crop to fit</div>
+        </div>
+        <div class="slot-count" id="squareCount">0 / 5</div>
+      </div>
+      <div class="ad-list" id="squareList"></div>
+      <form class="add-card" data-slot="square" onsubmit="return submitAd(event,'square')">
+        <h3>Add square ad</h3>
+        <div id="squareFields"></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var state = { ads: [] };
+
+function fieldsTemplate(slot){
+  return ''
+    + '<div class="grid2">'
+    + '  <div class="field"><label>Product page URL (optional — for auto-fill)</label>'
+    + '    <div class="field-row"><input type="url" placeholder="https://shopee.ph/..." id="'+slot+'_src">'
+    + '    <button type="button" class="btn btn-ghost" id="'+slot+'_fetchBtn" onclick="fetchPreview(\''+slot+'\')">FETCH</button></div>'
+    + '  </div>'
+    + '  <div class="field"><label>Affiliate link (required — what visitors click)</label>'
+    + '    <input type="url" placeholder="https://s.shopee.ph/..." id="'+slot+'_link" required></div>'
+    + '</div>'
+    + '<div class="grid2">'
+    + '  <div class="field"><label>Image URL</label><input type="url" placeholder="https://..." id="'+slot+'_image" required oninput="updatePreview(\''+slot+'\')"></div>'
+    + '  <div class="field"><label>Title / label</label><input type="text" placeholder="e.g. Logitech G Pro X Mouse" id="'+slot+'_title" maxlength="120"></div>'
+    + '</div>'
+    + '<div class="preview-strip '+slot+'" id="'+slot+'_preview" style="display:none"><img id="'+slot+'_previewImg" alt=""><span class="ptxt" id="'+slot+'_previewTxt"></span></div>'
+    + '<div class="hint">Fetch reads the page\'s share preview (title + image) to save typing — it never publishes anything by itself. Review and edit before saving.</div>'
+    + '<button class="btn btn-p" type="submit" id="'+slot+'_submitBtn" style="margin-top:14px;max-width:220px;">ADD AD</button>';
+}
+document.getElementById('bannerFields').innerHTML = fieldsTemplate('banner');
+document.getElementById('squareFields').innerHTML = fieldsTemplate('square');
+
+function toast(msg, isErr){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast on' + (isErr ? ' err' : '');
+  setTimeout(function(){ t.classList.remove('on'); }, 3200);
+}
+function $(id){ return document.getElementById(id); }
+
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+  var r = await fetch(path, Object.assign({ credentials: 'same-origin' }, opts));
+  var data = null;
+  try { data = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error((data && data.error) || ('Request failed (' + r.status + ')'));
+  return data;
+}
+
+async function checkSession(){
+  try {
+    var s = await api('/api/admin/session');
+    if (s.authed) showApp(); else showLogin();
+  } catch (e) {
+    showLogin();
+  }
+}
+function showLogin(){
+  $('loginShell').style.display = 'flex';
+  $('app').classList.remove('on');
+}
+function showApp(){
+  $('loginShell').style.display = 'none';
+  $('app').classList.add('on');
+  loadAds();
+}
+
+async function doLogin(){
+  var pw = $('pwInput').value;
+  var btn = $('loginBtn'), err = $('loginErr');
+  err.classList.remove('on');
+  if (!pw) return;
+  btn.disabled = true; btn.textContent = 'SIGNING IN…';
+  try {
+    await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: pw }) });
+    $('pwInput').value = '';
+    showApp();
+  } catch (e) {
+    err.textContent = e.message;
+    err.classList.add('on');
+  } finally {
+    btn.disabled = false; btn.textContent = 'SIGN IN';
+  }
+}
+async function doLogout(){
+  try { await api('/api/admin/logout', { method: 'POST' }); } catch (e) {}
+  showLogin();
+}
+
+async function loadAds(){
+  $('statusLine').textContent = 'Loading…';
+  try {
+    var data = await api('/api/ads?all=1');
+    state.ads = data.ads || [];
+    render();
+    $('statusLine').textContent = state.ads.length + ' total ad' + (state.ads.length===1?'':'s');
+  } catch (e) {
+    $('statusLine').textContent = '';
+    toast(e.message, true);
+  }
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+  });
+}
+
+function render(){
+  ['banner','square'].forEach(function(slot){
+    var items = state.ads.filter(function(a){ return a.slot === slot; }).sort(function(a,b){ return a.order - b.order; });
+    var activeCount = items.filter(function(a){ return a.active; }).length;
+    var countEl = $(slot + 'Count');
+    countEl.textContent = activeCount + ' / 5';
+    countEl.classList.toggle('full', activeCount >= 5);
+
+    var list = $(slot + 'List');
+    if (!items.length){
+      list.innerHTML = '<div class="empty-note">No ' + slot + ' ads yet.</div>';
+    } else {
+      list.innerHTML = items.map(function(a){
+        return '<div class="ad-row' + (a.active ? '' : ' inactive') + '" data-slot="' + slot + '">'
+          + '<div class="ad-thumb"><img src="' + escapeHtml(a.imageUrl) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>'
+          + '<div class="ad-info">'
+          + '  <div class="ad-title">' + (escapeHtml(a.title) || '<span style=\'color:var(--muted)\'>Untitled</span>') + '</div>'
+          + '  <span class="ad-link">' + escapeHtml(a.link) + '</span>'
+          + '</div>'
+          + '<div class="ad-actions">'
+          + '  <div class="tog' + (a.active ? ' on' : '') + '" title="Active on site" onclick="toggleActive(\'' + a.id + '\',' + !a.active + ')"></div>'
+          + '  <button class="icon-btn danger" title="Delete" onclick="deleteAd(\'' + a.id + '\')">✕</button>'
+          + '</div>'
+        + '</div>';
+      }).join('');
+    }
+
+    var submitBtn = $(slot + '_submitBtn');
+    if (submitBtn) submitBtn.disabled = activeCount >= 5;
+  });
+}
+
+async function toggleActive(id, active){
+  try {
+    await api('/api/ads?id=' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ active: active }) });
+    await loadAds();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+async function deleteAd(id){
+  if (!confirm('Delete this ad? This cannot be undone.')) return;
+  try {
+    await api('/api/ads?id=' + encodeURIComponent(id), { method: 'DELETE' });
+    toast('Ad deleted.');
+    await loadAds();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+async function fetchPreview(slot){
+  var srcUrl = $(slot + '_src').value.trim();
+  if (!srcUrl){ toast('Paste a product page URL first.', true); return; }
+  var btn = $(slot + '_fetchBtn');
+  btn.disabled = true;
+  var original = btn.innerHTML;
+  btn.innerHTML = '<span class="spin"></span>';
+  try {
+    var data = await api('/api/admin/preview', { method: 'POST', body: JSON.stringify({ url: srcUrl }) });
+    if (data.error) { toast(data.error, true); return; }
+    if (data.image) $(slot + '_image').value = data.image;
+    if (data.title && !$(slot + '_title').value) $(slot + '_title').value = data.title;
+    updatePreview(slot);
+    toast('Prefilled from page preview — review before saving.');
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+function updatePreview(slot){
+  var img = $(slot + '_image').value.trim();
+  var box = $(slot + '_preview');
+  if (!img){ box.style.display = 'none'; return; }
+  box.style.display = 'flex';
+  $(slot + '_previewImg').src = img;
+  $(slot + '_previewTxt').textContent = 'This is roughly how it will crop to fit the ' + slot + ' slot on-site.';
+}
+
+async function submitAd(evt, slot){
+  evt.preventDefault();
+  var link = $(slot + '_link').value.trim();
+  var imageUrl = $(slot + '_image').value.trim();
+  var title = $(slot + '_title').value.trim();
+  if (!link || !imageUrl) return false;
+
+  var btn = $(slot + '_submitBtn');
+  btn.disabled = true; btn.textContent = 'ADDING…';
+  try {
+    await api('/api/ads', { method: 'POST', body: JSON.stringify({ slot: slot, link: link, imageUrl: imageUrl, title: title }) });
+    toast('Ad added.');
+    $(slot + '_src').value = '';
+    $(slot + '_link').value = '';
+    $(slot + '_image').value = '';
+    $(slot + '_title').value = '';
+    $(slot + '_preview').style.display = 'none';
+    await loadAds();
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'ADD AD';
+  }
+  return false;
+}
+
+checkSession();
+</script>
+</body>
+</html>
