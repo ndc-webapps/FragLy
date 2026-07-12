@@ -7,7 +7,7 @@
 //   SESSION_SECRET  — any long random string, used to sign session cookies
 
 const COOKIE_NAME = 'fragly_admin';
-const SESSION_TTL_SECONDS = 60 * 60 * 8; // 8 hours
+const SESSION_TTL_SECONDS = 60 * 60 * 8; // absolute server-side cap on the signed token, independent of the cookie below
 
 function toBase64Url(bytes) {
   let bin = '';
@@ -66,7 +66,12 @@ export function getCookie(request, name) {
 }
 
 export function setSessionCookie(token) {
-  return `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_TTL_SECONDS}`;
+  // No Max-Age/Expires on purpose: this makes it a true browser-session cookie, which
+  // the browser deletes itself once you fully close it (all tabs/windows) — the actual
+  // mechanism for "close the browser -> logged out". The token's own exp claim (checked
+  // in verifySessionToken) is the server-side backstop if the cookie somehow survives
+  // (e.g. a browser's tab-restore feature).
+  return `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Strict`;
 }
 
 export function clearSessionCookie() {

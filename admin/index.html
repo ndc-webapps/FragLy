@@ -209,12 +209,47 @@ async function checkSession(){
 function showLogin(){
   $('loginShell').style.display = 'flex';
   $('app').classList.remove('on');
+  stopIdleWatch();
 }
 function showApp(){
   $('loginShell').style.display = 'none';
   $('app').classList.add('on');
   loadAds();
+  startIdleWatch();
 }
+
+/* ── auto-logout ──
+   1) The session cookie itself has no expiry set server-side, so closing the browser
+      (all tabs/windows) clears it automatically — that's the real "close = logged out".
+   2) This idle timer covers the more common risk: walking away from a still-open tab.
+   3) pagehide fires a best-effort logout the moment this tab navigates away/closes, so
+      the cookie is invalidated immediately rather than waiting on the browser to quit. */
+var IDLE_LIMIT_MS = 15 * 60 * 1000;
+var idleTimer = null;
+function startIdleWatch(){
+  resetIdleTimer();
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function(evt){
+    document.addEventListener(evt, resetIdleTimer, { passive: true });
+  });
+}
+function stopIdleWatch(){
+  if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function(evt){
+    document.removeEventListener(evt, resetIdleTimer);
+  });
+}
+function resetIdleTimer(){
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(function(){
+    doLogout();
+    toast('Logged out after 15 minutes of inactivity.', true);
+  }, IDLE_LIMIT_MS);
+}
+window.addEventListener('pagehide', function(){
+  if ($('app').classList.contains('on') && navigator.sendBeacon) {
+    navigator.sendBeacon('/api/admin/logout');
+  }
+});
 
 async function doLogin(){
   var pw = $('pwInput').value;
