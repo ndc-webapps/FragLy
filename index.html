@@ -183,10 +183,9 @@ nav{animation:navIn .7s var(--ease2) backwards;}
   .nav-live{display:none!important;} /* LIVE status lives in the sidebar drawer footer */
 }
 /* ── SPONSORED AD SLOTS — fixed-size containers, auto-slide, image never changes the box ── */
-.ad-slot-box{position:relative;overflow:hidden;border-radius:14px;border:1px solid var(--bdr);background:#000;}
+.ad-slot-box{position:relative;overflow:hidden;border-radius:14px;border:1px solid var(--bdr);background:linear-gradient(100deg,#0a0a10,#120a18);}
 .ad-slot-box .ad-frame{position:absolute;inset:0;opacity:0;transition:opacity .8s var(--ease2);}
 .ad-slot-box .ad-frame.on{opacity:1;z-index:1;}
-.ad-slot-box .ad-frame img{width:100%;height:100%;object-fit:cover;display:block;}
 .ad-slot-box .ad-tag{position:absolute;top:6px;left:8px;z-index:3;font-family:var(--mono);font-size:.5rem;letter-spacing:1.5px;color:rgba(255,255,255,.75);background:rgba(0,0,0,.55);padding:2px 6px;border-radius:4px;text-transform:uppercase;pointer-events:none;}
 .ad-slot-box .ad-dots{position:absolute;bottom:6px;right:8px;z-index:3;display:flex;gap:2px;}
 .ad-slot-box .ad-dots button{width:18px;height:18px;padding:0;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;}
@@ -200,11 +199,32 @@ nav{animation:navIn .7s var(--ease2) backwards;}
 .ad-slot-box:hover .ad-nav{opacity:1;}
 .ad-slot-box .ad-nav:hover{background:rgba(168,85,247,.5);border-color:rgba(168,85,247,.6);}
 @media(hover:none){.ad-slot-box .ad-nav{opacity:.55;}}
+
+/* banner: image chip (contained product shot, not stretched) + title/CTA copy — a raw
+   product photo cover-cropped across an 8:1 strip is illegible, so it never fills the
+   whole box. */
 .ad-banner{width:100%;height:64px;margin:0 0 28px;}
-.ad-banner .ad-frame img{transition:transform 6s linear;}
-.ad-banner .ad-frame.on img{transform:scale(1.06);}
-@media(min-width:640px){.ad-banner{height:80px;}}
+.ad-banner .ad-frame{display:flex;align-items:stretch;}
+.ad-banner .ad-thumb{flex:0 0 auto;height:100%;aspect-ratio:1/1;background:#000;overflow:hidden;}
+.ad-banner .ad-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 6s linear;}
+.ad-banner .ad-frame.on .ad-thumb img{transform:scale(1.08);}
+.ad-banner .ad-copy{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 44px 0 14px;}
+.ad-banner .ad-name{font-family:var(--body);font-weight:700;font-size:.86rem;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ad-banner .ad-cta{font-family:var(--mono);font-size:.6rem;letter-spacing:2px;color:var(--red);text-transform:uppercase;}
+@media(min-width:640px){
+  .ad-banner{height:80px;}
+  .ad-banner .ad-name{font-size:1rem;}
+}
+@media(max-width:420px){.ad-banner .ad-copy{padding-right:14px;}.ad-banner .ad-cta{display:none;}}
+@media(prefers-reduced-motion:reduce){.ad-banner .ad-frame.on .ad-thumb img{transform:none;transition:none;}}
+
+/* square: full-bleed image with a bottom gradient caption, so the product still reads
+   at a glance even in a small box. */
 .ad-square{aspect-ratio:1/1;margin:0 10px 14px;flex-shrink:0;}
+.ad-square .ad-frame img{width:100%;height:100%;object-fit:cover;display:block;}
+.ad-square .ad-cap{position:absolute;left:0;right:0;bottom:0;padding:16px 10px 8px;background:linear-gradient(0deg,rgba(0,0,0,.88),transparent);}
+.ad-square .ad-name{font-family:var(--body);font-weight:700;font-size:.72rem;color:#fff;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ad-square .ad-cta{display:block;margin-top:2px;font-family:var(--mono);font-size:.52rem;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;}
 .ad-square .ad-nav{width:20px;height:20px;}
 @media(prefers-reduced-motion:reduce){.ad-banner .ad-frame.on img{transform:none;transition:none;}}
 .sb-get{margin:auto 10px 10px;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:14px;border:1px solid rgba(168,85,247,.35);background:linear-gradient(100deg,rgba(139,92,246,.2),rgba(236,72,153,.12));color:var(--txt);font-family:var(--dp);font-size:.95rem;font-weight:700;letter-spacing:2px;cursor:pointer;transition:.3s var(--ease2);}
@@ -1810,15 +1830,27 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
   var CHEVRON_LEFT = chevron.replace('%POINTS%', '15 6 9 12 15 18');
   var CHEVRON_RIGHT = chevron.replace('%POINTS%', '9 6 15 12 9 18');
 
-  function initAdSlot(containerId, ads, intervalMs){
+  function bannerFrame(a, i){
+    var title = a.title || 'Sponsored';
+    return '<a class="ad-frame' + (i === 0 ? ' on' : '') + '" href="' + adEsc(a.link) + '" target="_blank" rel="noopener sponsored nofollow" aria-label="' + adEsc(title) + '">'
+      + '<div class="ad-thumb"><img src="' + adEsc(a.imageUrl) + '" alt="" loading="lazy"></div>'
+      + '<div class="ad-copy"><span class="ad-name">' + adEsc(title) + '</span><span class="ad-cta">Shop now →</span></div>'
+      + '</a>';
+  }
+  function squareFrame(a, i){
+    var title = a.title || 'Sponsored';
+    return '<a class="ad-frame' + (i === 0 ? ' on' : '') + '" href="' + adEsc(a.link) + '" target="_blank" rel="noopener sponsored nofollow" aria-label="' + adEsc(title) + '">'
+      + '<img src="' + adEsc(a.imageUrl) + '" alt="" loading="lazy">'
+      + '<div class="ad-cap"><span class="ad-name">' + adEsc(title) + '</span><span class="ad-cta">Shop now →</span></div>'
+      + '</a>';
+  }
+
+  function initAdSlot(containerId, ads, intervalMs, frameFn){
     var box = document.getElementById(containerId);
     if(!box || !ads || !ads.length) return;
     box.style.display = '';
     box.innerHTML = '<div class="ad-tag">AD</div>'
-      + ads.map(function(a, i){
-          return '<a class="ad-frame' + (i === 0 ? ' on' : '') + '" href="' + adEsc(a.link) + '" target="_blank" rel="noopener sponsored nofollow" aria-label="' + adEsc(a.title || 'Sponsored') + '">'
-            + '<img src="' + adEsc(a.imageUrl) + '" alt="' + adEsc(a.title || '') + '" loading="lazy"></a>';
-        }).join('')
+      + ads.map(frameFn).join('')
       + (ads.length > 1
           ? '<button type="button" class="ad-nav prev" aria-label="Previous ad">' + CHEVRON_LEFT + '</button>'
           + '<button type="button" class="ad-nav next" aria-label="Next ad">' + CHEVRON_RIGHT + '</button>'
@@ -1855,8 +1887,8 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
 
   fetch('/api/ads').then(function(r){ return r.ok ? r.json() : null; }).then(function(data){
     if(!data) return;
-    initAdSlot('adBanner', data.banner, 5000);
-    initAdSlot('adSquare', data.square, 6000);
+    initAdSlot('adBanner', data.banner, 5000, bannerFrame);
+    initAdSlot('adSquare', data.square, 6000, squareFrame);
   }).catch(function(){ /* ads are optional — page works fine without them */ });
 })();
 </script>
