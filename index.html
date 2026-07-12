@@ -187,15 +187,25 @@ nav{animation:navIn .7s var(--ease2) backwards;}
 .ad-slot-box .ad-frame{position:absolute;inset:0;opacity:0;transition:opacity .8s var(--ease2);}
 .ad-slot-box .ad-frame.on{opacity:1;z-index:1;}
 .ad-slot-box .ad-frame img{width:100%;height:100%;object-fit:cover;display:block;}
-.ad-slot-box .ad-tag{position:absolute;top:6px;left:8px;z-index:2;font-family:var(--mono);font-size:.5rem;letter-spacing:1.5px;color:rgba(255,255,255,.75);background:rgba(0,0,0,.55);padding:2px 6px;border-radius:4px;text-transform:uppercase;pointer-events:none;}
-.ad-slot-box .ad-dots{position:absolute;bottom:6px;right:8px;z-index:2;display:flex;gap:4px;}
-.ad-slot-box .ad-dots span{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.35);transition:.3s;}
-.ad-slot-box .ad-dots span.on{background:#fff;box-shadow:0 0 6px rgba(255,255,255,.6);}
+.ad-slot-box .ad-tag{position:absolute;top:6px;left:8px;z-index:3;font-family:var(--mono);font-size:.5rem;letter-spacing:1.5px;color:rgba(255,255,255,.75);background:rgba(0,0,0,.55);padding:2px 6px;border-radius:4px;text-transform:uppercase;pointer-events:none;}
+.ad-slot-box .ad-dots{position:absolute;bottom:6px;right:8px;z-index:3;display:flex;gap:2px;}
+.ad-slot-box .ad-dots button{width:18px;height:18px;padding:0;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.ad-slot-box .ad-dots button::after{content:'';width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.4);transition:.25s var(--ease2);}
+.ad-slot-box .ad-dots button:hover::after{background:rgba(255,255,255,.75);}
+.ad-slot-box .ad-dots button.on::after{width:12px;border-radius:3px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.6);}
+.ad-slot-box .ad-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.5);backdrop-filter:blur(4px);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:.25s var(--ease2);}
+.ad-slot-box .ad-nav svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+.ad-slot-box .ad-nav.prev{left:6px;}
+.ad-slot-box .ad-nav.next{right:6px;}
+.ad-slot-box:hover .ad-nav{opacity:1;}
+.ad-slot-box .ad-nav:hover{background:rgba(168,85,247,.5);border-color:rgba(168,85,247,.6);}
+@media(hover:none){.ad-slot-box .ad-nav{opacity:.55;}}
 .ad-banner{width:100%;height:64px;margin:0 0 28px;}
 .ad-banner .ad-frame img{transition:transform 6s linear;}
 .ad-banner .ad-frame.on img{transform:scale(1.06);}
 @media(min-width:640px){.ad-banner{height:80px;}}
 .ad-square{aspect-ratio:1/1;margin:0 10px 14px;flex-shrink:0;}
+.ad-square .ad-nav{width:20px;height:20px;}
 @media(prefers-reduced-motion:reduce){.ad-banner .ad-frame.on img{transform:none;transition:none;}}
 .sb-get{margin:auto 10px 10px;display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:14px;border:1px solid rgba(168,85,247,.35);background:linear-gradient(100deg,rgba(139,92,246,.2),rgba(236,72,153,.12));color:var(--txt);font-family:var(--dp);font-size:.95rem;font-weight:700;letter-spacing:2px;cursor:pointer;transition:.3s var(--ease2);}
 .sb-get:hover{border-color:rgba(236,72,153,.55);box-shadow:0 8px 30px rgba(168,85,247,.25);transform:translateY(-1px);}
@@ -1796,6 +1806,10 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
 (function(){
   function adEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+  var chevron = '<svg viewBox="0 0 24 24"><polyline points="%POINTS%"/></svg>';
+  var CHEVRON_LEFT = chevron.replace('%POINTS%', '15 6 9 12 15 18');
+  var CHEVRON_RIGHT = chevron.replace('%POINTS%', '9 6 15 12 9 18');
+
   function initAdSlot(containerId, ads, intervalMs){
     var box = document.getElementById(containerId);
     if(!box || !ads || !ads.length) return;
@@ -1805,17 +1819,38 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
           return '<a class="ad-frame' + (i === 0 ? ' on' : '') + '" href="' + adEsc(a.link) + '" target="_blank" rel="noopener sponsored nofollow" aria-label="' + adEsc(a.title || 'Sponsored') + '">'
             + '<img src="' + adEsc(a.imageUrl) + '" alt="' + adEsc(a.title || '') + '" loading="lazy"></a>';
         }).join('')
-      + (ads.length > 1 ? '<div class="ad-dots">' + ads.map(function(_, i){ return '<span' + (i === 0 ? ' class="on"' : '') + '></span>'; }).join('') + '</div>' : '');
+      + (ads.length > 1
+          ? '<button type="button" class="ad-nav prev" aria-label="Previous ad">' + CHEVRON_LEFT + '</button>'
+          + '<button type="button" class="ad-nav next" aria-label="Next ad">' + CHEVRON_RIGHT + '</button>'
+          + '<div class="ad-dots">' + ads.map(function(_, i){ return '<button type="button" class="' + (i === 0 ? 'on' : '') + '" aria-label="Go to ad ' + (i + 1) + '"></button>'; }).join('') + '</div>'
+          : '');
 
     if(ads.length <= 1) return;
     var idx = 0;
     var frames = box.querySelectorAll('.ad-frame');
-    var dots = box.querySelectorAll('.ad-dots span');
-    setInterval(function(){
+    var dots = box.querySelectorAll('.ad-dots button');
+    var timer = null;
+
+    function goTo(next){
       frames[idx].classList.remove('on'); if(dots[idx]) dots[idx].classList.remove('on');
-      idx = (idx + 1) % frames.length;
+      idx = (next + frames.length) % frames.length;
       frames[idx].classList.add('on'); if(dots[idx]) dots[idx].classList.add('on');
-    }, intervalMs);
+    }
+    function restart(){
+      if(timer) clearInterval(timer);
+      timer = setInterval(function(){ goTo(idx + 1); }, intervalMs);
+    }
+    function manual(next){
+      goTo(next);
+      restart(); // clicking resets the auto-advance clock so it doesn't yank away right after
+    }
+
+    dots.forEach(function(d, i){ d.addEventListener('click', function(e){ e.preventDefault(); manual(i); }); });
+    var prevBtn = box.querySelector('.ad-nav.prev'), nextBtn = box.querySelector('.ad-nav.next');
+    if(prevBtn) prevBtn.addEventListener('click', function(e){ e.preventDefault(); manual(idx - 1); });
+    if(nextBtn) nextBtn.addEventListener('click', function(e){ e.preventDefault(); manual(idx + 1); });
+
+    restart();
   }
 
   fetch('/api/ads').then(function(r){ return r.ok ? r.json() : null; }).then(function(data){
