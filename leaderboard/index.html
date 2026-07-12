@@ -35,7 +35,13 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .lb-kicker{font-family:var(--mono);font-size:.66rem;letter-spacing:5px;color:var(--red);text-transform:uppercase;margin-bottom:10px;}
 .lb-title{font-family:var(--dp);font-weight:900;font-size:clamp(2.2rem,5vw,3.6rem);letter-spacing:1px;line-height:1;
   background:linear-gradient(135deg,var(--txt),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:14px;}
-.lb-sub{color:var(--muted2);font-size:.92rem;max-width:600px;margin:0 auto;line-height:1.7;}
+/* per-letter entrance — same treatment as the tool overlay titles (Aim Trainer, Lineups, etc.)
+   and the main hero headline. background:inherit gives each letter its own copy of the
+   parent's gradient so the transform doesn't break background-clip:text. */
+.tt-ch{display:inline-block;background:inherit;-webkit-background-clip:text;background-clip:text;color:transparent;will-change:transform;}
+.lb-sub{color:var(--muted2);font-size:.92rem;max-width:600px;margin:0 auto;line-height:1.7;opacity:0;animation:fadeUpIn .7s .5s var(--ease) forwards;}
+.region-tabs{opacity:0;animation:fadeUpIn .7s .68s var(--ease) forwards;}
+@keyframes fadeUpIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 
 .region-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:28px 0;}
 .region-tab{padding:9px 18px;border-radius:999px;border:1px solid var(--bdr);background:rgba(255,255,255,.03);color:var(--muted2);font-family:var(--dp);font-weight:700;font-size:.9rem;letter-spacing:1px;cursor:pointer;transition:.2s var(--ease);}
@@ -82,6 +88,7 @@ footer{text-align:center;padding:32px;font-family:var(--mono);font-size:.6rem;co
 footer a{color:var(--muted2);text-decoration:none;}
 footer a:hover{color:var(--red);}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 </head>
 <body>
 <div class="topbar">
@@ -127,6 +134,22 @@ footer a:hover{color:var(--red);}
 </footer>
 
 <script>
+/* per-letter title entrance — same as the tool overlay titles on the main site */
+(function(){
+  var el = document.querySelector('.lb-title');
+  if(!el || !window.gsap) return;
+  var t = el.textContent; el.textContent = '';
+  t.split('').forEach(function(ch){
+    var s = document.createElement('span');
+    s.className = 'tt-ch';
+    s.textContent = ch === ' ' ? ' ' : ch;
+    el.appendChild(s);
+  });
+  gsap.fromTo(el.children,
+    {opacity:0, y:46, rotateX:-45},
+    {opacity:1, y:0, rotateX:0, duration:.75, ease:'back.out(1.6)', stagger:.04, clearProps:'transform,opacity'});
+})();
+
 var TIER_UUID = '03621f52-342b-cf4e-4f86-9350a49c6d04';
 function tierIcon(t){ return t ? 'https://media.valorant-api.com/competitivetiers/'+TIER_UUID+'/'+t+'/smallicon.png' : ''; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
