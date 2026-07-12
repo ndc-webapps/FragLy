@@ -203,7 +203,7 @@ nav{animation:navIn .7s var(--ease2) backwards;}
 /* banner: image chip (contained product shot, not stretched) + title/CTA copy — a raw
    product photo cover-cropped across an 8:1 strip is illegible, so it never fills the
    whole box. */
-.ad-banner{width:100%;height:64px;margin:0 0 28px;}
+.ad-banner{width:100%;height:64px;margin:28px 0 0;}
 .ad-banner .ad-frame{display:flex;align-items:stretch;}
 .ad-banner .ad-thumb{flex:0 0 auto;height:100%;aspect-ratio:1/1;background:#000;overflow:hidden;}
 .ad-banner .ad-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 6s linear;}
@@ -1904,7 +1904,6 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
   <div class="hero-orb o4"></div>
   <div class="hero-streak"></div>
   <div class="hero-scan"></div>
-  <div class="ad-slot-box ad-banner reveal" id="adBanner" style="display:none"></div>
   <p class="eyebrow reveal">Powered by FragLy</p>
   <h1 class="htitle reveal">
     <span class="l1">DOMINATE</span>
@@ -1933,6 +1932,10 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
     </div>
     <button class="sbtn magnetic" id="scanBtn" onclick="fetchStats()">SCAN PLAYER</button>
   </div>
+  <!-- Sponsored banner sits AFTER the real headline + search box on purpose — Google flagged
+       the site for "low value content" right after this slot briefly sat above the fold as the
+       first thing on the page. Real content first, ad after, keeps it from reading as ad-first. -->
+  <div class="ad-slot-box ad-banner reveal" id="adBanner" style="display:none"></div>
 </section>
 
 <!-- DASHBOARD -->
