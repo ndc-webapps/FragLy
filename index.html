@@ -384,6 +384,14 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
   .dash.on{clip-path:none!important;transition:none!important;}
 }
 
+.sample-badge{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  margin-bottom:18px;padding:10px 16px;border-radius:999px;
+  border:1px solid rgba(168,85,247,.3);background:linear-gradient(100deg,rgba(168,85,247,.12),rgba(236,72,153,.06));
+  font-family:var(--mono);font-size:.62rem;letter-spacing:1.5px;color:var(--muted2);text-transform:uppercase;}
+.sample-badge span:first-child{color:var(--txt);font-weight:600;}
+.sample-badge-cta{color:var(--red);}
+@media(max-width:600px){.sample-badge{font-size:.56rem;padding:9px 14px;}}
+
 /* PROFILE BANNER — mobile-first */
 .prof{
   --mouse-x:50%;--mouse-y:50%;
@@ -1893,6 +1901,48 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
 })();
 </script>
 
+<!-- ════ SAMPLE REPORT ── auto-loads a real (cached, /api/sample) example player's stats so
+     visitors and crawlers see an actual populated dashboard without needing to search first —
+     the dashboard was previously 100% empty until a user typed a Riot ID, which is very likely
+     why AdSense flagged the site as low-value-content: nothing but marketing copy was visible
+     to any automated review. Clearly labeled via #sampleBadge; replaced instantly by a real
+     search (fetchStats sets window.__realSearchStarted and hides the badge). No scroll-jump,
+     no hero-flash — this runs passively in the background, unlike a user-initiated search. ════ -->
+<script>
+(function(){
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  ready(function(){
+    setTimeout(loadSampleReport, 1200); // let the hero's own entrance motion finish first
+  });
+
+  window.loadSampleReport = async function(){
+    if(window.__realSearchStarted) return;
+    var dash=document.getElementById('dash');
+    if(!dash || dash.classList.contains('on')) return;
+    try{
+      var r=await fetch('/api/sample');
+      if(!r.ok || window.__realSearchStarted) return;
+      var data=await r.json();
+      if(!data || !data.acc || window.__realSearchStarted) return;
+      if(typeof render!=='function') return; // main app script not loaded yet — skip quietly
+      render(data.acc, data.mmr, data.matches||[], data.name, data.tag, data.region);
+      if(window.__realSearchStarted) return; // real search won the race mid-render
+      dash.classList.add('on');
+      void dash.offsetWidth;
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ dash.classList.add('slice-open'); });
+      });
+      if(window.gsapStagger) window.gsapStagger(document.querySelectorAll('#profBanner, .tcol'));
+      if(typeof animBars==='function') setTimeout(animBars, 400);
+      var badge=document.getElementById('sampleBadge');
+      var badgeLabel=document.getElementById('sampleBadgeLabel');
+      if(badgeLabel) badgeLabel.textContent='◎ SAMPLE REPORT — real stats for '+data.name+'#'+data.tag+' (current #1 NA)';
+      if(badge) badge.style.display='flex';
+    }catch(e){ /* sample is optional — page works fine without it */ }
+  };
+})();
+</script>
+
 <!-- HERO -->
 <section class="hero">
   <div class="grid-lines"></div>
@@ -1940,6 +1990,12 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
 
 <!-- DASHBOARD -->
 <section class="dash" id="dash">
+
+  <!-- Shown only for the auto-loaded example report — real search results never carry this -->
+  <div class="sample-badge" id="sampleBadge" style="display:none">
+    <span id="sampleBadgeLabel">◎ SAMPLE REPORT — real stats for the #1 NA player</span>
+    <span class="sample-badge-cta">Search your own Riot ID above to see yours ↑</span>
+  </div>
 
   <!-- PROFILE -->
   <div class="prof reveal" id="profBanner">
@@ -2440,6 +2496,8 @@ async function fetchStats(){
   let name=raw,rawTag='';
   if(raw.includes('#')){const s=raw.split('#');name=s[0].trim();rawTag=(s[1]||'').trim();}
   if(!name||!rawTag){showErr('Enter your Riot ID with tag, e.g. TenZ#NA1');return;}
+  window.__realSearchStarted=true; // stops the auto-loaded sample report from racing in
+  const sb=document.getElementById('sampleBadge');if(sb)sb.style.display='none';
   hideErr();setLoad(true,'CONNECTING TO RIOT SERVERS...');
   document.getElementById('dash').classList.remove('on','slice-open');
   try{
