@@ -1,17 +1,22 @@
 // Ad storage — one JSON array in Cloudflare KV (binding: FRAGLY_ADS), two slots
-// ("banner", "square"), max 5 ACTIVE ads per slot so the on-site carousel never
-// grows past what the fixed-size containers were designed for.
+// ("banner", "square"). Admins can activate up to POOL_CAP ads per slot (the pool);
+// the public endpoint only ever returns DISPLAY_COUNT of them at a time, chosen by a
+// deterministic time-bucketed shuffle (see _lib/rotation.js) that changes on its own
+// every N hours — no cron job, nothing scheduled, just math on each request.
 //
-// GET  /api/ads            -> public: { banner: [...active], square: [...active] }
+// GET  /api/ads            -> public: { banner: [...5 for this rotation], square: [...] }
 // GET  /api/ads?all=1      -> admin-only: every ad (active + inactive), for the manager UI
 // POST /api/ads            -> admin-only: create
 // PUT  /api/ads?id=xxx     -> admin-only: update (partial)
 // DELETE /api/ads?id=xxx   -> admin-only: delete
 import { isAuthed, json } from '../_lib/auth.js';
+import { pickRotation } from '../_lib/rotation.js';
+import { getRotationHours } from '../_lib/settings.js';
 
 const KV_KEY = 'ads';
 const SLOTS = ['banner', 'square'];
-const MAX_PER_SLOT = 5;
+const POOL_CAP = 50; // ceiling on how many ACTIVE ads can sit in the pool per slot
+const DISPLAY_COUNT = 5; // how many the site actually shows at once, picked from the pool
 
 async function loadAll(env) {
   const raw = await env.FRAGLY_ADS.get(KV_KEY);
@@ -52,13 +57,14 @@ export async function onRequestGet(context) {
     return json({ ads: sorted });
   }
 
+  const rotationHours = await getRotationHours(env);
   const out = {};
   SLOTS.forEach((slot) => {
-    out[slot] = ads
-      .filter((a) => a.slot === slot && a.active)
-      .sort((a, b) => a.order - b.order)
-      .map(publicShape);
+    const pool = ads.filter((a) => a.slot === slot && a.active);
+    out[slot] = pickRotation(pool, slot, rotationHours, DISPLAY_COUNT).map(publicShape);
   });
+  // Cached briefly at the edge — a rotation boundary might be served up to a minute
+  // late in the worst case, which is invisible against an hours-long rotation period.
   return json(out, 200, { 'Cache-Control': 'public, max-age=60' });
 }
 
@@ -80,8 +86,8 @@ export async function onRequestPost(context) {
 
   const ads = await loadAll(env);
   const activeInSlot = ads.filter((a) => a.slot === slot && a.active).length;
-  if (activeInSlot >= MAX_PER_SLOT) {
-    return json({ error: `The ${slot} slot already has ${MAX_PER_SLOT} active ads — deactivate or delete one first.` }, 400);
+  if (activeInSlot >= POOL_CAP) {
+    return json({ error: `The ${slot} slot already has ${POOL_CAP} active ads (the pool cap) — deactivate or delete one first.` }, 400);
   }
 
   const maxOrder = ads.filter((a) => a.slot === slot).reduce((m, a) => Math.max(m, a.order || 0), 0);
@@ -130,8 +136,8 @@ export async function onRequestPut(context) {
     const wantActive = !!body.active;
     if (wantActive && !current.active) {
       const activeInSlot = ads.filter((a) => a.slot === current.slot && a.active).length;
-      if (activeInSlot >= MAX_PER_SLOT) {
-        return json({ error: `The ${current.slot} slot already has ${MAX_PER_SLOT} active ads.` }, 400);
+      if (activeInSlot >= POOL_CAP) {
+        return json({ error: `The ${current.slot} slot already has ${POOL_CAP} active ads (the pool cap).` }, 400);
       }
     }
     next.active = wantActive;

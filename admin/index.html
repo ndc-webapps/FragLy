@@ -48,6 +48,13 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .btn-ghost{padding:9px 16px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);color:var(--muted2);font-family:var(--mono);font-size:.66rem;letter-spacing:1.5px;}
 .btn-ghost:hover{color:var(--txt);border-color:rgba(255,255,255,.2);}
 
+.rotation-card{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(155deg,rgba(168,85,247,.09),rgba(236,72,153,.04));border:1px solid var(--bdr);border-radius:var(--r);padding:16px 20px;margin-bottom:32px;}
+.rotation-card h3{font-family:var(--dp);font-size:1rem;font-weight:800;letter-spacing:.5px;margin-bottom:3px;}
+.rotation-card p{font-family:var(--mono);font-size:.62rem;color:var(--muted2);letter-spacing:.5px;}
+.seg{display:flex;gap:4px;background:rgba(0,0,0,.3);border:1px solid var(--bdr);border-radius:10px;padding:3px;flex:none;}
+.seg button{padding:8px 14px;border:none;border-radius:7px;background:none;color:var(--muted2);font-family:var(--dp);font-weight:700;font-size:.85rem;cursor:pointer;transition:.2s var(--ease);}
+.seg button.on{background:linear-gradient(135deg,var(--red),var(--pink));color:#fff;}
+.seg button:disabled{opacity:.5;cursor:wait;}
 .slot-block{margin-bottom:44px;}
 .slot-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap;}
 .slot-title{font-family:var(--dp);font-size:1.3rem;font-weight:800;letter-spacing:1px;}
@@ -122,13 +129,27 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
       <button class="btn btn-ghost" onclick="doLogout()">LOG OUT</button>
     </div>
 
+    <div class="rotation-card">
+      <div>
+        <h3>Rotation</h3>
+        <p>Site shows 5 ads per slot at a time, randomly picked from everything active below — swaps to a fresh random 5 automatically on this interval.</p>
+      </div>
+      <div class="seg" id="rotationSeg">
+        <button type="button" onclick="setRotation(1)">1h</button>
+        <button type="button" onclick="setRotation(2)">2h</button>
+        <button type="button" onclick="setRotation(3)">3h</button>
+        <button type="button" onclick="setRotation(4)">4h</button>
+        <button type="button" onclick="setRotation(5)">5h</button>
+      </div>
+    </div>
+
     <div class="slot-block">
       <div class="slot-head">
         <div>
           <div class="slot-title">Banner slot</div>
-          <div class="slot-dims">Long horizontal strip, above the hero · fixed container, images auto-crop to fit</div>
+          <div class="slot-dims">Long horizontal strip, above the hero · fixed container, images auto-crop to fit · 5 shown at a time, rotated from this pool</div>
         </div>
-        <div class="slot-count" id="bannerCount">0 / 5</div>
+        <div class="slot-count" id="bannerCount">0 / 50</div>
       </div>
       <div class="ad-list" id="bannerList"></div>
       <form class="add-card" data-slot="banner" onsubmit="return submitAd(event,'banner')">
@@ -141,9 +162,9 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
       <div class="slot-head">
         <div>
           <div class="slot-title">Square slot</div>
-          <div class="slot-dims">Square card, above GET APP in the sidebar · fixed container, images auto-crop to fit</div>
+          <div class="slot-dims">Square card, above GET APP in the sidebar · fixed container, images auto-crop to fit · 5 shown at a time, rotated from this pool</div>
         </div>
-        <div class="slot-count" id="squareCount">0 / 5</div>
+        <div class="slot-count" id="squareCount">0 / 50</div>
       </div>
       <div class="ad-list" id="squareList"></div>
       <form class="add-card" data-slot="square" onsubmit="return submitAd(event,'square')">
@@ -158,6 +179,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 
 <script>
 var state = { ads: [] };
+var POOL_CAP = 50; // must match functions/api/ads.js
 
 function fieldsTemplate(slot){
   return ''
@@ -215,7 +237,33 @@ function showApp(){
   $('loginShell').style.display = 'none';
   $('app').classList.add('on');
   loadAds();
+  loadRotationSetting();
   startIdleWatch();
+}
+
+async function loadRotationSetting(){
+  try {
+    var data = await api('/api/admin/settings');
+    paintRotationSeg(data.rotationHours);
+  } catch (e) { /* non-fatal — the segmented control just won't show a selection yet */ }
+}
+function paintRotationSeg(hours){
+  document.querySelectorAll('#rotationSeg button').forEach(function(b, i){
+    b.classList.toggle('on', i + 1 === hours);
+  });
+}
+async function setRotation(hours){
+  var seg = $('rotationSeg');
+  seg.querySelectorAll('button').forEach(function(b){ b.disabled = true; });
+  try {
+    var data = await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({ rotationHours: hours }) });
+    paintRotationSeg(data.rotationHours);
+    toast('Ads now rotate every ' + data.rotationHours + 'h.');
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    seg.querySelectorAll('button').forEach(function(b){ b.disabled = false; });
+  }
 }
 
 /* ── auto-logout ──
@@ -297,8 +345,8 @@ function render(){
     var items = state.ads.filter(function(a){ return a.slot === slot; }).sort(function(a,b){ return a.order - b.order; });
     var activeCount = items.filter(function(a){ return a.active; }).length;
     var countEl = $(slot + 'Count');
-    countEl.textContent = activeCount + ' / 5';
-    countEl.classList.toggle('full', activeCount >= 5);
+    countEl.textContent = activeCount + ' / ' + POOL_CAP;
+    countEl.classList.toggle('full', activeCount >= POOL_CAP);
 
     var list = $(slot + 'List');
     if (!items.length){
@@ -320,7 +368,7 @@ function render(){
     }
 
     var submitBtn = $(slot + '_submitBtn');
-    if (submitBtn) submitBtn.disabled = activeCount >= 5;
+    if (submitBtn) submitBtn.disabled = activeCount >= POOL_CAP;
   });
 }
 
