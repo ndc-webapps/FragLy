@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valorant Weapon Skins Gallery — Every Skin, Every Weapon | FragLy</title>
+<meta name="description" content="Browse every Valorant weapon skin — filter by Select, Deluxe, Premium, Exclusive, and Ultra tiers, see real animated previews, and switch between color variants.">
+<link rel="icon" href="/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Barlow+Condensed:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#A855F7;--gold:#FB923C;--pink:#EC4899;--blue:#4BBDFF;--green:#3DFFA0;
+  --bg:#0B0C10;--surf:#14161C;
+  --bdr:rgba(255,255,255,.09);--txt:#ECE8F5;--muted:#6a6a8a;--muted2:#9a93b8;
+  --mono:'DM Mono',monospace;--dp:'Barlow Condensed',sans-serif;--body:'Syne',sans-serif;
+  --r:16px;--r2:10px;--ease:cubic-bezier(.16,1,.3,1);
+  --t-select:#C7CBD6;--t-deluxe:#3DFFA0;--t-premium:#4BBDFF;--t-exclusive:#EC4899;--t-ultra:#FFC862;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse 60% 40% at 15% 0%,rgba(168,85,247,.16),transparent 60%),
+             radial-gradient(ellipse 50% 40% at 100% 20%,rgba(236,72,153,.1),transparent 60%),
+             radial-gradient(ellipse 50% 40% at 20% 100%,rgba(251,146,60,.08),transparent 60%);}
+::selection{background:var(--red);color:#fff;}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 24px;max-width:1200px;margin:0 auto;}
+.back-link{display:inline-flex;align-items:center;gap:8px;color:var(--muted2);text-decoration:none;font-family:var(--mono);font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;transition:.2s;}
+.back-link:hover{color:var(--txt);}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--dp);font-weight:900;font-size:1.3rem;letter-spacing:1px;}
+.brand-dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 10px var(--red);}
+.brand b{background:linear-gradient(135deg,var(--red),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;}
+
+.wrap{max-width:1200px;margin:0 auto;padding:20px 24px 100px;}
+.sk-head{text-align:center;padding:36px 0 28px;}
+.sk-kicker{font-family:var(--mono);font-size:.66rem;letter-spacing:5px;color:var(--red);text-transform:uppercase;margin-bottom:10px;}
+.sk-title{font-family:var(--dp);font-weight:900;font-size:clamp(2.2rem,5vw,3.6rem);letter-spacing:1px;line-height:1;
+  background:linear-gradient(135deg,var(--txt),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:14px;}
+.tt-ch{display:inline-block;background:inherit;-webkit-background-clip:text;background-clip:text;color:transparent;will-change:transform;}
+.sk-sub{color:var(--muted2);font-size:.92rem;max-width:640px;margin:0 auto;line-height:1.7;opacity:0;animation:fadeUpIn .7s .5s var(--ease) forwards;}
+@keyframes fadeUpIn{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+
+/* weapon picker */
+.wpn-cats{opacity:0;animation:fadeUpIn .7s .62s var(--ease) forwards;margin-top:30px;}
+.wpn-cat{margin-bottom:16px;}
+.wpn-cat-lbl{font-family:var(--mono);font-size:.6rem;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;padding-left:2px;}
+.wpn-row{display:flex;flex-wrap:wrap;gap:8px;}
+.wpn-btn{display:flex;flex-direction:column;align-items:center;gap:6px;width:84px;padding:10px 6px 8px;border-radius:var(--r2);border:1px solid var(--bdr);background:rgba(255,255,255,.03);cursor:pointer;transition:.2s var(--ease);}
+.wpn-btn:hover{border-color:rgba(168,85,247,.35);background:rgba(168,85,247,.06);}
+.wpn-btn.on{border-color:rgba(168,85,247,.55);background:linear-gradient(155deg,rgba(168,85,247,.16),rgba(236,72,153,.08));box-shadow:0 8px 20px rgba(168,85,247,.18);}
+.wpn-btn img{width:48px;height:32px;object-fit:contain;filter:invert(1) brightness(1.15) drop-shadow(0 2px 5px rgba(0,0,0,.55));}
+.wpn-btn span{font-family:var(--dp);font-weight:700;font-size:.66rem;letter-spacing:.3px;color:var(--muted2);text-align:center;line-height:1.2;}
+.wpn-btn.on span{color:var(--txt);}
+
+/* tier filter */
+.tier-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 24px;}
+.tier-tab{padding:8px 16px;border-radius:999px;border:1px solid var(--bdr);background:rgba(255,255,255,.03);color:var(--muted2);font-family:var(--dp);font-weight:700;font-size:.82rem;letter-spacing:.5px;cursor:pointer;transition:.2s var(--ease);display:flex;align-items:center;gap:6px;}
+.tier-tab:hover{border-color:rgba(168,85,247,.4);color:var(--txt);}
+.tier-tab.on{background:linear-gradient(135deg,var(--red),var(--pink));border-color:transparent;color:#fff;box-shadow:0 8px 20px rgba(168,85,247,.28);}
+.tier-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.tier-dot.Select{background:var(--t-select);}
+.tier-dot.Deluxe{background:var(--t-deluxe);}
+.tier-dot.Premium{background:var(--t-premium);}
+.tier-dot.Exclusive{background:var(--t-exclusive);}
+.tier-dot.Ultra{background:var(--t-ultra);}
+
+.sk-meta{font-family:var(--mono);font-size:.62rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;}
+
+/* skin grid */
+.sk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+.sk-card{position:relative;display:flex;flex-direction:column;background:linear-gradient(155deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:.25s var(--ease);}
+.sk-card:hover{transform:translateY(-3px);border-color:rgba(168,85,247,.35);box-shadow:0 14px 28px rgba(0,0,0,.35);}
+.sk-card-img-wrap{position:relative;width:100%;aspect-ratio:16/10;background:radial-gradient(ellipse at 50% 60%,rgba(255,255,255,.05),transparent 70%);display:flex;align-items:center;justify-content:center;padding:10px;}
+.sk-card-img-wrap img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5));transition:.35s var(--ease);}
+.sk-card:hover .sk-card-img-wrap img{transform:scale(1.06);}
+.sk-tier-badge{position:absolute;top:8px;left:8px;display:flex;align-items:center;gap:4px;padding:3px 8px 3px 6px;border-radius:999px;background:rgba(11,12,16,.75);backdrop-filter:blur(6px);border:1px solid var(--bdr);font-family:var(--mono);font-size:.52rem;letter-spacing:1px;text-transform:uppercase;color:var(--txt);}
+.sk-video-badge{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;background:rgba(11,12,16,.75);backdrop-filter:blur(6px);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--txt);}
+.sk-card-body{padding:10px 12px 12px;}
+.sk-card-name{font-family:var(--dp);font-weight:700;font-size:.86rem;line-height:1.25;letter-spacing:.2px;}
+
+.sk-empty{grid-column:1/-1;padding:50px 20px;text-align:center;color:var(--muted2);font-family:var(--mono);font-size:.78rem;line-height:1.8;}
+.skeleton-card{aspect-ratio:16/12;border-radius:var(--r2);background:linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.05) 37%,rgba(255,255,255,.02) 63%);background-size:400% 100%;animation:shimmer 1.6s ease infinite;border:1px solid var(--bdr);}
+@keyframes shimmer{0%{background-position:100% 0;}100%{background-position:-100% 0;}}
+
+/* premium skin modal */
+.sk-modal-scrim{position:fixed;inset:0;background:rgba(4,4,8,.85);backdrop-filter:blur(8px);z-index:200;opacity:0;pointer-events:none;transition:.25s var(--ease);}
+.sk-modal-scrim.on{opacity:1;pointer-events:auto;}
+.sk-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);width:min(760px,94vw);max-height:90vh;overflow-y:auto;background:linear-gradient(165deg,#181a22,#0d0e13);border:1px solid var(--bdr);border-radius:var(--r);z-index:201;opacity:0;pointer-events:none;transition:.3s var(--ease);box-shadow:0 40px 90px rgba(0,0,0,.6);}
+.sk-modal.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+.sk-modal-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:1px solid var(--bdr);background:rgba(11,12,16,.7);color:var(--txt);font-size:1.05rem;cursor:pointer;z-index:3;transition:.2s;}
+.sk-modal-close:hover{background:rgba(168,85,247,.28);border-color:rgba(168,85,247,.5);}
+.sk-stage{position:relative;width:100%;aspect-ratio:16/9;background:radial-gradient(ellipse at 50% 55%,var(--stage-glow,rgba(168,85,247,.22)),transparent 70%),
+  repeating-linear-gradient(115deg,rgba(255,255,255,.015) 0 2px,transparent 2px 60px),#0a0a0e;
+  border-radius:var(--r) var(--r) 0 0;overflow:hidden;display:flex;align-items:center;justify-content:center;perspective:1000px;}
+.sk-stage-img{max-width:78%;max-height:78%;object-fit:contain;filter:drop-shadow(0 20px 40px rgba(0,0,0,.6));transition:transform .12s ease-out;will-change:transform;}
+.sk-stage-video{width:100%;height:100%;object-fit:cover;}
+.sk-stage-hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:.56rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);opacity:.7;pointer-events:none;}
+.sk-modal-body{padding:20px 24px 26px;}
+.sk-modal-tierline{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.sk-modal-tier-icon{width:20px;height:20px;object-fit:contain;}
+.sk-modal-tier-name{font-family:var(--mono);font-size:.62rem;letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+.sk-modal-title{font-family:var(--dp);font-weight:800;font-size:1.6rem;line-height:1.2;letter-spacing:.3px;margin-bottom:4px;}
+.sk-modal-wpn{font-family:var(--mono);font-size:.68rem;color:var(--muted2);letter-spacing:1px;text-transform:uppercase;margin-bottom:18px;}
+.sk-chroma-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+.sk-chroma-swatch{width:34px;height:34px;border-radius:50%;border:2px solid var(--bdr);cursor:pointer;background-size:cover;background-position:center;transition:.2s;position:relative;}
+.sk-chroma-swatch:hover{border-color:rgba(255,255,255,.4);}
+.sk-chroma-swatch.on{border-color:var(--txt);box-shadow:0 0 0 3px rgba(168,85,247,.35);}
+.sk-credit{font-family:var(--mono);font-size:.58rem;color:var(--muted);letter-spacing:.3px;padding-top:16px;margin-top:16px;border-top:1px solid var(--bdr);}
+
+.sk-content{max-width:820px;margin:56px auto 0;padding-top:36px;border-top:1px solid var(--bdr);}
+.sk-content h2{font-family:var(--dp);font-size:1.4rem;font-weight:800;margin-bottom:12px;letter-spacing:.5px;}
+.sk-content p{color:var(--muted2);font-size:.88rem;line-height:1.8;margin-bottom:16px;}
+.sk-content a{color:var(--red);text-decoration:none;}
+.sk-content a:hover{text-decoration:underline;}
+
+footer{text-align:center;padding:32px;font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:2px;}
+footer a{color:var(--muted2);text-decoration:none;}
+footer a:hover{color:var(--red);}
+
+@media(max-width:640px){
+  .sk-grid{grid-template-columns:1fr 1fr;gap:10px;}
+  .wpn-btn{width:72px;}
+  .wpn-btn img{width:40px;height:28px;}
+  .sk-modal{width:100vw;height:100vh;max-height:100vh;border-radius:0;top:0;left:0;transform:translate(0,0) scale(1);}
+  .sk-modal.on{transform:translate(0,0) scale(1);}
+  .sk-stage{border-radius:0;aspect-ratio:4/3;}
+  .sk-modal-title{font-size:1.25rem;}
+  .sk-modal-body{padding:16px 18px 20px;}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+</head>
+<body>
+<div class="topbar">
+  <a class="back-link" href="/">← Back to FragLy</a>
+  <div class="brand"><span class="brand-dot"></span>Frag<b>Ly</b></div>
+</div>
+
+<div class="wrap">
+  <div class="sk-head">
+    <div class="sk-kicker">Real Riot Catalog · All 20 Weapons</div>
+    <h1 class="sk-title">Weapon Skins</h1>
+    <p class="sk-sub">Every skin for every weapon, straight from Riot's own game data. Filter by tier, then click a skin for the full showcase — real animated previews where Riot has one, and every color variant.</p>
+  </div>
+
+  <div class="wpn-cats" id="wpnCats"></div>
+  <div class="tier-tabs" id="tierTabs"></div>
+  <div class="sk-meta" id="skMeta">Loading…</div>
+  <div class="sk-grid" id="skGrid"></div>
+
+  <div class="sk-content">
+    <h2>About the FragLy Skins Gallery</h2>
+    <p>This gallery mirrors Riot's real weapon skin catalog — every skin's tier (Select, Deluxe, Premium, Exclusive, Ultra), its real render art, and — for the higher tiers that have one — Riot's own animated preview video, played directly from their CDN. Nothing here is fan art or a mockup.</p>
+    <p>True 3D rotation isn't something Riot exposes publicly, so where a skin has a real animated preview, it plays inline. Otherwise you get the real high-resolution render and can switch between every official color variant. Want to check your own loadout stats instead? <a href="/">Search your Riot ID on FragLy</a>.</p>
+  </div>
+</div>
+
+<div class="sk-modal-scrim" id="skScrim"></div>
+<div class="sk-modal" id="skModal" role="dialog" aria-modal="true">
+  <button class="sk-modal-close" id="skClose" aria-label="Close">✕</button>
+  <div class="sk-stage" id="skStage">
+    <img class="sk-stage-img" id="skStageImg" src="" alt="">
+    <video class="sk-stage-video" id="skStageVideo" style="display:none" autoplay muted loop playsinline></video>
+    <div class="sk-stage-hint" id="skStageHint">Move your cursor to preview</div>
+  </div>
+  <div class="sk-modal-body">
+    <div class="sk-modal-tierline">
+      <img class="sk-modal-tier-icon" id="skTierIcon" src="" alt="">
+      <span class="sk-modal-tier-name" id="skTierName"></span>
+    </div>
+    <div class="sk-modal-title" id="skTitle"></div>
+    <div class="sk-modal-wpn" id="skWpnName"></div>
+    <div class="sk-chroma-row" id="skChromaRow"></div>
+    <div class="sk-credit">Source: Riot Games — official weapon skin data via valorant-api.com</div>
+  </div>
+</div>
+
+<footer>
+  <span>FragLy</span> · Unofficial · Not affiliated with Riot Games
+</footer>
+
+<script>
+(function(){
+  var el = document.querySelector('.sk-title');
+  if(!el || !window.gsap) return;
+  var t = el.textContent; el.textContent = '';
+  t.split('').forEach(function(ch){
+    var s = document.createElement('span');
+    s.className = 'tt-ch';
+    s.textContent = ch === ' ' ? ' ' : ch;
+    el.appendChild(s);
+  });
+  gsap.fromTo(el.children,
+    {opacity:0, y:46, rotateX:-45},
+    {opacity:1, y:0, rotateX:0, duration:.75, ease:'back.out(1.6)', stagger:.035, clearProps:'transform,opacity'});
+})();
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+var TIER_ORDER = ['Ultra','Exclusive','Premium','Deluxe','Select'];
+var weaponList = [];
+var currentWeapon = null;   // full weapon object incl. skins, fetched lazily
+var currentWeaponId = null;
+var currentTier = 'all';
+var currentSkins = [];      // filtered view of currentWeapon.skins
+var activeSkin = null;
+
+async function loadWeaponList(){
+  var meta = document.getElementById('skMeta');
+  try{
+    var r = await fetch('/api/skins');
+    var d = await r.json();
+    if(!r.ok || d.error || !d.weapons || !d.weapons.length){
+      meta.textContent = '';
+      document.getElementById('skGrid').innerHTML = '<div class="sk-empty">Skins catalog temporarily unavailable. Try again in a moment.</div>';
+      return;
+    }
+    weaponList = d.weapons;
+    buildWeaponPicker();
+    var vandal = weaponList.find(function(w){ return w.name === 'Vandal'; });
+    selectWeapon((vandal || weaponList[0]).id);
+  }catch(e){
+    meta.textContent = '';
+    document.getElementById('skGrid').innerHTML = '<div class="sk-empty">Couldn\'t load the skins catalog — check your connection and try again.</div>';
+  }
+}
+
+function buildWeaponPicker(){
+  var byCat = {};
+  var order = [];
+  weaponList.forEach(function(w){
+    if(!byCat[w.category]){ byCat[w.category] = []; order.push(w.category); }
+    byCat[w.category].push(w);
+  });
+  var html = order.map(function(cat){
+    var rows = byCat[cat].map(function(w){
+      return '<button class="wpn-btn" data-id="'+esc(w.id)+'" title="'+esc(w.name)+'">'
+        + (w.icon ? '<img src="'+esc(w.icon)+'" alt="" loading="lazy">' : '<div style="width:48px;height:32px;"></div>')
+        + '<span>'+esc(w.name)+'</span>'
+      + '</button>';
+    }).join('');
+    return '<div class="wpn-cat"><div class="wpn-cat-lbl">'+esc(cat)+'</div><div class="wpn-row">'+rows+'</div></div>';
+  }).join('');
+  var el = document.getElementById('wpnCats');
+  el.innerHTML = html;
+  el.querySelectorAll('.wpn-btn').forEach(function(b){
+    b.addEventListener('click', function(){ selectWeapon(b.dataset.id); });
+  });
+}
+
+async function selectWeapon(id){
+  if(id === currentWeaponId) return;
+  currentWeaponId = id;
+  document.querySelectorAll('.wpn-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.id === id); });
+  var meta = document.getElementById('skMeta');
+  var grid = document.getElementById('skGrid');
+  meta.textContent = 'Loading…';
+  grid.innerHTML = Array.from({length:8}).map(function(){ return '<div class="skeleton-card"></div>'; }).join('');
+
+  try{
+    var r = await fetch('/api/skins?weapon='+encodeURIComponent(id));
+    var d = await r.json();
+    if(!r.ok || d.error || !d.weapon){
+      grid.innerHTML = '<div class="sk-empty">Couldn\'t load skins for this weapon. Try another.</div>';
+      meta.textContent = '';
+      return;
+    }
+    if(currentWeaponId !== id) return; // a newer click already won
+    currentWeapon = d.weapon;
+    buildTierTabs();
+    applyTierFilter();
+  }catch(e){
+    grid.innerHTML = '<div class="sk-empty">Couldn\'t load skins for this weapon. Try another.</div>';
+    meta.textContent = '';
+  }
+}
+
+function buildTierTabs(){
+  var present = {};
+  currentWeapon.skins.forEach(function(s){ present[s.tier] = (present[s.tier]||0)+1; });
+  var tabs = document.getElementById('tierTabs');
+  var order = TIER_ORDER.filter(function(t){ return present[t]; });
+  tabs.innerHTML = '<button class="tier-tab" data-tier="all">All (' + currentWeapon.skins.length + ')</button>'
+    + order.map(function(t){
+      return '<button class="tier-tab" data-tier="'+esc(t)+'"><span class="tier-dot '+esc(t)+'"></span>'+esc(t)+' ('+present[t]+')</button>';
+    }).join('');
+  currentTier = 'all';
+  tabs.querySelectorAll('.tier-tab').forEach(function(b){
+    b.classList.toggle('on', b.dataset.tier === currentTier);
+    b.addEventListener('click', function(){
+      currentTier = b.dataset.tier;
+      tabs.querySelectorAll('.tier-tab').forEach(function(x){ x.classList.toggle('on', x===b); });
+      applyTierFilter();
+    });
+  });
+}
+
+function applyTierFilter(){
+  currentSkins = currentTier === 'all' ? currentWeapon.skins : currentWeapon.skins.filter(function(s){ return s.tier === currentTier; });
+  document.getElementById('skMeta').textContent = currentWeapon.name + ' · ' + currentSkins.length + ' skin' + (currentSkins.length===1?'':'s');
+  renderGrid();
+}
+
+function renderGrid(){
+  var grid = document.getElementById('skGrid');
+  if(!currentSkins.length){
+    grid.innerHTML = '<div class="sk-empty">No skins in this tier for '+esc(currentWeapon.name)+'.</div>';
+    return;
+  }
+  grid.innerHTML = currentSkins.map(function(s, i){
+    var img = s.render || s.icon;
+    return '<div class="sk-card" onclick="openSkin('+i+')">'
+      + '<div class="sk-card-img-wrap">'
+        + (img ? '<img src="'+esc(img)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '')
+        + '<span class="sk-tier-badge"><span class="tier-dot '+esc(s.tier)+'"></span>'+esc(s.tier)+'</span>'
+        + (s.video ? '<span class="sk-video-badge" title="Animated preview available">▶</span>' : '')
+      + '</div>'
+      + '<div class="sk-card-body"><div class="sk-card-name">'+esc(s.name)+'</div></div>'
+    + '</div>';
+  }).join('');
+}
+
+function openSkin(i){
+  var s = currentSkins[i];
+  if(!s) return;
+  activeSkin = s;
+  document.getElementById('skTierIcon').src = s.tierIcon || '';
+  document.getElementById('skTierIcon').style.display = s.tierIcon ? '' : 'none';
+  document.getElementById('skTierName').textContent = s.tier;
+  document.getElementById('skTierName').style.color = 'var(--t-' + s.tier.toLowerCase() + ', var(--txt))';
+  document.getElementById('skTitle').textContent = s.name;
+  document.getElementById('skWpnName').textContent = currentWeapon.name;
+  document.getElementById('skStage').style.setProperty('--stage-glow', tierGlow(s.tier));
+
+  setStageImage(s.render || s.icon);
+  var video = document.getElementById('skStageVideo');
+  var img = document.getElementById('skStageImg');
+  var hint = document.getElementById('skStageHint');
+  if(s.video){
+    video.src = s.video;
+    video.style.display = '';
+    img.style.display = 'none';
+    hint.style.display = 'none';
+  }else{
+    video.pause();
+    video.removeAttribute('src');
+    video.style.display = 'none';
+    img.style.display = '';
+    hint.style.display = s.chromas && s.chromas.length > 1 ? 'none' : '';
+  }
+
+  var row = document.getElementById('skChromaRow');
+  if(s.chromas && s.chromas.length > 1){
+    row.innerHTML = s.chromas.map(function(c, ci){
+      var bg = c.swatch || c.render;
+      return '<div class="sk-chroma-swatch'+(ci===0?' on':'')+'" style="background-image:url(\''+esc(bg)+'\')" title="'+esc(c.name)+'" onclick="pickChroma(this,'+ci+')"></div>';
+    }).join('');
+  }else{
+    row.innerHTML = '';
+  }
+
+  document.getElementById('skScrim').classList.add('on');
+  document.getElementById('skModal').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function pickChroma(el, ci){
+  if(!activeSkin || !activeSkin.chromas[ci]) return;
+  document.querySelectorAll('.sk-chroma-swatch').forEach(function(x){ x.classList.remove('on'); });
+  el.classList.add('on');
+  if(!activeSkin.video){
+    setStageImage(activeSkin.chromas[ci].render || activeSkin.render);
+  }
+}
+
+function setStageImage(url){
+  document.getElementById('skStageImg').src = url || '';
+}
+
+function tierGlow(tier){
+  var map = { Ultra:'rgba(255,200,98,.28)', Exclusive:'rgba(236,72,153,.26)', Premium:'rgba(75,189,255,.24)', Deluxe:'rgba(61,255,160,.22)', Select:'rgba(199,203,214,.18)' };
+  return map[tier] || 'rgba(168,85,247,.22)';
+}
+
+function closeSkin(){
+  document.getElementById('skScrim').classList.remove('on');
+  document.getElementById('skModal').classList.remove('on');
+  document.body.style.overflow = '';
+  var video = document.getElementById('skStageVideo');
+  video.pause();
+  video.removeAttribute('src');
+}
+document.getElementById('skScrim').addEventListener('click', closeSkin);
+document.getElementById('skClose').addEventListener('click', closeSkin);
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeSkin(); });
+
+/* subtle cursor-follow tilt on the static render — the closest honest substitute for
+   true 3D rotation, which Riot doesn't expose publicly */
+(function(){
+  var stage = document.getElementById('skStage');
+  var img = document.getElementById('skStageImg');
+  var fine = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+  if(!fine) return;
+  stage.addEventListener('mousemove', function(e){
+    if(img.style.display === 'none') return;
+    var r = stage.getBoundingClientRect();
+    var px = (e.clientX - r.left) / r.width;
+    var py = (e.clientY - r.top) / r.height;
+    var ry = (px - 0.5) * 22;
+    var rx = (py - 0.5) * -14;
+    img.style.transform = 'perspective(900px) rotateX('+rx+'deg) rotateY('+ry+'deg)';
+  });
+  stage.addEventListener('mouseleave', function(){ img.style.transform = ''; });
+})();
+
+loadWeaponList();
+</script>
+</body>
+</html>
