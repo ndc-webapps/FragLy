@@ -594,7 +594,19 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .form-insight.up{border-color:rgba(61,255,160,.18);background:rgba(61,255,160,.055);color:rgba(214,255,235,.78);}
 .form-insight.down{border-color:rgba(168,85,247,.2);background:rgba(168,85,247,.055);color:#F5A9C7;}
 .form-insight.flat{border-color:rgba(75,189,255,.18);background:rgba(75,189,255,.05);color:rgba(210,238,255,.76);}
+.streak-banner{display:flex;align-items:center;gap:14px;margin:16px 0;padding:14px 18px;border-radius:var(--r3);border:1px solid var(--bdr);background:rgba(255,255,255,.03);}
+.streak-banner .streak-ico{font-size:1.5rem;line-height:1;flex-shrink:0;}
+.streak-banner .streak-body{flex:1;min-width:0;}
+.streak-banner .streak-title{font-family:var(--dp);font-size:.85rem;font-weight:900;letter-spacing:.5px;color:var(--txt);margin-bottom:3px;}
+.streak-banner .streak-sub{font-family:var(--mono);font-size:.6rem;line-height:1.5;letter-spacing:.5px;color:var(--muted2);}
+.streak-banner.tilt{border-color:rgba(168,85,247,.22);background:rgba(168,85,247,.06);}
+.streak-banner.tilt .streak-title{color:#F5A9C7;}
+.streak-banner.cold{border-color:rgba(75,189,255,.2);background:rgba(75,189,255,.05);}
+.streak-banner.hot{border-color:rgba(61,255,160,.2);background:rgba(61,255,160,.06);}
+.streak-banner.hot .streak-title{color:var(--green);}
 @media(max-width:500px){
+  .streak-banner{padding:12px 14px;gap:10px;}
+  .streak-banner .streak-ico{font-size:1.25rem;}
   .form-stats{grid-template-columns:repeat(2,1fr);}
   .form-stat{padding:8px 9px;}
   .form-stat .v{font-size:1.2rem;}
@@ -612,6 +624,17 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .agent-ico{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid var(--bdr);background:var(--surf);}
 .wr-cell{font-family:var(--dp);font-size:1.05rem;font-weight:700;letter-spacing:1px;}
 .wr-cell.hi{color:var(--green);}.wr-cell.mid{color:var(--blue);}.wr-cell.lo{color:var(--red);}
+.synergy-sub{font-family:var(--mono);font-size:.6rem;letter-spacing:.5px;color:var(--muted2);margin-bottom:12px;line-height:1.5;}
+.econ-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.econ-card{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r3);padding:16px 10px;text-align:center;}
+.econ-card .econ-lbl{font-family:var(--mono);font-size:.56rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.econ-card .econ-wr{font-family:var(--dp);font-size:1.5rem;font-weight:900;letter-spacing:1px;}
+.econ-card .econ-wr.hi{color:var(--green);}.econ-card .econ-wr.mid{color:var(--blue);}.econ-card .econ-wr.lo{color:var(--red);}
+.econ-card .econ-sub{font-family:var(--mono);font-size:.56rem;color:var(--muted2);margin-top:5px;}
+@media(max-width:500px){
+  .econ-card{padding:12px 8px;}
+  .econ-card .econ-wr{font-size:1.2rem;}
+}
 
 /* MODE TABS (map/agent) */
 .mode-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
@@ -1287,10 +1310,10 @@ footer span{color:var(--red);}
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="1" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="1" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="23" y2="12"/></svg>
       Aim Trainer
     </button>
-    <button class="sb-item" data-nav="coach" onclick="sbSetActive(this);toggleAI()">
-      <svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="3"/><line x1="12" y1="4" x2="12" y2="8"/><circle cx="12" cy="3" r="1.4"/><circle cx="9" cy="13" r="1.2"/><circle cx="15" cy="13" r="1.2"/></svg>
-      AI Coach
-    </button>
+    <a class="sb-item" href="/news/">
+      <svg viewBox="0 0 24 24"><path d="M4 4h13a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3V4z"/><path d="M17 4a3 3 0 0 1 3 3v0"/><line x1="8" y1="9" x2="14" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/><line x1="8" y1="17" x2="11" y2="17"/></svg>
+      News
+    </a>
     <button class="sb-item" data-nav="xhair" onclick="sbSetActive(this);openCrosshairs()">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="21"/><line x1="3" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="21" y2="12"/></svg>
       Crosshairs
@@ -2103,6 +2126,9 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
     </div>
   </div>
 
+  <!-- STREAK / TILT DETECTOR — only shown when there's a meaningful current streak -->
+  <div class="streak-banner reveal" id="streakBanner" style="display:none"></div>
+
   <!-- AD: Left side / top of stats — only shown after stats load -->
   <div class="ad-slot W">
     <ins class="adsbygoogle"
@@ -2166,6 +2192,22 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
         <tbody></tbody>
       </table>
     </div>
+  </div>
+
+  <!-- DUO SYNERGY — only shown when 2+ matches exist with the same partied teammate -->
+  <div class="panel reveal" id="synergyPanel" style="display:none;margin-bottom:24px;">
+    <div class="sh"><h2 class="sh-title">Duo Synergy</h2><div class="sh-line"></div><span class="sh-tag">PARTIED TEAMMATES</span></div>
+    <div class="synergy-sub" id="synergySub"></div>
+    <table class="ptbl" id="synergyTbl">
+      <thead><tr><th>TEAMMATE</th><th>G</th><th>WIN%</th><th>VS SOLO</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- ECONOMY BREAKDOWN — real per-round loadout value from ranked/unrated matches -->
+  <div class="panel reveal" id="econPanel" style="display:none;margin-bottom:24px;">
+    <div class="sh"><h2 class="sh-title">Economy Breakdown</h2><div class="sh-line"></div><span class="sh-tag" id="econTag">ROUND BUY TYPE</span></div>
+    <div class="econ-grid" id="econGrid"></div>
   </div>
 
   <!-- MATCH HISTORY -->
@@ -2627,6 +2669,35 @@ function computeStats(matches,name,tag){
   return{kills,deaths,assists,hsPct,winPct,wins,total,kd:+kd.toFixed(2),kda:+kda.toFixed(2),adr,acs,ddr,kpr,ts,grade,formACS,mapArr,agentArr,avgKills:(total>0?+(kills/total).toFixed(1):0)};
 }
 
+/* TILT / STREAK DETECTOR — walks from the most recent match (matches[0], confirmed
+   newest-first from the real API) forward until the result flips, to find the CURRENT
+   streak. Flags a losing streak as a possible tilt only when performance during it is
+   meaningfully below the player's own overall average — a losing streak with normal
+   ACS is probably just tough matchups, not tilt. Real data only: no streak/no message
+   if there's nothing meaningful to say (never invents a reason for silence or noise). */
+function computeStreak(matches,name,tag,overallAcs){
+  const seq=[];
+  for(const m of matches){
+    const me=(m.players?.all_players||[]).find(p=>p.name?.toLowerCase()===name.toLowerCase()&&p.tag?.toLowerCase()===tag.toLowerCase());
+    if(!me)continue;
+    const myT=me.team?.toLowerCase();
+    const won=!!m.teams?.[myT]?.has_won;
+    const rnd=m.metadata?.rounds_played||20;
+    const acs=Math.round((me.stats?.score||0)/rnd);
+    seq.push({won,acs});
+  }
+  if(!seq.length)return null;
+  const type=seq[0].won?'win':'loss';
+  let len=0,sumAcs=0;
+  for(const s of seq){
+    if((s.won?'win':'loss')!==type)break;
+    len++;sumAcs+=s.acs;
+  }
+  const streakAvgAcs=len?Math.round(sumAcs/len):0;
+  const deltaPct=overallAcs>0?Math.round((streakAvgAcs-overallAcs)/overallAcs*100):0;
+  return{type,len,streakAvgAcs,deltaPct};
+}
+
 /* ═══════════════════════════════════════════
    RENDER
 ═══════════════════════════════════════════ */
@@ -2684,9 +2755,12 @@ function render(acc,mmr,matches,name,tag,region,mmrHistory){
   }
   S.statFilter='all';S.modeCache={};S.modeCount={};S.statSeq++;
   const st=computeStats(matches,name,tag);S.stats=st;
+  S.streak=computeStreak(matches,name,tag,st.acs);
   buildStatModeTabs(matches);
   renderStatSections(st);
   renderMapTbl(st.mapArr,matches);renderAgentTbl(st.agentArr,matches);
+  renderSynergyTbl(matches);
+  renderEconomyPanel(matches);
   // Match-history list works off its own array (S.history) so we can deepen it with
   // the stored-matches endpoint without disturbing overview/tables/stats above.
   S.history=matches.slice();S._deep=new Set();
@@ -2753,6 +2827,7 @@ async function getModeSample(label){
 function renderStatFilter(matchesForMode,note){
   const st=computeStats(matchesForMode,S.player?.name||'',S.player?.tag||'');
   S.stats=st;
+  S.streak=computeStreak(matchesForMode,S.player?.name||'',S.player?.tag||'',st.acs);
   buildStatModeTabs(S.matches);
   renderStatSections(st);
   setTimeout(animBars,60);
@@ -2774,10 +2849,39 @@ async function setStatFilter(label){
     }
   }catch(e){/* keep the real v3 subset already shown; never fabricate */}
 }
+/* Renders (or hides) the tilt/streak banner from S.streak. Only speaks up when there's
+   something meaningful: 3+ game streaks, and tilt only fires when ACS is meaningfully
+   down (not just "you lost a few close ones"). Stays silent otherwise — no noise. */
+function renderStreakBanner(streak){
+  const el=document.getElementById('streakBanner');
+  if(!el)return;
+  if(!streak||streak.len<3){el.style.display='none';el.className='streak-banner reveal';el.innerHTML='';return;}
+  const {type,len,deltaPct}=streak;
+  let cls,ico,title,sub;
+  if(type==='loss'){
+    if(deltaPct<=-15){
+      cls='tilt';ico='⚠️';
+      title=`Tilt Alert — ${len} losses in a row`;
+      sub=`Your ACS is down ${Math.abs(deltaPct)}% vs your overall average during this streak. Might be worth a short break before queuing again.`;
+    }else{
+      cls='cold';ico='🥶';
+      title=`${len}-game losing streak`;
+      sub=`Performance looks steady though — ACS is close to your usual average. Could just be rough matchups, not tilt.`;
+    }
+  }else{
+    cls='hot';ico='🔥';
+    title=`${len}-game win streak`;
+    sub=deltaPct>0?`ACS is up ${deltaPct}% vs your overall average during this run. Keep it going.`:`Solid run — ${len} wins in a row.`;
+  }
+  el.className=`streak-banner reveal ${cls}`;
+  el.style.display='flex';
+  el.innerHTML=`<div class="streak-ico">${ico}</div><div class="streak-body"><div class="streak-title">${escapeHtml(title)}</div><div class="streak-sub">${escapeHtml(sub)}</div></div>`;
+}
 function renderStatSections(st){
   const modeTag=S.statFilter==='all'?'GAMES ANALYZED':`${statFilterLabel()} GAMES`;
   document.getElementById('pGames').textContent=st.total;
   document.getElementById('matchCt').textContent=`${st.total} ${modeTag}`;
+  renderStreakBanner(S.streak);
   const tsEl=document.getElementById('tsVal');
   if(st.total){tsEl.textContent='0';animateValue(tsEl,st.ts,650);}else{tsEl.textContent='—';}
   const tsRing=document.getElementById('tsRing');
@@ -3102,6 +3206,99 @@ function renderAgentTbl(agentArr, allMatches){
   tb.innerHTML=arr.length?arr.slice(0,8).map(([ag,d])=>{const wr=d.g>0?Math.round(d.w/d.g*100):0;const kd=d.d>0?(d.k/d.d).toFixed(2):'—';const tot=d.h+d.b+d.l;const hs=tot>0?Math.round(d.h/tot*100):0;const wrc=wr>=55?'hi':wr>=45?'mid':'lo';return`<tr><td><div class="agent-cell">${d.ico?`<img class="agent-ico" src="${d.ico}" alt="${ag}" onerror="this.style.display='none'">`:'🎮'} ${ag}</div></td><td>${d.g}</td><td class="wr-cell ${wrc}">${wr}%</td><td>${kd}</td><td>${hs}%</td></tr>`;}).join(''):`<tr><td colspan="5" style="color:var(--muted);font-family:var(--mono);font-size:.7rem;padding:16px 10px;text-align:center">No matches for this mode.</td></tr>`;
 }
 function setAgentTabMode(m){_agentTabMode=m==='ALL'?'all':m.toLowerCase();renderAgentTbl(null,S.matches);}
+
+/* DUO SYNERGY — groups teammates by party_id (people actually queued together, not
+   just randomly matched onto the same team) and compares win rate with each partner
+   against solo-queue win rate. Only surfaces partners seen in 2+ matches — a single
+   shared game isn't a real "duo", it's noise. */
+function computeSynergy(matches,name,tag){
+  const partners={};
+  let soloGames=0,soloWins=0;
+  for(const m of matches||[]){
+    const all=m.players?.all_players||[];
+    const me=all.find(p=>p.name?.toLowerCase()===name.toLowerCase()&&p.tag?.toLowerCase()===tag.toLowerCase());
+    if(!me)continue;
+    const myT=me.team?.toLowerCase();
+    const won=!!m.teams?.[myT]?.has_won;
+    const mates=me.party_id?all.filter(p=>p.party_id===me.party_id&&p!==me):[];
+    if(!mates.length){soloGames++;if(won)soloWins++;continue;}
+    for(const p of mates){
+      const key=`${p.name}#${p.tag}`.toLowerCase();
+      if(!partners[key])partners[key]={name:p.name,tag:p.tag,games:0,wins:0};
+      partners[key].games++;if(won)partners[key].wins++;
+    }
+  }
+  const solo={games:soloGames,wins:soloWins,winPct:soloGames?Math.round(soloWins/soloGames*100):0};
+  const arr=Object.values(partners).filter(p=>p.games>=2).map(p=>{
+    const winPct=Math.round(p.wins/p.games*100);
+    return{...p,winPct,deltaPct:solo.games?winPct-solo.winPct:0};
+  }).sort((a,b)=>b.games-a.games);
+  return{partners:arr.slice(0,5),solo};
+}
+function renderSynergyTbl(matches){
+  const wrap=document.getElementById('synergyPanel');
+  if(!wrap)return;
+  const name=S.player?.name,tag=S.player?.tag;
+  if(!name||!tag){wrap.style.display='none';return;}
+  const{partners,solo}=computeSynergy(matches,name,tag);
+  if(!partners.length){wrap.style.display='none';return;}
+  wrap.style.display='';
+  document.getElementById('synergySub').textContent=solo.games?`Solo-queue win rate: ${solo.winPct}% across ${solo.games} games — "vs solo" below shows how each duo compares.`:'Every recent match was played with a party — no solo baseline to compare against yet.';
+  const tb=document.querySelector('#synergyTbl tbody');
+  tb.innerHTML=partners.map(p=>{
+    const wrc=p.winPct>=55?'hi':p.winPct>=45?'mid':'lo';
+    const deltaTxt=solo.games?`${p.deltaPct>=0?'+':''}${p.deltaPct}%`:'—';
+    const deltaCls=p.deltaPct>0?'hi':p.deltaPct<0?'lo':'mid';
+    return`<tr><td><div class="map-name">👥 ${escapeHtml(p.name)}<span style="color:var(--muted2);font-weight:400;">#${escapeHtml(p.tag)}</span></div></td><td>${p.games}</td><td class="wr-cell ${wrc}">${p.winPct}%</td><td class="wr-cell ${deltaCls}">${deltaTxt}</td></tr>`;
+  }).join('');
+}
+
+/* ECONOMY BREAKDOWN — real per-round loadout_value from the match's rounds[] array
+   (only present for real Riot server matches with round-by-round tracking, e.g.
+   Competitive/Unrated — Deathmatch/Swiftplay have no rounds and are skipped
+   automatically). Standard buy-type thresholds: <2000 eco, 2000-3499 semi/force buy,
+   3500+ full buy. */
+function computeEconomy(matches,name,tag){
+  const buckets={eco:{r:0,w:0},semi:{r:0,w:0},full:{r:0,w:0}};
+  let totalRounds=0;
+  for(const m of matches||[]){
+    const rounds=m.rounds;
+    if(!Array.isArray(rounds)||!rounds.length)continue;
+    const me=(m.players?.all_players||[]).find(p=>p.name?.toLowerCase()===name.toLowerCase()&&p.tag?.toLowerCase()===tag.toLowerCase());
+    if(!me?.puuid)continue;
+    for(const r of rounds){
+      const ps=(r.player_stats||[]).find(p=>p.player_puuid===me.puuid);
+      const lv=ps?.economy?.loadout_value;
+      if(typeof lv!=='number')continue;
+      const key=lv<2000?'eco':lv<3500?'semi':'full';
+      const won=r.winning_team===ps.player_team;
+      buckets[key].r++;totalRounds++;
+      if(won)buckets[key].w++;
+    }
+  }
+  const out={totalRounds};
+  for(const k of['eco','semi','full']){
+    const b=buckets[k];
+    out[k]={rounds:b.r,wins:b.w,winPct:b.r?Math.round(b.w/b.r*100):0};
+  }
+  return out;
+}
+function renderEconomyPanel(matches){
+  const wrap=document.getElementById('econPanel');
+  if(!wrap)return;
+  const name=S.player?.name,tag=S.player?.tag;
+  if(!name||!tag){wrap.style.display='none';return;}
+  const econ=computeEconomy(matches,name,tag);
+  if(econ.totalRounds<5){wrap.style.display='none';return;}
+  wrap.style.display='';
+  document.getElementById('econTag').textContent=`${econ.totalRounds} ROUNDS TRACKED`;
+  const cards=[['eco','ECO','< 2K credits'],['semi','SEMI-BUY','2K – 3.5K'],['full','FULL BUY','3.5K+']];
+  document.getElementById('econGrid').innerHTML=cards.map(([k,lbl,range])=>{
+    const d=econ[k];
+    const wrc=!d.rounds?'mid':d.winPct>=55?'hi':d.winPct>=45?'mid':'lo';
+    return`<div class="econ-card"><div class="econ-lbl">${lbl}</div><div class="econ-wr ${wrc}">${d.rounds?d.winPct+'%':'—'}</div><div class="econ-sub">${d.rounds} round${d.rounds===1?'':'s'} · ${range}</div></div>`;
+  }).join('');
+}
 
 
 /* MATCHES */
