@@ -244,11 +244,11 @@ function buildWeaponPicker(){
   var el = document.getElementById('wpnCats');
   el.innerHTML = html;
   el.querySelectorAll('.wpn-btn').forEach(function(b){
-    b.addEventListener('click', function(){ selectWeapon(b.dataset.id); });
+    b.addEventListener('click', function(){ selectWeapon(b.dataset.id, true); });
   });
 }
 
-async function selectWeapon(id){
+async function selectWeapon(id, userClicked){
   if(id === currentWeaponId) return;
   currentWeaponId = id;
   document.querySelectorAll('.wpn-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.id === id); });
@@ -256,6 +256,11 @@ async function selectWeapon(id){
   var grid = document.getElementById('skGrid');
   meta.textContent = 'Loading…';
   grid.innerHTML = Array.from({length:8}).map(function(){ return '<div class="skeleton-card"></div>'; }).join('');
+  // Jump the view down to the skin list right away so a click always has visible,
+  // immediate feedback instead of silently loading below the fold.
+  if(userClicked){
+    document.getElementById('tierTabs').scrollIntoView({behavior:'smooth', block:'start'});
+  }
 
   try{
     var r = await fetch('/api/skins?weapon='+encodeURIComponent(id));
@@ -333,8 +338,11 @@ function openSkin(i){
   document.getElementById('skStage').style.setProperty('--stage-glow', tierGlow(s.tier));
 
   var hasChromas = s.chromas && s.chromas.length > 1;
-  var initial = hasChromas ? s.chromas[0] : { video: s.video, render: s.render };
-  showVariant(initial.video, initial.render || s.render || s.icon);
+  var firstChroma = hasChromas ? s.chromas[0] : null;
+  // The "Standard" chroma almost never carries its own streamedVideo — the skin's base
+  // animated preview lives on its upgrade levels instead (skin.video). Fall back to that
+  // so a skin with an animated preview actually shows it by default, not a static image.
+  showVariant((firstChroma && firstChroma.video) || s.video, (firstChroma && firstChroma.render) || s.render || s.icon);
   document.getElementById('skStageHint').style.display = hasChromas ? 'none' : '';
 
   var row = document.getElementById('skChromaRow');
@@ -356,7 +364,9 @@ function pickChroma(ci){
   if(!activeSkin || !activeSkin.chromas[ci]) return;
   document.querySelectorAll('.sk-chroma-swatch').forEach(function(x, i){ x.classList.toggle('on', i===ci); });
   var c = activeSkin.chromas[ci];
-  showVariant(c.video, c.render || activeSkin.render);
+  // Prefer this color's own video; if it doesn't have one, fall back to the skin's base
+  // animated preview rather than dropping to a static image (see openSkin for why).
+  showVariant(c.video || activeSkin.video, c.render || activeSkin.render);
 }
 
 // Shows either that specific color variant's real animated video (if Riot has one for
