@@ -332,28 +332,16 @@ function openSkin(i){
   document.getElementById('skWpnName').textContent = currentWeapon.name;
   document.getElementById('skStage').style.setProperty('--stage-glow', tierGlow(s.tier));
 
-  setStageImage(s.render || s.icon);
-  var video = document.getElementById('skStageVideo');
-  var img = document.getElementById('skStageImg');
-  var hint = document.getElementById('skStageHint');
-  if(s.video){
-    video.src = s.video;
-    video.style.display = '';
-    img.style.display = 'none';
-    hint.style.display = 'none';
-  }else{
-    video.pause();
-    video.removeAttribute('src');
-    video.style.display = 'none';
-    img.style.display = '';
-    hint.style.display = s.chromas && s.chromas.length > 1 ? 'none' : '';
-  }
+  var hasChromas = s.chromas && s.chromas.length > 1;
+  var initial = hasChromas ? s.chromas[0] : { video: s.video, render: s.render };
+  showVariant(initial.video, initial.render || s.render || s.icon);
+  document.getElementById('skStageHint').style.display = hasChromas ? 'none' : '';
 
   var row = document.getElementById('skChromaRow');
-  if(s.chromas && s.chromas.length > 1){
+  if(hasChromas){
     row.innerHTML = s.chromas.map(function(c, ci){
       var bg = c.swatch || c.render;
-      return '<div class="sk-chroma-swatch'+(ci===0?' on':'')+'" style="background-image:url(\''+esc(bg)+'\')" title="'+esc(c.name)+'" onclick="pickChroma(this,'+ci+')"></div>';
+      return '<div class="sk-chroma-swatch'+(ci===0?' on':'')+'" style="background-image:url(\''+esc(bg)+'\')" title="'+esc(c.name)+'" onclick="pickChroma('+ci+')"></div>';
     }).join('');
   }else{
     row.innerHTML = '';
@@ -364,17 +352,32 @@ function openSkin(i){
   document.body.style.overflow = 'hidden';
 }
 
-function pickChroma(el, ci){
+function pickChroma(ci){
   if(!activeSkin || !activeSkin.chromas[ci]) return;
-  document.querySelectorAll('.sk-chroma-swatch').forEach(function(x){ x.classList.remove('on'); });
-  el.classList.add('on');
-  if(!activeSkin.video){
-    setStageImage(activeSkin.chromas[ci].render || activeSkin.render);
-  }
+  document.querySelectorAll('.sk-chroma-swatch').forEach(function(x, i){ x.classList.toggle('on', i===ci); });
+  var c = activeSkin.chromas[ci];
+  showVariant(c.video, c.render || activeSkin.render);
 }
 
-function setStageImage(url){
-  document.getElementById('skStageImg').src = url || '';
+// Shows either that specific color variant's real animated video (if Riot has one for
+// it — not every variant does) or its static render. Always swaps to something visible
+// on click, rather than silently ignoring the click when a variant has no video.
+function showVariant(videoUrl, renderUrl){
+  var video = document.getElementById('skStageVideo');
+  var img = document.getElementById('skStageImg');
+  if(videoUrl){
+    video.pause();
+    video.src = videoUrl;
+    video.play().catch(function(){});
+    video.style.display = '';
+    img.style.display = 'none';
+  }else{
+    video.pause();
+    video.removeAttribute('src');
+    video.style.display = 'none';
+    img.style.display = '';
+    img.src = renderUrl || '';
+  }
 }
 
 function tierGlow(tier){

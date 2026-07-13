@@ -61,7 +61,8 @@ function trimChromas(skin) {
     .map((c) => ({
       name: (c.displayName || '').replace(skin.displayName, '').replace(/[()\r\n]/g, ' ').trim() || 'Standard',
       render: c.fullRender || '',
-      swatch: c.swatch || ''
+      swatch: c.swatch || '',
+      video: c.streamedVideo || ''
     }));
 }
 
