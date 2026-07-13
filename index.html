@@ -419,6 +419,16 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .avatar-fallback{width:72px;height:72px;border-radius:50%;border:2px solid rgba(168,85,247,.2);background:radial-gradient(circle,rgba(168,85,247,.15),var(--surf));box-shadow:0 0 30px rgba(168,85,247,.2);display:flex;align-items:center;justify-content:center;font-family:var(--dp);font-size:1.6rem;font-weight:900;color:rgba(168,85,247,.5);letter-spacing:1px;}
 .avatar-ring{position:absolute;inset:-5px;border-radius:50%;border:1px solid rgba(168,85,247,.15);animation:spin 8s linear infinite;}
 .prof-info{flex:1;min-width:0;}
+.prof-share-btn{flex:0 0 auto;display:flex;align-items:center;gap:7px;align-self:flex-start;padding:10px 16px;border-radius:999px;
+  border:1px solid rgba(168,85,247,.35);background:linear-gradient(135deg,rgba(168,85,247,.16),rgba(236,72,153,.1));
+  color:var(--txt);font-family:var(--dp);font-weight:700;font-size:.82rem;letter-spacing:1.5px;text-transform:uppercase;
+  cursor:pointer;transition:.2s var(--ease2);white-space:nowrap;}
+.prof-share-btn:hover{border-color:rgba(236,72,153,.55);box-shadow:0 8px 26px rgba(168,85,247,.28);transform:translateY(-1px);}
+.prof-share-btn svg{width:15px;height:15px;flex:none;}
+@media(max-width:520px){
+  .prof-share-btn{padding:10px;border-radius:50%;}
+  .prof-share-btn span{display:none;}
+}
 .pname{font-family:var(--dp);font-size:1.7rem;font-weight:900;letter-spacing:1px;line-height:1.1;word-break:normal;overflow-wrap:anywhere;}
 .ptag{font-family:var(--mono);font-size:.75rem;color:var(--muted2);letter-spacing:2px;margin-top:3px;}
 .pmeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
@@ -2036,6 +2046,10 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
           <span class="chip"><span class="chip-dot"></span><span id="pGames">—</span> GAMES</span>
         </div>
       </div>
+      <button class="prof-share-btn magnetic" id="shareOpenBtn" onclick="openShareComposer()" title="Create a shareable stats image">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>
+        <span>Share</span>
+      </button>
     </div>
     <div class="prof-stats">
       <div class="pstat-card ts-card">
@@ -2124,10 +2138,6 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
       <div class="sh"><h2 class="sh-title">Recent Form</h2><div class="sh-line"></div><span class="sh-tag" id="formTag">LAST 10 · ACS</span></div>
       <div class="form-chart-wrap" id="formChart"></div>
       <div class="form-lbl" id="formLbl"></div>
-      <div class="share-actions">
-        <button class="share-btn" id="shareOpenBtn" onclick="openShareComposer()">CREATE SHARE IMAGE</button>
-        <div class="share-note">Generate a premium PNG in Facebook feed (4:5) or story (9:16) size using the real stats currently on screen.</div>
-      </div>
     </div>
   </div>
 
@@ -3737,7 +3747,7 @@ function cloneForShare(el){
   if(!el)return document.createElement('div');
   const clone=el.cloneNode(true);
   clone.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
-  clone.querySelectorAll('.share-actions').forEach(n=>n.remove());
+  clone.querySelectorAll('.share-actions, .prof-share-btn').forEach(n=>n.remove());
   clone.querySelectorAll('[onclick]').forEach(n=>n.removeAttribute('onclick'));
   clone.querySelectorAll('img').forEach(img=>{img.crossOrigin='anonymous';});
   return clone;
