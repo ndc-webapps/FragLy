@@ -1034,6 +1034,19 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .cs-faq-item p{font-size:.85rem;line-height:1.7;color:var(--muted2);padding:0 0 18px;}
 @media(max-width:520px){.content-static{padding:44px 0 48px;}.cs-block{margin-bottom:40px;}}
 
+/* support / tip card */
+.support-card{display:flex;gap:24px;align-items:center;background:linear-gradient(155deg,rgba(255,255,255,.04),rgba(255,255,255,.01));border:1px solid var(--bdr);border-radius:var(--r);padding:26px 28px;}
+.support-qr{width:150px;height:150px;object-fit:cover;border-radius:var(--r2);border:1px solid var(--bdr-hi);flex:0 0 auto;}
+.support-txt{flex:1;min-width:0;}
+.support-txt .cs-p{margin-bottom:14px;}
+.support-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+.support-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;background:rgba(61,255,160,.1);border:1px solid rgba(61,255,160,.25);color:var(--green);font-family:var(--mono);font-size:.68rem;letter-spacing:1px;text-transform:uppercase;}
+.support-name{font-family:var(--dp);font-weight:700;font-size:.95rem;letter-spacing:.5px;color:var(--txt);}
+@media(max-width:560px){
+  .support-card{flex-direction:column;text-align:center;padding:24px 20px;}
+  .support-meta{justify-content:center;}
+}
+
 /* ─── unified overlay background (matches landing hero: red grid + red glow + dark base) ─── */
 #aimTrainer,#lineups,#compare,#xhairs{background:var(--bg);}
 #aimTrainer::before,#lineups::before,#compare::before,#xhairs::before{
@@ -2331,6 +2344,20 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
         <div class="cs-faq-item reveal">
           <button class="cs-faq-q" onclick="toggleFaq(this)"><h3>Is FragLy affiliated with Riot Games?</h3><span class="cs-faq-icon">+</span></button>
           <div class="cs-faq-a"><div><p>No. FragLy is an independent, fan-made tool and is not endorsed by or affiliated with Riot Games. Valorant is a trademark of Riot Games, Inc.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cs-block reveal">
+      <h2 class="cs-h2">Support FragLy</h2>
+      <div class="support-card">
+        <img class="support-qr" src="/gcash-qr.jpg" alt="GCash QR code to support FragLy" loading="lazy">
+        <div class="support-txt">
+          <p class="cs-p">FragLy is free, keyless, and built solo — but hosting, the AI coach, and API usage all cost real money to keep running. If FragLy's ever helped you climb, scout an enemy, or just settle an argument about who's actually carrying, a small tip helps keep it online and ad-light for everyone. Completely optional, no pressure.</p>
+          <div class="support-meta">
+            <span class="support-badge">◆ GCash / InstaPay</span>
+            <span class="support-name">Scan to send — account name "FragLy"</span>
+          </div>
         </div>
       </div>
     </div>
