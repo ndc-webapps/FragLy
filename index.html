@@ -1036,7 +1036,15 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 
 /* support / tip card */
 .support-card{display:flex;gap:24px;align-items:center;background:linear-gradient(155deg,rgba(255,255,255,.04),rgba(255,255,255,.01));border:1px solid var(--bdr);border-radius:var(--r);padding:26px 28px;}
-.support-qr{width:150px;height:150px;object-fit:cover;border-radius:var(--r2);border:1px solid var(--bdr-hi);flex:0 0 auto;}
+.support-qr{width:150px;height:150px;object-fit:cover;border-radius:var(--r2);border:1px solid var(--bdr-hi);flex:0 0 auto;cursor:zoom-in;transition:transform .25s var(--ease2),border-color .25s;}
+.support-qr:hover{transform:scale(1.04);border-color:rgba(168,85,247,.5);}
+.qr-overlay{position:fixed;inset:0;z-index:9100;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(2,2,8,.85);backdrop-filter:blur(8px);}
+.qr-overlay.show{display:flex;}
+.qr-box{position:relative;text-align:center;}
+.qr-box img{width:min(78vw,420px);height:auto;border-radius:var(--r);border:1px solid var(--bdr-hi);box-shadow:0 30px 80px rgba(0,0,0,.6);}
+.qr-box p{margin-top:14px;font-family:var(--mono);font-size:.7rem;letter-spacing:1px;color:var(--muted2);}
+.qr-x{position:absolute;top:-16px;right:-16px;width:36px;height:36px;border-radius:50%;border:1px solid var(--bdr);background:var(--surf2);color:var(--muted2);cursor:pointer;font-size:.9rem;transition:.2s;}
+.qr-x:hover{color:var(--red);border-color:var(--bdr-hi);}
 .support-txt{flex:1;min-width:0;}
 .support-txt .cs-p{margin-bottom:14px;}
 .support-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
@@ -2351,7 +2359,7 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
     <div class="cs-block reveal">
       <h2 class="cs-h2">Support FragLy</h2>
       <div class="support-card">
-        <img class="support-qr" src="/gcash-qr.jpg" alt="GCash QR code to support FragLy" loading="lazy">
+        <img class="support-qr" src="/gcash-qr.jpg" alt="GCash QR code to support FragLy" loading="lazy" onclick="openQr()">
         <div class="support-txt">
           <p class="cs-p">FragLy is free, keyless, and built solo — but hosting, the AI coach, and API usage all cost real money to keep running. If FragLy's ever helped you climb, scout an enemy, or just settle an argument about who's actually carrying, a small tip helps keep it online and ad-light for everyone. Completely optional, no pressure.</p>
           <div class="support-meta">
@@ -2363,6 +2371,15 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
     </div>
   </div>
 </section>
+
+<!-- QR ZOOM OVERLAY (Support FragLy) -->
+<div class="qr-overlay" id="qrOverlay" onclick="if(event.target===this)closeQr()">
+  <div class="qr-box">
+    <button class="qr-x" onclick="closeQr()" aria-label="Close">✕</button>
+    <img src="/gcash-qr.jpg" alt="GCash QR code to support FragLy — full size">
+    <p>Scan with the GCash app to send a tip · account name "FragLy"</p>
+  </div>
+</div>
 
 <!-- AI COACH FAB -->
 <div class="ai-fab">
@@ -2471,7 +2488,15 @@ function closeLegal(){
   document.getElementById('legalOverlay').classList.remove('show');
   document.body.style.overflow='';
 }
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLegal();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeLegal();closeQr();}});
+function openQr(){
+  document.getElementById('qrOverlay').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeQr(){
+  document.getElementById('qrOverlay').classList.remove('show');
+  document.body.style.overflow='';
+}
 </script>
 </div><!-- /.W -->
 
