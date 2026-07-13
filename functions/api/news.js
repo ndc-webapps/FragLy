@@ -32,14 +32,36 @@ async function fetchArticles() {
   return items
     .filter((it) => it.title && it.action?.payload?.url)
     .slice(0, 60)
-    .map((it) => ({
-      title: it.title,
-      url: it.action.payload.url,
-      image: it.media?.url || it.imageMedia?.url || '',
-      category: it.category?.title || 'News',
-      description: it.description?.body || '',
-      publishedAt: it.publishedAt || it.analytics?.publishDate || null
-    }));
+    .map((it) => {
+      const url = it.action.payload.url;
+      return {
+        title: it.title,
+        url,
+        embedUrl: toEmbedUrl(url),
+        image: it.media?.url || it.imageMedia?.url || '',
+        category: it.category?.title || 'News',
+        description: it.description?.body || '',
+        publishedAt: it.publishedAt || it.analytics?.publishDate || null
+      };
+    });
+}
+
+// Riot's news feed links straight to a YouTube watch page for trailers, but YouTube
+// blocks watch?v= pages from being iframed — only the /embed/ path is embeddable. Since
+// we show the full story in-page (never redirecting the user out), trailer links need
+// this rewrite or they'd just show a blank frame.
+function toEmbedUrl(url) {
+  try {
+    const u = new URL(url);
+    if (u.hostname.replace('www.', '') === 'youtube.com' && u.pathname === '/watch') {
+      const id = u.searchParams.get('v');
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+    if (u.hostname === 'youtu.be' && u.pathname.length > 1) {
+      return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+    }
+  } catch (e) { /* not a valid URL — fall through to the original */ }
+  return url;
 }
 
 export async function onRequestGet(context) {

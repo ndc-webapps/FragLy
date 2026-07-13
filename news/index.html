@@ -74,31 +74,41 @@ footer a{color:var(--muted2);text-decoration:none;}
 footer a:hover{color:var(--red);}
 .nw-card{cursor:pointer;}
 
-.nw-modal-scrim{position:fixed;inset:0;background:rgba(6,6,10,.72);backdrop-filter:blur(6px);z-index:200;opacity:0;pointer-events:none;transition:.25s var(--ease);}
+.nw-modal-scrim{position:fixed;inset:0;background:rgba(6,6,10,.78);backdrop-filter:blur(6px);z-index:200;opacity:0;pointer-events:none;transition:.25s var(--ease);}
 .nw-modal-scrim.on{opacity:1;pointer-events:auto;}
-.nw-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);width:min(640px,92vw);max-height:86vh;overflow-y:auto;background:linear-gradient(155deg,#181a22,#101116);border:1px solid var(--bdr);border-radius:var(--r);z-index:201;opacity:0;pointer-events:none;transition:.28s var(--ease);box-shadow:0 30px 70px rgba(0,0,0,.5);}
+.nw-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);width:min(920px,94vw);height:min(88vh,900px);display:flex;flex-direction:column;background:linear-gradient(155deg,#181a22,#101116);border:1px solid var(--bdr);border-radius:var(--r);z-index:201;opacity:0;pointer-events:none;transition:.28s var(--ease);box-shadow:0 30px 70px rgba(0,0,0,.5);overflow:hidden;}
 .nw-modal.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
-.nw-modal-close{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--bdr);background:rgba(11,12,16,.65);color:var(--txt);font-size:1rem;cursor:pointer;z-index:2;transition:.2s;}
+.nw-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--bdr);flex-shrink:0;}
+.nw-modal-head-txt .nw-cat-badge{position:static;display:inline-block;margin-bottom:8px;}
+.nw-modal-title{font-family:var(--dp);font-weight:800;font-size:1.15rem;line-height:1.25;letter-spacing:.3px;margin-bottom:4px;}
+.nw-modal-date{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.nw-modal-close{flex-shrink:0;width:34px;height:34px;border-radius:50%;border:1px solid var(--bdr);background:rgba(11,12,16,.65);color:var(--txt);font-size:1rem;cursor:pointer;transition:.2s;}
 .nw-modal-close:hover{background:rgba(168,85,247,.25);border-color:rgba(168,85,247,.5);}
-.nw-modal-img-wrap{width:100%;aspect-ratio:16/9;background:var(--surf);overflow:hidden;border-radius:var(--r) var(--r) 0 0;}
-.nw-modal-img{width:100%;height:100%;object-fit:cover;}
-.nw-modal-body{padding:20px 24px 26px;}
-.nw-modal-body .nw-cat-badge{position:static;display:inline-block;margin-bottom:12px;}
-.nw-modal-title{font-family:var(--dp);font-weight:800;font-size:1.5rem;line-height:1.25;letter-spacing:.3px;margin-bottom:8px;}
-.nw-modal-date{font-family:var(--mono);font-size:.62rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px;}
-.nw-modal-desc{color:var(--muted2);font-size:.94rem;line-height:1.8;margin-bottom:20px;}
-.nw-modal-credit{font-family:var(--mono);font-size:.62rem;color:var(--muted);letter-spacing:.5px;padding-top:16px;border-top:1px solid var(--bdr);}
+.nw-modal-frame-wrap{position:relative;flex:1;min-height:0;background:var(--surf);}
+.nw-modal-frame{width:100%;height:100%;border:0;display:block;}
+.nw-modal-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);}
+.nw-modal-loading.hide{display:none;}
+.nw-modal-credit{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:.3px;padding:10px 18px;border-top:1px solid var(--bdr);flex-shrink:0;}
 .nw-modal-credit a{color:var(--red);text-decoration:none;}
 .nw-modal-credit a:hover{text-decoration:underline;}
+
+.nw-modal.read-mode{height:auto;max-height:86vh;overflow-y:auto;}
+.nw-modal-read-body{padding:20px 24px 26px;}
+.nw-modal-img-wrap{width:100%;aspect-ratio:16/9;background:var(--surf);overflow:hidden;flex-shrink:0;}
+.nw-modal-img{width:100%;height:100%;object-fit:cover;display:block;}
+.nw-modal-desc{color:var(--muted2);font-size:.95rem;line-height:1.85;margin-bottom:22px;}
+.nw-modal-cta{display:inline-flex;align-items:center;gap:6px;padding:12px 22px;border-radius:999px;background:linear-gradient(135deg,var(--red),var(--pink));color:#fff;text-decoration:none;font-family:var(--dp);font-weight:700;font-size:.92rem;letter-spacing:.5px;box-shadow:0 8px 24px rgba(168,85,247,.3);transition:.2s var(--ease);}
+.nw-modal-cta:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(168,85,247,.4);}
 
 @media(max-width:640px){
   .nw-grid{grid-template-columns:1fr 1fr;gap:10px;}
   .nw-body{padding:10px 12px 12px;gap:6px;}
   .nw-title-txt{font-size:.86rem;}
   .nw-desc{display:none;}
-  .nw-modal{width:94vw;max-height:90vh;}
-  .nw-modal-body{padding:16px 18px 20px;}
-  .nw-modal-title{font-size:1.2rem;}
+  .nw-modal{width:100vw;height:100vh;max-height:100vh;border-radius:0;top:0;left:0;transform:translate(0,0) scale(1);}
+  .nw-modal.on{transform:translate(0,0) scale(1);}
+  .nw-modal-head{padding:12px 14px;}
+  .nw-modal-title{font-size:1rem;}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
@@ -127,21 +137,32 @@ footer a:hover{color:var(--red);}
   <div class="nw-content">
     <h2>About FragLy Valorant News</h2>
     <p>This page mirrors Riot's official Valorant news feed — patch notes, new agent and map reveals, upcoming skin lines, esports (VCT) coverage, and dev updates — refreshed automatically so you don't have to check playvalorant.com separately.</p>
-    <p>Click any article to read it right here — the feed refreshes automatically from Riot behind the scenes, so it's never a static snapshot. Want your own stats instead? <a href="/">Search your Riot ID on FragLy</a> — free, no login, no setup.</p>
+    <p>Click any article for the full preview right here — trailers play inline, and text articles show the real image, category, and summary before you head to Riot for the full read. The feed refreshes automatically behind the scenes, so it's never a static snapshot. Want your own stats instead? <a href="/">Search your Riot ID on FragLy</a> — free, no login, no setup.</p>
   </div>
 </div>
 
 <div class="nw-modal-scrim" id="artScrim"></div>
 <div class="nw-modal" id="artModal" role="dialog" aria-modal="true">
-  <button class="nw-modal-close" id="artClose" aria-label="Close">✕</button>
-  <div class="nw-modal-img-wrap"><img class="nw-modal-img" id="artImg" src="" alt=""></div>
-  <div class="nw-modal-body">
-    <span class="nw-cat-badge" id="artCat"></span>
-    <h2 class="nw-modal-title" id="artTitle"></h2>
-    <div class="nw-modal-date" id="artDate"></div>
-    <p class="nw-modal-desc" id="artDesc"></p>
-    <div class="nw-modal-credit">Source: Riot Games — playvalorant.com · <a id="artLink" href="#" target="_blank" rel="noopener">View original ↗</a></div>
+  <div class="nw-modal-head">
+    <div class="nw-modal-head-txt">
+      <span class="nw-cat-badge" id="artCat"></span>
+      <div class="nw-modal-title" id="artTitle"></div>
+      <div class="nw-modal-date" id="artDate"></div>
+    </div>
+    <button class="nw-modal-close" id="artClose" aria-label="Close">✕</button>
   </div>
+  <div class="nw-modal-frame-wrap" id="artFrameWrap" style="display:none">
+    <div class="nw-modal-loading" id="artLoading">Loading video…</div>
+    <iframe class="nw-modal-frame" id="artFrame" src="about:blank" title="Article video" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerated-2d-canvas; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+  </div>
+  <div class="nw-modal-read" id="artReadWrap">
+    <div class="nw-modal-img-wrap"><img class="nw-modal-img" id="artImg" src="" alt=""></div>
+    <div class="nw-modal-read-body">
+      <p class="nw-modal-desc" id="artDesc"></p>
+      <a class="nw-modal-cta" id="artCta" href="#" target="_blank" rel="noopener">Read Full Story on Riot ↗</a>
+    </div>
+  </div>
+  <div class="nw-modal-credit">Source: Riot Games — playvalorant.com / valorantesports.com · <a id="artLink" href="#" target="_blank" rel="noopener">Open original ↗</a></div>
 </div>
 
 <footer>
@@ -177,25 +198,55 @@ function fmtDate(iso){
   return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
 }
 
+// Only YouTube's /embed/ path reliably plays inside an iframe on our own domain — Riot's
+// actual article pages (valorantesports.com) block third-party framing in real browsers,
+// even though it isn't visible in a plain header check. So: video links play inline for
+// real in-site playback; everything else gets a rich excerpt (real title/image/teaser
+// text, all from Riot's own feed) with an explicit, opt-in link out for the full article.
+function isPlayableEmbed(url){
+  return !!url && /^https:\/\/www\.youtube\.com\/embed\//.test(url);
+}
 function openArticle(idx){
   var a = currentList[idx];
   if(!a) return;
-  document.getElementById('artImg').src = a.image || '';
-  document.getElementById('artImg').style.display = a.image ? '' : 'none';
+  var modal = document.getElementById('artModal');
   document.getElementById('artCat').textContent = a.category;
   document.getElementById('artTitle').textContent = a.title;
   document.getElementById('artDate').textContent = fmtDate(a.publishedAt);
-  document.getElementById('artDesc').textContent = a.description || '';
-  document.getElementById('artDesc').style.display = a.description ? '' : 'none';
   document.getElementById('artLink').href = a.url;
+  document.getElementById('artCta').href = a.url;
+
+  var frameWrap = document.getElementById('artFrameWrap');
+  var readWrap = document.getElementById('artReadWrap');
+  if(isPlayableEmbed(a.embedUrl)){
+    modal.classList.remove('read-mode');
+    frameWrap.style.display = '';
+    readWrap.style.display = 'none';
+    var loading = document.getElementById('artLoading');
+    var frame = document.getElementById('artFrame');
+    loading.classList.remove('hide');
+    frame.onload = function(){ loading.classList.add('hide'); };
+    frame.src = a.embedUrl;
+  }else{
+    modal.classList.add('read-mode');
+    frameWrap.style.display = 'none';
+    readWrap.style.display = '';
+    document.getElementById('artFrame').src = 'about:blank';
+    var img = document.getElementById('artImg');
+    img.src = a.image || '';
+    document.getElementById('artImg').closest('.nw-modal-img-wrap').style.display = a.image ? '' : 'none';
+    document.getElementById('artDesc').textContent = a.description || '';
+    document.getElementById('artDesc').style.display = a.description ? '' : 'none';
+  }
   document.getElementById('artScrim').classList.add('on');
-  document.getElementById('artModal').classList.add('on');
+  modal.classList.add('on');
   document.body.style.overflow = 'hidden';
 }
 function closeArticle(){
   document.getElementById('artScrim').classList.remove('on');
   document.getElementById('artModal').classList.remove('on');
   document.body.style.overflow = '';
+  document.getElementById('artFrame').src = 'about:blank';
 }
 document.getElementById('artScrim').addEventListener('click', closeArticle);
 document.getElementById('artClose').addEventListener('click', closeArticle);
