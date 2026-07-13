@@ -156,6 +156,9 @@ nav{animation:navIn .7s var(--ease2) backwards;}
 .sb-item svg{width:18px;height:18px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s var(--ease2);}
 .sb-item:hover{color:var(--txt);background:rgba(255,255,255,.045);}
 .sb-item:hover svg{transform:scale(1.12);}
+.sb-support{color:var(--gold);}
+.sb-support:hover{color:var(--gold);background:rgba(251,146,60,.1);}
+.sb-support svg{color:var(--gold);}
 .sb-item.active{color:var(--txt);background:linear-gradient(100deg,rgba(168,85,247,.18),rgba(236,72,153,.05));border-color:rgba(168,85,247,.3);}
 .sb-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:56%;border-radius:0 3px 3px 0;background:var(--grad);box-shadow:0 0 16px var(--red-glow);}
 .sb-item.active svg{color:var(--mag2);}
@@ -1310,11 +1313,7 @@ footer span{color:var(--red);}
     </button>
     <button class="sb-item" data-nav="maps" onclick="sbNav('maps',this)">
       <svg viewBox="0 0 24 24"><polygon points="9,4 3,7 3,20 9,17 15,20 21,17 21,4 15,7"/><line x1="9" y1="4" x2="9" y2="17"/><line x1="15" y1="7" x2="15" y2="20"/></svg>
-      Maps
-    </button>
-    <button class="sb-item" data-nav="agents" onclick="sbNav('agents',this)">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      Agents
+      Maps &amp; Agents
     </button>
     <a class="sb-item" href="/leaderboard/">
       <svg viewBox="0 0 24 24"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M6 3h12v6a6 6 0 0 1-12 0V3z"/><path d="M6 5H3v2a3 3 0 0 0 3 3"/><path d="M18 5h3v2a3 3 0 0 1-3 3"/></svg>
@@ -1346,6 +1345,10 @@ footer span{color:var(--red);}
     <button class="sb-item" data-nav="compare" onclick="sbSetActive(this);openCompare()">
       <svg viewBox="0 0 24 24"><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 8l6-5 6 5"/><path d="M21 16l-6 5-6-5"/></svg>
       Compare
+    </button>
+    <button class="sb-item sb-support" onclick="openQr()">
+      <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+      Support Devs
     </button>
   </div>
   <div class="ad-slot-box ad-square" id="adSquare" style="display:none"></div>
