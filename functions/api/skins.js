@@ -15,7 +15,7 @@
 // traffic.
 const WEAPONS_URL = 'https://valorant-api.com/v1/weapons';
 const TIERS_URL = 'https://valorant-api.com/v1/contenttiers';
-const CACHE_KEY = 'valorant_skins_v1';
+const CACHE_KEY = 'valorant_skins_v2';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 const CATEGORY_LABELS = {
