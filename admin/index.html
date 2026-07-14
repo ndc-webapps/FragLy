@@ -172,6 +172,44 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
         <div id="squareFields"></div>
       </form>
     </div>
+
+    <div class="slot-block">
+      <div class="slot-head">
+        <div>
+          <div class="slot-title">Gear Shop items</div>
+          <div class="slot-dims">Curated catalog shown on /shop/ — real store tiles with search + category filters, not a rotating ad slot. Every item always shows (while active).</div>
+        </div>
+        <div class="slot-count" id="shopCount">0 items</div>
+      </div>
+      <div class="ad-list" id="shopList"></div>
+      <form class="add-card" onsubmit="return submitShopItem(event)">
+        <h3>Add gear item</h3>
+        <div class="grid2">
+          <div class="field"><label>Product page URL (optional — for auto-fill)</label>
+            <div class="field-row"><input type="url" placeholder="https://shopee.ph/..." id="shop_src">
+            <button type="button" class="btn btn-ghost" id="shop_fetchBtn" onclick="fetchShopPreview()">FETCH</button></div>
+          </div>
+          <div class="field"><label>Affiliate link (required — what visitors click)</label>
+            <input type="url" placeholder="https://s.shopee.ph/..." id="shop_link" required></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Image URL</label><input type="url" placeholder="https://..." id="shop_image" required oninput="updateShopPreview()"></div>
+          <div class="field"><label>Product name</label><input type="text" placeholder="e.g. Logitech G Pro X Superlight" id="shop_name" maxlength="120" required></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Category</label><input type="text" placeholder="e.g. Mice, Keyboards, Monitors" id="shop_category" list="shop_cat_list" maxlength="40">
+            <datalist id="shop_cat_list"></datalist>
+          </div>
+          <div class="field"><label>Price (optional, shown as typed)</label><input type="text" placeholder="e.g. ₱4,290" id="shop_price" maxlength="40"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.68rem;color:var(--muted2);margin-bottom:14px;cursor:pointer;">
+          <input type="checkbox" id="shop_featured" style="width:16px;height:16px;"> Feature this item ("Pick of the week" badge)
+        </label>
+        <div class="preview-strip square" id="shop_preview" style="display:none"><img id="shop_previewImg" alt=""><span class="ptxt" id="shop_previewTxt"></span></div>
+        <div class="hint">Fetch reads the page's share preview (title + image) to save typing — Shopee product pages usually don't expose this (their pages render client-side), so you'll likely still fill image/name in by hand for those. It never publishes anything by itself.</div>
+        <button class="btn btn-p" type="submit" id="shop_submitBtn" style="margin-top:14px;max-width:220px;">ADD ITEM</button>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -238,6 +276,7 @@ function showApp(){
   $('app').classList.add('on');
   loadAds();
   loadRotationSetting();
+  loadShop();
   startIdleWatch();
 }
 
@@ -444,6 +483,128 @@ async function submitAd(evt, slot){
     toast(e.message, true);
   } finally {
     btn.disabled = false; btn.textContent = 'ADD AD';
+  }
+  return false;
+}
+
+/* ── Gear Shop items ── */
+var shopState = { items: [] };
+
+async function loadShop(){
+  try {
+    var data = await api('/api/shop?all=1');
+    shopState.items = data.items || [];
+    renderShop();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+function renderShop(){
+  var items = shopState.items;
+  $('shopCount').textContent = items.length + ' item' + (items.length===1?'':'s') + ' (' + items.filter(function(i){return i.active;}).length + ' active)';
+
+  var list = $('shopList');
+  if (!items.length){
+    list.innerHTML = '<div class="empty-note">No gear items yet.</div>';
+  } else {
+    list.innerHTML = items.map(function(i){
+      return '<div class="ad-row' + (i.active ? '' : ' inactive') + '" data-slot="square">'
+        + '<div class="ad-thumb"><img src="' + escapeHtml(i.image) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>'
+        + '<div class="ad-info">'
+        + '  <div class="ad-title">' + escapeHtml(i.name) + (i.featured ? ' <span style="color:var(--gold)">★</span>' : '') + '</div>'
+        + '  <span class="ad-link">' + escapeHtml(i.category) + (i.price ? ' · ' + escapeHtml(i.price) : '') + ' · ' + escapeHtml(i.link) + '</span>'
+        + '</div>'
+        + '<div class="ad-actions">'
+        + '  <div class="tog' + (i.active ? ' on' : '') + '" title="Active on site" onclick="toggleShopActive(\'' + i.id + '\',' + !i.active + ')"></div>'
+        + '  <button class="icon-btn danger" title="Delete" onclick="deleteShopItem(\'' + i.id + '\')">✕</button>'
+        + '</div>'
+      + '</div>';
+    }).join('');
+  }
+
+  var cats = Array.from(new Set(items.map(function(i){ return i.category; }).filter(Boolean)));
+  $('shop_cat_list').innerHTML = cats.map(function(c){ return '<option value="' + escapeHtml(c) + '">'; }).join('');
+}
+
+async function toggleShopActive(id, active){
+  try {
+    await api('/api/shop?id=' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ active: active }) });
+    await loadShop();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+async function deleteShopItem(id){
+  if (!confirm('Delete this gear item? This cannot be undone.')) return;
+  try {
+    await api('/api/shop?id=' + encodeURIComponent(id), { method: 'DELETE' });
+    toast('Item deleted.');
+    await loadShop();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+async function fetchShopPreview(){
+  var srcUrl = $('shop_src').value.trim();
+  if (!srcUrl){ toast('Paste a product page URL first.', true); return; }
+  var btn = $('shop_fetchBtn');
+  btn.disabled = true;
+  var original = btn.innerHTML;
+  btn.innerHTML = '<span class="spin"></span>';
+  try {
+    var data = await api('/api/admin/preview', { method: 'POST', body: JSON.stringify({ url: srcUrl }) });
+    if (data.error) { toast(data.error, true); return; }
+    if (data.image) $('shop_image').value = data.image;
+    if (data.title && !$('shop_name').value) $('shop_name').value = data.title;
+    updateShopPreview();
+    toast('Prefilled from page preview — review before saving.');
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+function updateShopPreview(){
+  var img = $('shop_image').value.trim();
+  var box = $('shop_preview');
+  if (!img){ box.style.display = 'none'; return; }
+  box.style.display = 'flex';
+  $('shop_previewImg').src = img;
+  $('shop_previewTxt').textContent = 'This is roughly how the tile image will look on /shop/.';
+}
+
+async function submitShopItem(evt){
+  evt.preventDefault();
+  var name = $('shop_name').value.trim();
+  var link = $('shop_link').value.trim();
+  var image = $('shop_image').value.trim();
+  var category = $('shop_category').value.trim() || 'Other';
+  var price = $('shop_price').value.trim();
+  var featured = $('shop_featured').checked;
+  if (!name || !link || !image) return false;
+
+  var btn = $('shop_submitBtn');
+  btn.disabled = true; btn.textContent = 'ADDING…';
+  try {
+    await api('/api/shop', { method: 'POST', body: JSON.stringify({ name: name, link: link, image: image, category: category, price: price, featured: featured }) });
+    toast('Gear item added.');
+    $('shop_src').value = '';
+    $('shop_link').value = '';
+    $('shop_image').value = '';
+    $('shop_name').value = '';
+    $('shop_category').value = '';
+    $('shop_price').value = '';
+    $('shop_featured').checked = false;
+    $('shop_preview').style.display = 'none';
+    await loadShop();
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'ADD ITEM';
   }
   return false;
 }
