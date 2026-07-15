@@ -145,9 +145,16 @@ nav{animation:navIn .7s var(--ease2) backwards;}
   border:1px solid var(--bdr);border-radius:22px;padding:22px 14px;
   display:none;flex-direction:column;gap:24px;
   box-shadow:0 30px 90px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.02) inset;
+  overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;
 }
+.sidebar::-webkit-scrollbar{width:5px;}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px;}
 .sidebar::before{content:'';position:absolute;top:0;left:22px;right:22px;height:1px;background:var(--grad);opacity:.5;}
-.sb-brand{display:flex;align-items:center;gap:9px;padding:2px 10px 4px;}
+.sb-brand{display:flex;align-items:center;gap:9px;padding:2px 10px 4px;flex-shrink:0;}
+.sb-brand-txt{flex:1;}
+.sb-brand-get{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;border:1px solid rgba(168,85,247,.35);background:linear-gradient(100deg,rgba(139,92,246,.2),rgba(236,72,153,.12));color:var(--txt);cursor:pointer;transition:.25s var(--ease2);flex-shrink:0;}
+.sb-brand-get:hover{border-color:rgba(236,72,153,.55);box-shadow:0 6px 18px rgba(168,85,247,.3);}
+.sb-brand-get svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 .sb-brand-dot{width:9px;height:9px;border-radius:3px;background:var(--grad);box-shadow:0 0 14px var(--red-glow);}
 .sb-brand-txt{font-family:var(--dp);font-size:1.25rem;font-weight:900;letter-spacing:2px;}
 .sb-group{display:flex;flex-direction:column;gap:3px;}
@@ -223,7 +230,7 @@ nav{animation:navIn .7s var(--ease2) backwards;}
 
 /* square: full-bleed image with a bottom gradient caption, so the product still reads
    at a glance even in a small box. */
-.ad-square{aspect-ratio:1/1;margin:0 10px 14px;flex-shrink:0;}
+.ad-square{aspect-ratio:1/1;margin:0 10px 14px;flex-shrink:0;max-height:180px;}
 .ad-square .ad-frame img{width:100%;height:100%;object-fit:cover;display:block;}
 .ad-square .ad-cap{position:absolute;left:0;right:0;bottom:0;padding:16px 10px 8px;background:linear-gradient(0deg,rgba(0,0,0,.88),transparent);}
 .ad-square .ad-name{font-family:var(--body);font-weight:700;font-size:.72rem;color:#fff;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
@@ -1300,7 +1307,11 @@ footer span{color:var(--red);}
 
 <!-- LEFT SIDEBAR — desktop app-shell. Items map to real features (no dead buttons). -->
 <aside class="sidebar" id="sidebar" aria-label="Primary">
-  <div class="sb-brand"><span class="sb-brand-dot"></span><span class="sb-brand-txt">FRAGLY</span></div>
+  <div class="sb-brand"><span class="sb-brand-dot"></span><span class="sb-brand-txt">FRAGLY</span>
+    <button class="sb-brand-get" onclick="fraglyInstall()" title="Get the app" aria-label="Get the app">
+      <svg viewBox="0 0 24 24"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 19h14"/></svg>
+    </button>
+  </div>
   <div class="sb-group">
     <div class="sb-head">Navigation</div>
     <button class="sb-item active" data-nav="dashboard" onclick="sbNav('dashboard',this)">
