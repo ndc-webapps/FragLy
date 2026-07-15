@@ -1,7 +1,8 @@
-// Shop item storage — one JSON array in Cloudflare KV (binding: FRAGLY_ADS, key "shop_items").
-// Curated gaming gear with real Shopee affiliate links, managed from /admin. Distinct from
-// ads.js's rotating banner/square slots — this is a flat, always-fully-shown catalog with
-// client-side search/category filtering, not a rotation.
+// Single product catalog — one JSON array in Cloudflare KV (binding: FRAGLY_ADS, key
+// "shop_items"). This is now the ONE place admins add an affiliate item: it feeds the
+// /shop/ storefront directly (this file) AND the site-wide banner/square ad rotation
+// (functions/api/ads.js, which imports loadAll() below and picks 5 at random per slot).
+// One add form, one catalog, two places it shows up — no separate ad-only entries.
 //
 // GET  /api/shop             -> public: { items: [...active items] }
 // GET  /api/shop?all=1       -> admin-only: every item (active + inactive), for the manager UI
@@ -13,7 +14,7 @@ import { isAuthed, json } from '../_lib/auth.js';
 const KV_KEY = 'shop_items';
 const CAP = 300; // sane ceiling on catalog size
 
-async function loadAll(env) {
+export async function loadAll(env) {
   const raw = await env.FRAGLY_ADS.get(KV_KEY);
   if (!raw) return [];
   try {

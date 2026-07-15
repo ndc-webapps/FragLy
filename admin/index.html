@@ -132,7 +132,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
     <div class="rotation-card">
       <div>
         <h3>Rotation</h3>
-        <p>Site shows 5 ads per slot at a time, randomly picked from everything active below — swaps to a fresh random 5 automatically on this interval.</p>
+        <p>Banner + square ad slots on the main site each show 5 products at a time, randomly picked from everything active below — swaps to a fresh random 5 automatically on this interval.</p>
       </div>
       <div class="seg" id="rotationSeg">
         <button type="button" onclick="setRotation(1)">1h</button>
@@ -146,44 +146,14 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
     <div class="slot-block">
       <div class="slot-head">
         <div>
-          <div class="slot-title">Banner slot</div>
-          <div class="slot-dims">Long horizontal strip, above the hero · fixed container, images auto-crop to fit · 5 shown at a time, rotated from this pool</div>
-        </div>
-        <div class="slot-count" id="bannerCount">0 / 50</div>
-      </div>
-      <div class="ad-list" id="bannerList"></div>
-      <form class="add-card" data-slot="banner" onsubmit="return submitAd(event,'banner')">
-        <h3>Add banner ad</h3>
-        <div id="bannerFields"></div>
-      </form>
-    </div>
-
-    <div class="slot-block">
-      <div class="slot-head">
-        <div>
-          <div class="slot-title">Square slot</div>
-          <div class="slot-dims">Square card, above GET APP in the sidebar · fixed container, images auto-crop to fit · 5 shown at a time, rotated from this pool</div>
-        </div>
-        <div class="slot-count" id="squareCount">0 / 50</div>
-      </div>
-      <div class="ad-list" id="squareList"></div>
-      <form class="add-card" data-slot="square" onsubmit="return submitAd(event,'square')">
-        <h3>Add square ad</h3>
-        <div id="squareFields"></div>
-      </form>
-    </div>
-
-    <div class="slot-block">
-      <div class="slot-head">
-        <div>
-          <div class="slot-title">Gear Shop items</div>
-          <div class="slot-dims">Curated catalog shown on /shop/ — real store tiles with search + category filters, not a rotating ad slot. Every item always shows (while active).</div>
+          <div class="slot-title">Products</div>
+          <div class="slot-dims">One add form. Every active item here automatically: (1) rotates into the banner + square ad slots on the main site, 5 shown at a time, and (2) shows in the /shop/ storefront grid. No separate ad entry needed.</div>
         </div>
         <div class="slot-count" id="shopCount">0 items</div>
       </div>
       <div class="ad-list" id="shopList"></div>
       <form class="add-card" onsubmit="return submitShopItem(event)">
-        <h3>Add gear item</h3>
+        <h3>Add product</h3>
         <div class="grid2">
           <div class="field"><label>Product page URL (optional — for auto-fill)</label>
             <div class="field-row"><input type="url" placeholder="https://shopee.ph/..." id="shop_src">
@@ -216,30 +186,6 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 <div class="toast" id="toast"></div>
 
 <script>
-var state = { ads: [] };
-var POOL_CAP = 50; // must match functions/api/ads.js
-
-function fieldsTemplate(slot){
-  return ''
-    + '<div class="grid2">'
-    + '  <div class="field"><label>Product page URL (optional — for auto-fill)</label>'
-    + '    <div class="field-row"><input type="url" placeholder="https://shopee.ph/..." id="'+slot+'_src">'
-    + '    <button type="button" class="btn btn-ghost" id="'+slot+'_fetchBtn" onclick="fetchPreview(\''+slot+'\')">FETCH</button></div>'
-    + '  </div>'
-    + '  <div class="field"><label>Affiliate link (required — what visitors click)</label>'
-    + '    <input type="url" placeholder="https://s.shopee.ph/..." id="'+slot+'_link" required></div>'
-    + '</div>'
-    + '<div class="grid2">'
-    + '  <div class="field"><label>Image URL</label><input type="url" placeholder="https://..." id="'+slot+'_image" required oninput="updatePreview(\''+slot+'\')"></div>'
-    + '  <div class="field"><label>Title / label</label><input type="text" placeholder="e.g. Logitech G Pro X Mouse" id="'+slot+'_title" maxlength="120"></div>'
-    + '</div>'
-    + '<div class="preview-strip '+slot+'" id="'+slot+'_preview" style="display:none"><img id="'+slot+'_previewImg" alt=""><span class="ptxt" id="'+slot+'_previewTxt"></span></div>'
-    + '<div class="hint">Fetch reads the page\'s share preview (title + image) to save typing — it never publishes anything by itself. Review and edit before saving.</div>'
-    + '<button class="btn btn-p" type="submit" id="'+slot+'_submitBtn" style="margin-top:14px;max-width:220px;">ADD AD</button>';
-}
-document.getElementById('bannerFields').innerHTML = fieldsTemplate('banner');
-document.getElementById('squareFields').innerHTML = fieldsTemplate('square');
-
 function toast(msg, isErr){
   var t = document.getElementById('toast');
   t.textContent = msg;
@@ -274,7 +220,6 @@ function showLogin(){
 function showApp(){
   $('loginShell').style.display = 'none';
   $('app').classList.add('on');
-  loadAds();
   loadRotationSetting();
   loadShop();
   startIdleWatch();
@@ -360,142 +305,24 @@ async function doLogout(){
   showLogin();
 }
 
-async function loadAds(){
-  $('statusLine').textContent = 'Loading…';
-  try {
-    var data = await api('/api/ads?all=1');
-    state.ads = data.ads || [];
-    render();
-    $('statusLine').textContent = state.ads.length + ' total ad' + (state.ads.length===1?'':'s');
-  } catch (e) {
-    $('statusLine').textContent = '';
-    toast(e.message, true);
-  }
-}
-
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, function(c){
     return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
   });
 }
 
-function render(){
-  ['banner','square'].forEach(function(slot){
-    var items = state.ads.filter(function(a){ return a.slot === slot; }).sort(function(a,b){ return a.order - b.order; });
-    var activeCount = items.filter(function(a){ return a.active; }).length;
-    var countEl = $(slot + 'Count');
-    countEl.textContent = activeCount + ' / ' + POOL_CAP;
-    countEl.classList.toggle('full', activeCount >= POOL_CAP);
-
-    var list = $(slot + 'List');
-    if (!items.length){
-      list.innerHTML = '<div class="empty-note">No ' + slot + ' ads yet.</div>';
-    } else {
-      list.innerHTML = items.map(function(a){
-        return '<div class="ad-row' + (a.active ? '' : ' inactive') + '" data-slot="' + slot + '">'
-          + '<div class="ad-thumb"><img src="' + escapeHtml(a.imageUrl) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>'
-          + '<div class="ad-info">'
-          + '  <div class="ad-title">' + (escapeHtml(a.title) || '<span style=\'color:var(--muted)\'>Untitled</span>') + '</div>'
-          + '  <span class="ad-link">' + escapeHtml(a.link) + '</span>'
-          + '</div>'
-          + '<div class="ad-actions">'
-          + '  <div class="tog' + (a.active ? ' on' : '') + '" title="Active on site" onclick="toggleActive(\'' + a.id + '\',' + !a.active + ')"></div>'
-          + '  <button class="icon-btn danger" title="Delete" onclick="deleteAd(\'' + a.id + '\')">✕</button>'
-          + '</div>'
-        + '</div>';
-      }).join('');
-    }
-
-    var submitBtn = $(slot + '_submitBtn');
-    if (submitBtn) submitBtn.disabled = activeCount >= POOL_CAP;
-  });
-}
-
-async function toggleActive(id, active){
-  try {
-    await api('/api/ads?id=' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ active: active }) });
-    await loadAds();
-  } catch (e) {
-    toast(e.message, true);
-  }
-}
-async function deleteAd(id){
-  if (!confirm('Delete this ad? This cannot be undone.')) return;
-  try {
-    await api('/api/ads?id=' + encodeURIComponent(id), { method: 'DELETE' });
-    toast('Ad deleted.');
-    await loadAds();
-  } catch (e) {
-    toast(e.message, true);
-  }
-}
-
-async function fetchPreview(slot){
-  var srcUrl = $(slot + '_src').value.trim();
-  if (!srcUrl){ toast('Paste a product page URL first.', true); return; }
-  var btn = $(slot + '_fetchBtn');
-  btn.disabled = true;
-  var original = btn.innerHTML;
-  btn.innerHTML = '<span class="spin"></span>';
-  try {
-    var data = await api('/api/admin/preview', { method: 'POST', body: JSON.stringify({ url: srcUrl }) });
-    if (data.error) { toast(data.error, true); return; }
-    if (data.image) $(slot + '_image').value = data.image;
-    if (data.title && !$(slot + '_title').value) $(slot + '_title').value = data.title;
-    updatePreview(slot);
-    toast('Prefilled from page preview — review before saving.');
-  } catch (e) {
-    toast(e.message, true);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = original;
-  }
-}
-
-function updatePreview(slot){
-  var img = $(slot + '_image').value.trim();
-  var box = $(slot + '_preview');
-  if (!img){ box.style.display = 'none'; return; }
-  box.style.display = 'flex';
-  $(slot + '_previewImg').src = img;
-  $(slot + '_previewTxt').textContent = 'This is roughly how it will crop to fit the ' + slot + ' slot on-site.';
-}
-
-async function submitAd(evt, slot){
-  evt.preventDefault();
-  var link = $(slot + '_link').value.trim();
-  var imageUrl = $(slot + '_image').value.trim();
-  var title = $(slot + '_title').value.trim();
-  if (!link || !imageUrl) return false;
-
-  var btn = $(slot + '_submitBtn');
-  btn.disabled = true; btn.textContent = 'ADDING…';
-  try {
-    await api('/api/ads', { method: 'POST', body: JSON.stringify({ slot: slot, link: link, imageUrl: imageUrl, title: title }) });
-    toast('Ad added.');
-    $(slot + '_src').value = '';
-    $(slot + '_link').value = '';
-    $(slot + '_image').value = '';
-    $(slot + '_title').value = '';
-    $(slot + '_preview').style.display = 'none';
-    await loadAds();
-  } catch (e) {
-    toast(e.message, true);
-  } finally {
-    btn.disabled = false; btn.textContent = 'ADD AD';
-  }
-  return false;
-}
-
-/* ── Gear Shop items ── */
+/* ── Products (one catalog — feeds shop grid + banner/square ad rotation) ── */
 var shopState = { items: [] };
 
 async function loadShop(){
+  $('statusLine').textContent = 'Loading…';
   try {
     var data = await api('/api/shop?all=1');
     shopState.items = data.items || [];
     renderShop();
+    $('statusLine').textContent = shopState.items.length + ' total product' + (shopState.items.length===1?'':'s');
   } catch (e) {
+    $('statusLine').textContent = '';
     toast(e.message, true);
   }
 }
