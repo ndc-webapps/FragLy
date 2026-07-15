@@ -73,10 +73,25 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .pl-row.inactive{opacity:.5;}
 .pl-thumb{flex:none;width:56px;height:56px;border-radius:8px;overflow:hidden;background:#000;border:1px solid var(--bdr);}
 .pl-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.pl-info{flex:1;min-width:0;}
-.pl-name{font-size:.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pl-info{flex:1;min-width:0;cursor:default;}
+.pl-name{font-size:.86rem;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3;}
 .pl-meta{font-family:var(--mono);font-size:.62rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:3px;}
 .pl-actions{display:flex;align-items:center;gap:6px;flex:none;}
+
+/* density control — swaps how many grid columns pl-list uses, i.e. how much width
+   each card (and its name) gets. "Wide" = 1 col = full-width names, no clamping needed. */
+.pl-density{margin-left:auto;}
+.pl-density button{padding:8px 12px;font-size:.66rem;letter-spacing:1px;text-transform:uppercase;}
+.pl-list[data-cols="2"]{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));}
+.pl-list[data-cols="1"]{grid-template-columns:1fr;}
+.pl-list[data-cols="1"] .pl-name{-webkit-line-clamp:1;}
+
+/* hover tooltip — full name/category/price/link on hover, since cards truncate. */
+.pl-tip{position:fixed;z-index:2000;max-width:320px;padding:12px 14px;border-radius:var(--r2);background:var(--surf);border:1px solid var(--bdr-hi,rgba(255,255,255,.2));box-shadow:0 20px 50px rgba(0,0,0,.55);font-size:.78rem;line-height:1.5;opacity:0;transform:translateY(4px);transition:.15s var(--ease);pointer-events:none;}
+.pl-tip.on{opacity:1;transform:translateY(0);}
+.pl-tip .tip-name{font-weight:700;color:var(--txt);margin-bottom:6px;word-break:break-word;}
+.pl-tip .tip-row{font-family:var(--mono);font-size:.66rem;color:var(--muted2);margin-top:3px;word-break:break-all;}
+.pl-tip .tip-row b{color:var(--muted);font-weight:500;}
 .icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--bdr);background:rgba(255,255,255,.03);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:.15s;}
 .icon-btn:hover{color:var(--txt);border-color:rgba(255,255,255,.25);}
 .icon-btn.danger:hover{color:#fca5a5;border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08);}
@@ -195,12 +210,18 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
         <input type="text" id="shop_search" placeholder="Search products by name…" oninput="onShopFilterChange()">
         <select id="shop_catFilter" onchange="onShopFilterChange()"><option value="">All categories</option></select>
         <label class="filter-chip"><input type="checkbox" id="shop_activeOnly" onchange="onShopFilterChange()"> Active only</label>
+        <div class="seg pl-density" id="plDensity">
+          <button type="button" data-cols="3" class="on" onclick="setDensity(3)">Compact</button>
+          <button type="button" data-cols="2" onclick="setDensity(2)">Cozy</button>
+          <button type="button" data-cols="1" onclick="setDensity(1)">Wide</button>
+        </div>
       </div>
-      <div class="pl-list" id="shopList"></div>
+      <div class="pl-list" id="shopList" data-cols="3"></div>
     </div>
   </div>
 </div>
 
+<div class="pl-tip" id="plTip"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -372,7 +393,9 @@ function renderShop(){
     list.innerHTML = filtered.map(function(i){
       return '<div class="pl-row' + (i.active ? '' : ' inactive') + '">'
         + '<div class="pl-thumb"><img src="' + escapeHtml(i.image) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>'
-        + '<div class="pl-info">'
+        + '<div class="pl-info" onmouseenter="showTip(event,\'' + escapeHtml(i.id) + '\')" onmouseleave="hideTip()" onmousemove="moveTip(event)"'
+        + ' data-name="' + escapeHtml(i.name) + '" data-cat="' + escapeHtml(i.category) + '" data-price="' + escapeHtml(i.price || '') + '"'
+        + ' data-link="' + escapeHtml(i.link) + '" data-active="' + (i.active ? 'Active' : 'Inactive') + '" data-featured="' + (i.featured ? '1' : '') + '">'
         + '  <div class="pl-name">' + escapeHtml(i.name) + (i.featured ? ' <span style="color:var(--gold)">★</span>' : '') + '</div>'
         + '  <span class="pl-meta">' + escapeHtml(i.category) + (i.price ? ' · ' + escapeHtml(i.price) : '') + ' · ' + escapeHtml(i.link) + '</span>'
         + '</div>'
@@ -389,6 +412,40 @@ function renderShop(){
   var curCat = shopState.category;
   $('shop_catFilter').innerHTML = '<option value="">All categories</option>'
     + cats.map(function(c){ return '<option value="' + escapeHtml(c) + '"' + (c===curCat?' selected':'') + '>' + escapeHtml(c) + '</option>'; }).join('');
+}
+
+function setDensity(cols){
+  $('shopList').setAttribute('data-cols', cols);
+  document.querySelectorAll('#plDensity button').forEach(function(b){
+    b.classList.toggle('on', Number(b.dataset.cols) === cols);
+  });
+}
+
+/* hover tooltip — reads the data-* attrs written on .pl-info in renderShop() so it
+   always shows the untruncated name/category/price/link/status, without re-fetching. */
+function showTip(evt, id){
+  var el = evt.currentTarget;
+  var tip = $('plTip');
+  tip.innerHTML = '<div class="tip-name">' + escapeHtml(el.dataset.name) + (el.dataset.featured ? ' ★' : '') + '</div>'
+    + '<div class="tip-row"><b>Category</b> ' + escapeHtml(el.dataset.cat || '—') + '</div>'
+    + (el.dataset.price ? '<div class="tip-row"><b>Price</b> ' + escapeHtml(el.dataset.price) + '</div>' : '')
+    + '<div class="tip-row"><b>Status</b> ' + escapeHtml(el.dataset.active) + '</div>'
+    + '<div class="tip-row"><b>Link</b> ' + escapeHtml(el.dataset.link) + '</div>';
+  tip.classList.add('on');
+  moveTip(evt);
+}
+function moveTip(evt){
+  var tip = $('plTip');
+  if (!tip.classList.contains('on')) return;
+  var pad = 16, w = 320, h = tip.offsetHeight || 100;
+  var x = evt.clientX + pad, y = evt.clientY + pad;
+  if (x + w > window.innerWidth) x = evt.clientX - w - pad;
+  if (y + h > window.innerHeight) y = evt.clientY - h - pad;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+function hideTip(){
+  $('plTip').classList.remove('on');
 }
 
 async function toggleShopActive(id, active){
