@@ -479,8 +479,16 @@ async function fetchShopPreview(){
     if (data.error) { toast(data.error, true); return; }
     if (data.image) $('shop_image').value = data.image;
     if (data.title && !$('shop_name').value) $('shop_name').value = data.title;
+    if (data.price && !$('shop_price').value) $('shop_price').value = data.price;
     updateShopPreview();
-    toast('Prefilled from page preview — review before saving.');
+    var isShopee = /(^|\.)shopee\.[a-z.]+$/i.test(srcUrl.replace(/^https?:\/\/(www\.|s\.)?/i, '').split(/[/?]/)[0]);
+    if (data.price) {
+      toast('Prefilled from page preview, price included — review before saving.');
+    } else if (isShopee) {
+      toast('Prefilled title/image — Shopee doesn\'t expose price server-side, enter it manually.');
+    } else {
+      toast('Prefilled from page preview — no price found on that page, enter it manually.');
+    }
   } catch (e) {
     toast(e.message, true);
   } finally {
