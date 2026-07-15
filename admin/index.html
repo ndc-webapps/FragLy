@@ -62,19 +62,21 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .slot-count{font-family:var(--mono);font-size:.68rem;color:var(--muted2);letter-spacing:1px;}
 .slot-count.full{color:var(--gold);}
 
-.ad-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin:0;max-height:560px;overflow-y:auto;padding:4px 4px 4px 0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;}
-.ad-list::-webkit-scrollbar{width:6px;}
-.ad-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px;}
-.ad-row{display:flex;align-items:center;gap:14px;background:linear-gradient(155deg,rgba(255,255,255,.04),rgba(255,255,255,.015));border:1px solid var(--bdr);border-radius:var(--r2);padding:12px;transition:.2s;}
-.ad-row.inactive{opacity:.5;}
-.ad-thumb{flex:none;border-radius:8px;overflow:hidden;background:#000;border:1px solid var(--bdr);}
-.ad-row[data-slot="banner"] .ad-thumb{width:120px;height:24px;}
-.ad-row[data-slot="square"] .ad-thumb{width:56px;height:56px;}
-.ad-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.ad-info{flex:1;min-width:0;}
-.ad-title{font-size:.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ad-link{font-family:var(--mono);font-size:.62rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:3px;}
-.ad-actions{display:flex;align-items:center;gap:6px;flex:none;}
+/* Named pl-* (product list), not ad-* — ad-blocker cosmetic filters (Brave Shields,
+   EasyList, etc.) hide any element classed "ad-title"/"ad-info"/"ad-link" etc. site-wide
+   as a generic ad-container heuristic, even here where it's just admin UI text, not an
+   actual ad. That silently blanked out every product's name/category/price/link. */
+.pl-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin:0;max-height:560px;overflow-y:auto;padding:4px 4px 4px 0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;}
+.pl-list::-webkit-scrollbar{width:6px;}
+.pl-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px;}
+.pl-row{display:flex;align-items:center;gap:14px;background:linear-gradient(155deg,rgba(255,255,255,.04),rgba(255,255,255,.015));border:1px solid var(--bdr);border-radius:var(--r2);padding:12px;transition:.2s;}
+.pl-row.inactive{opacity:.5;}
+.pl-thumb{flex:none;width:56px;height:56px;border-radius:8px;overflow:hidden;background:#000;border:1px solid var(--bdr);}
+.pl-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.pl-info{flex:1;min-width:0;}
+.pl-name{font-size:.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pl-meta{font-family:var(--mono);font-size:.62rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:3px;}
+.pl-actions{display:flex;align-items:center;gap:6px;flex:none;}
 .icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--bdr);background:rgba(255,255,255,.03);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:.15s;}
 .icon-btn:hover{color:var(--txt);border-color:rgba(255,255,255,.25);}
 .icon-btn.danger:hover{color:#fca5a5;border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08);}
@@ -194,7 +196,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
         <select id="shop_catFilter" onchange="onShopFilterChange()"><option value="">All categories</option></select>
         <label class="filter-chip"><input type="checkbox" id="shop_activeOnly" onchange="onShopFilterChange()"> Active only</label>
       </div>
-      <div class="ad-list" id="shopList"></div>
+      <div class="pl-list" id="shopList"></div>
     </div>
   </div>
 </div>
@@ -368,13 +370,13 @@ function renderShop(){
     list.innerHTML = '<div class="empty-note">No products match this filter.</div>';
   } else {
     list.innerHTML = filtered.map(function(i){
-      return '<div class="ad-row' + (i.active ? '' : ' inactive') + '" data-slot="square">'
-        + '<div class="ad-thumb"><img src="' + escapeHtml(i.image) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>'
-        + '<div class="ad-info">'
-        + '  <div class="ad-title">' + escapeHtml(i.name) + (i.featured ? ' <span style="color:var(--gold)">★</span>' : '') + '</div>'
-        + '  <span class="ad-link">' + escapeHtml(i.category) + (i.price ? ' · ' + escapeHtml(i.price) : '') + ' · ' + escapeHtml(i.link) + '</span>'
+      return '<div class="pl-row' + (i.active ? '' : ' inactive') + '">'
+        + '<div class="pl-thumb"><img src="' + escapeHtml(i.image) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>'
+        + '<div class="pl-info">'
+        + '  <div class="pl-name">' + escapeHtml(i.name) + (i.featured ? ' <span style="color:var(--gold)">★</span>' : '') + '</div>'
+        + '  <span class="pl-meta">' + escapeHtml(i.category) + (i.price ? ' · ' + escapeHtml(i.price) : '') + ' · ' + escapeHtml(i.link) + '</span>'
         + '</div>'
-        + '<div class="ad-actions">'
+        + '<div class="pl-actions">'
         + '  <div class="tog' + (i.active ? ' on' : '') + '" title="Active on site" onclick="toggleShopActive(\'' + i.id + '\',' + !i.active + ')"></div>'
         + '  <button class="icon-btn danger" title="Delete" onclick="deleteShopItem(\'' + i.id + '\')">✕</button>'
         + '</div>'
