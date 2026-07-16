@@ -254,6 +254,11 @@ nav{animation:navIn .7s var(--ease2) backwards;}
 .nav-burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
 .nav-burger.open span:nth-child(2){opacity:0;}
 .nav-burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+/* burger must appear at the SAME breakpoint the sidebar becomes a drawer (1179.98px,
+   defined above) — it was previously gated at a separate max-width:860px rule further
+   down the file, leaving a dead zone (861–1179px): nav-r force-hidden above that width,
+   burger not yet shown below it, so there was no way to open navigation at all. */
+@media(max-width:1179.98px){.nav-burger{display:flex;}}
 .nav-pill{font-family:var(--mono);font-size:.62rem;letter-spacing:2px;padding:6px 14px;border-radius:var(--r3);border:1px solid var(--bdr);color:var(--muted2);transition:.25s var(--ease2);background:transparent;text-transform:uppercase;cursor:pointer;}
 button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);background:rgba(168,85,247,.07);box-shadow:0 0 22px rgba(168,85,247,.12);}
 .nav-pill.ok{border-color:rgba(61,255,160,.3);color:var(--green);background:rgba(61,255,160,.06);}
@@ -1118,7 +1123,6 @@ footer span{color:var(--red);}
   .dash{padding:20px 0 40px;}
   .W{padding:0 14px;}
   nav{padding:12px 14px;margin:10px auto 0;border-radius:999px;max-width:calc(100% - 20px);} /* stays sticky — hide-on-scroll motion works on mobile too */
-  .nav-burger{display:flex;}
   .nav-r{position:absolute;top:calc(100% + 8px);right:14px;left:auto;flex-direction:column;align-items:stretch;gap:6px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px;min-width:200px;box-shadow:0 18px 50px rgba(0,0,0,.55);opacity:0;transform:translateY(-8px);pointer-events:none;transition:.2s var(--ease);z-index:50;}
   .nav-r.open{opacity:1;transform:translateY(0);pointer-events:auto;}
   .nav-r .nav-pill{width:100%;text-align:center;padding:11px 14px;font-size:.7rem;}
