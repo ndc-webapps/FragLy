@@ -12,7 +12,7 @@
 import { isAuthed, json } from '../_lib/auth.js';
 
 const KV_KEY = 'shop_items';
-const CAP = 300; // sane ceiling on catalog size
+const CAP = 5000; // sane ceiling on catalog size — KV values allow up to 25MB, plenty of headroom at this size
 
 export async function loadAll(env) {
   const raw = await env.FRAGLY_ADS.get(KV_KEY);

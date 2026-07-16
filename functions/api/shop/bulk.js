@@ -4,7 +4,7 @@
 import { isAuthed, json } from '../../_lib/auth.js';
 import { loadAll, saveAll } from '../shop.js';
 
-const CAP = 300;
+const CAP = 5000; // must match functions/api/shop.js
 
 function isHttpUrl(s) {
   try {
