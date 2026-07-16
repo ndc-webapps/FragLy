@@ -188,8 +188,8 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 
       <div class="import-card">
         <h3>Import Shopee CSV</h3>
-        <div class="hint" style="margin:0 0 10px;">From Shopee Affiliate → Product Offer → select items → Batch Get Link → download CSV. No images in that export — items import with a blank thumbnail; edit them in later.</div>
-        <input type="file" id="csvFile" accept=".csv" onchange="handleCsvFile(event)">
+        <div class="hint" style="margin:0 0 10px;">From Shopee Affiliate → Product Offer → select items → Batch Get Link → download CSV. Batch caps at 100 rows, so select all your CSVs at once (ctrl/cmd-click) to merge them. No images in that export — items import with a blank thumbnail; edit them in later.</div>
+        <input type="file" id="csvFile" accept=".csv" multiple onchange="handleCsvFile(event)">
         <div id="csvSummary" class="hint" style="display:none;margin-top:10px;"></div>
         <div id="csvPreviewWrap" style="display:none;">
           <div class="pl-list" id="csvPreview" data-cols="3" style="max-height:320px;margin-top:12px;"></div>
@@ -595,24 +595,38 @@ function parsePriceNum(s) {
 }
 function formatPeso(n) { return '₱' + n.toLocaleString('en-US', { maximumFractionDigits: 2 }); }
 
-function handleCsvFile(evt) {
-  var file = evt.target.files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function () {
-    try {
-      buildCsvPreview(String(reader.result));
-    } catch (e) {
-      toast('Could not parse that CSV — check the format.', true);
-    }
-  };
-  reader.readAsText(file);
+function readFileText(file) {
+  return new Promise(function (resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function () { resolve(String(reader.result)); };
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
 }
 
-function buildCsvPreview(text) {
-  var table = parseCsv(text);
-  if (table.length < 2) { toast('CSV has no data rows.', true); return; }
-  var header = table[0].map(function (h) { return h.trim().toLowerCase(); });
+// Accepts multiple CSVs at once (Shopee's Batch Get Link export caps at 100 rows per
+// file, so bulk imports usually mean several files) — merges every file's data rows
+// into one combined set before building the preview, using the first file's header
+// for column mapping since all exports from that flow share the same columns.
+async function handleCsvFile(evt) {
+  var files = Array.prototype.slice.call(evt.target.files || []);
+  if (!files.length) return;
+  try {
+    var header = null, bodyRows = [];
+    for (var i = 0; i < files.length; i++) {
+      var table = parseCsv(await readFileText(files[i]));
+      if (table.length < 2) continue;
+      if (!header) header = table[0].map(function (h) { return h.trim().toLowerCase(); });
+      bodyRows = bodyRows.concat(table.slice(1));
+    }
+    if (!header || !bodyRows.length) { toast('No data rows found in the selected CSV(s).', true); return; }
+    buildCsvPreview(header, bodyRows, files.length);
+  } catch (e) {
+    toast('Could not parse those CSV files — check the format.', true);
+  }
+}
+
+function buildCsvPreview(header, bodyRows, fileCount) {
   var idx = {
     itemId: header.indexOf('item id'), name: header.indexOf('item name'),
     price: header.indexOf('price'), sales: header.indexOf('sales'),
@@ -628,7 +642,7 @@ function buildCsvPreview(text) {
   shopState.items.forEach(function (i) { existingLinks[i.link] = true; if (i.itemId) existingItemIds[i.itemId] = true; });
   var seenInBatch = {};
 
-  csvRows = table.slice(1).map(function (r) {
+  csvRows = bodyRows.map(function (r) {
     var name = (r[idx.name] || '').trim();
     var link = (r[idx.link] || '').trim();
     var itemId = idx.itemId > -1 ? (r[idx.itemId] || '').trim() : '';
@@ -653,17 +667,17 @@ function buildCsvPreview(text) {
     return row;
   });
 
-  renderCsvPreview();
+  renderCsvPreview(fileCount);
 }
 
-function renderCsvPreview() {
+function renderCsvPreview(fileCount) {
   var ok = csvRows.filter(function (r) { return r.status === 'ok'; }).length;
   var dup = csvRows.filter(function (r) { return r.status === 'dup'; }).length;
   var err = csvRows.filter(function (r) { return r.status === 'err'; }).length;
 
   var summary = $('csvSummary');
   summary.style.display = 'block';
-  summary.textContent = csvRows.length + ' rows parsed — ' + ok + ' ready, ' + dup + ' duplicates (skipped), ' + err + ' invalid (skipped).';
+  summary.textContent = csvRows.length + ' rows parsed' + (fileCount > 1 ? ' from ' + fileCount + ' files' : '') + ' — ' + ok + ' ready, ' + dup + ' duplicates (skipped), ' + err + ' invalid (skipped).';
 
   $('csvPreviewWrap').style.display = ok ? 'block' : 'none';
   $('csvImportBtn').disabled = !ok;
