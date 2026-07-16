@@ -28,7 +28,12 @@ export async function onRequestPost(context) {
   const updates = Array.isArray(body.updates) ? body.updates : [];
   if (!updates.length) return json({ error: 'No updates provided' }, 400);
 
-  const items = await loadAll(env);
+  let items;
+  try {
+    items = await loadAll(env);
+  } catch (e) {
+    return json({ error: 'KV read failed: ' + e.message }, 500);
+  }
   const byId = new Map(items.map((it) => [it.id, it]));
 
   // Empty image is a valid value here — it's how the blank-image scanner clears a
@@ -46,7 +51,21 @@ export async function onRequestPost(context) {
   }
 
   // Single write for the whole batch — this is the entire point of the endpoint.
-  if (updated > 0) await saveAll(env, items);
+  // Previously an uncaught throw here surfaced to the client as a bare, non-JSON
+  // "Request failed (500)" with no real reason. KV write conflicts/rate-limit hiccups
+  // are often transient, so one retry after a short backoff before giving up for real.
+  if (updated > 0) {
+    try {
+      await saveAll(env, items);
+    } catch (e1) {
+      try {
+        await new Promise((r) => setTimeout(r, 1500));
+        await saveAll(env, items);
+      } catch (e2) {
+        return json({ error: 'KV write failed after retry: ' + e2.message }, 500);
+      }
+    }
+  }
   return json({ updated, notFound, invalid });
 }
 
