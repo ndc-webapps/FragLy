@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FragLy Extractor</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{width:320px;background:#0B0C10;color:#ECE8F5;font-family:'Segoe UI',sans-serif;font-size:13px;padding:14px;}
+h2{font-size:14px;font-weight:700;letter-spacing:.5px;margin-bottom:4px;color:#A855F7;}
+.sub{font-size:11px;color:#6a6a8a;margin-bottom:12px;line-height:1.5;}
+button{display:block;width:100%;padding:10px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:12px;letter-spacing:1px;transition:.2s;}
+.btn-extract{background:linear-gradient(135deg,#A855F7,#EC4899);color:#fff;margin-bottom:10px;}
+.btn-extract:hover{opacity:.9;}
+.btn-extract:disabled{opacity:.5;cursor:not-allowed;}
+.btn-copy{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#ECE8F5;margin-top:8px;display:none;}
+.btn-copy:hover{background:rgba(255,255,255,.12);}
+.status{font-size:11px;color:#9a93b8;margin-bottom:8px;min-height:16px;}
+.status.ok{color:#3dffa0;}
+.status.err{color:#fca5a5;}
+textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#ECE8F5;font-family:monospace;font-size:10px;padding:8px;resize:vertical;min-height:100px;outline:none;display:none;}
+.hint{font-size:10px;color:#6a6a8a;margin-top:10px;line-height:1.5;border-top:1px solid rgba(255,255,255,.07);padding-top:10px;}
+.hint b{color:#9a93b8;}
+</style>
+</head>
+<body>
+<h2>FragLy Extractor</h2>
+<p class="sub">Extracts product images from the current Shopee Affiliate page.</p>
+<button class="btn-extract" id="extractBtn">EXTRACT PRODUCTS</button>
+<div class="status" id="status">Open a Shopee Affiliate product page first.</div>
+<textarea id="output" readonly rows="6"></textarea>
+<button class="btn-copy" id="copyBtn">COPY JSON</button>
+<div class="hint">
+  <b>How to use:</b><br>
+  1. Go to Shopee Affiliate → search/browse products<br>
+  2. Click EXTRACT PRODUCTS<br>
+  3. Copy JSON → paste in FragLy Admin → Import Images
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

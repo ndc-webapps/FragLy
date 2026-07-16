@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "FragLy – Shopee Image Extractor",
+  "version": "1.0",
+  "description": "Extracts product images from Shopee Affiliate pages for FragLy image import.",
+  "permissions": ["activeTab", "scripting", "clipboardWrite"],
+  "host_permissions": ["*://*.shopee.ph/*", "*://affiliate.shopee.ph/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Extract Shopee Images"
+  }
+}

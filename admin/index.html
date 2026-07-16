@@ -135,6 +135,18 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .toast.err{border-color:rgba(239,68,68,.4);color:#fca5a5;}
 .spin{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;animation:sp .7s linear infinite;display:inline-block;}
 @keyframes sp{to{transform:rotate(360deg);}}
+
+/* image import card */
+.img-import-card{background:linear-gradient(155deg,rgba(251,146,60,.08),rgba(168,85,247,.03));border:1px solid var(--bdr);border-radius:var(--r);padding:20px;margin-bottom:20px;}
+.img-import-card h3{font-family:var(--mono);font-size:.66rem;letter-spacing:3px;color:var(--gold);margin-bottom:6px;text-transform:uppercase;}
+.img-import-steps{font-family:var(--mono);font-size:.62rem;color:var(--muted2);line-height:2;margin-bottom:12px;}
+.img-import-steps b{color:var(--red);}
+.img-textarea{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--bdr);border-radius:var(--r2);padding:10px 12px;color:var(--txt);font-family:var(--mono);font-size:.68rem;resize:vertical;outline:none;min-height:90px;margin-top:10px;transition:.2s;}
+.img-textarea:focus{border-color:rgba(251,146,60,.5);}
+.img-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.img-preview-msg{font-family:var(--mono);font-size:.64rem;color:var(--muted2);margin-top:10px;display:none;padding:8px 10px;border-radius:var(--r2);background:rgba(0,0,0,.25);border:1px solid var(--bdr);}
+.img-preview-msg.ready{color:#3dffa0;}
+.img-preview-msg.warn{color:var(--gold);}
 </style>
 </head>
 <body>
@@ -196,6 +208,22 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
           <button class="btn btn-p" id="csvImportBtn" style="margin-top:14px;max-width:220px;" onclick="runCsvImport()">IMPORT ALL</button>
           <div id="csvProgress" class="hint" style="margin-top:8px;"></div>
         </div>
+      </div>
+
+      <div class="img-import-card">
+        <h3>Import Shopee Images</h3>
+        <div class="img-import-steps">
+          1. Open <b>Shopee Affiliate</b> in Chrome — browse/search products until cards are visible<br>
+          2. Click the <b>FragLy Extractor</b> extension icon → EXTRACT PRODUCTS → COPY JSON<br>
+          3. Paste JSON below → PREVIEW → APPLY
+        </div>
+        <div class="img-actions">
+          <label class="filter-chip" style="flex:none;"><input type="checkbox" id="imgMissingOnly" checked> Only update missing images</label>
+          <button type="button" class="btn btn-ghost" onclick="previewImageImport()">PREVIEW</button>
+          <button type="button" class="btn btn-p" id="imgApplyBtn" style="max-width:160px;display:none;" onclick="runImageImport()">APPLY UPDATES</button>
+        </div>
+        <textarea class="img-textarea" id="imgJsonInput" placeholder='[{"itemId":"50255794912","title":"Onikuma DM02","image":"https://down-ph.img.susercontent.com/..."}]' rows="5"></textarea>
+        <div class="img-preview-msg" id="imgPreviewMsg"></div>
       </div>
 
       <form class="add-card" onsubmit="return submitShopItem(event)">
@@ -719,6 +747,76 @@ async function runCsvImport() {
   $('csvSummary').style.display = 'none';
   await loadShop();
   btn.disabled = false;
+}
+
+/* ── Image import (paste JSON from FragLy Extractor Chrome extension) ── */
+var imgImportQueue = [];
+
+function previewImageImport() {
+  var raw = $('imgJsonInput').value.trim();
+  if (!raw) { toast('Paste JSON from the extractor first.', true); return; }
+  var parsed;
+  try { parsed = JSON.parse(raw); } catch (e) { toast('Invalid JSON — copy again from the extension.', true); return; }
+  if (!Array.isArray(parsed)) { toast('Expected a JSON array.', true); return; }
+
+  var missingOnly = $('imgMissingOnly').checked;
+  var byItemId = {};
+  shopState.items.forEach(function(i) { if (i.itemId) byItemId[i.itemId] = i; });
+
+  var matched = 0, alreadyHas = 0, unmatched = 0, noImg = 0;
+  imgImportQueue = [];
+
+  parsed.forEach(function(row) {
+    var itemId = String(row.itemId || '').trim();
+    var image = String(row.image || '').trim();
+    if (!itemId) { unmatched++; return; }
+    if (!image) { noImg++; return; }
+    var item = byItemId[itemId];
+    if (!item) { unmatched++; return; }
+    if (missingOnly && item.image) { alreadyHas++; return; }
+    imgImportQueue.push({ id: item.id, name: item.name, newImage: image });
+    matched++;
+  });
+
+  var msg = $('imgPreviewMsg');
+  var parts = [matched + ' will update'];
+  if (alreadyHas) parts.push(alreadyHas + ' skipped (already have images)');
+  if (noImg) parts.push(noImg + ' skipped (extractor got no image)');
+  if (unmatched) parts.push(unmatched + ' unmatched (itemId not in catalog — import CSV first)');
+  msg.textContent = parts.join(' · ') + '.';
+  msg.style.display = 'block';
+  msg.className = 'img-preview-msg ' + (matched ? 'ready' : 'warn');
+  $('imgApplyBtn').style.display = matched ? 'inline-flex' : 'none';
+  if (!matched) toast('No matches found. Import the CSV first so itemIds exist in catalog.', true);
+}
+
+async function runImageImport() {
+  if (!imgImportQueue.length) return;
+  var btn = $('imgApplyBtn');
+  btn.disabled = true;
+  var msg = $('imgPreviewMsg');
+  var done = 0, errors = 0, total = imgImportQueue.length;
+
+  for (var i = 0; i < total; i++) {
+    var row = imgImportQueue[i];
+    try {
+      await api('/api/shop?id=' + encodeURIComponent(row.id), {
+        method: 'PUT',
+        body: JSON.stringify({ image: row.newImage })
+      });
+      done++;
+    } catch (e) { errors++; }
+    msg.textContent = 'Updating ' + (done + errors) + ' / ' + total + '…';
+  }
+
+  msg.textContent = 'Done — ' + done + ' updated' + (errors ? ', ' + errors + ' errors' : '') + '.';
+  msg.className = 'img-preview-msg ' + (errors ? 'warn' : 'ready');
+  toast('Images updated: ' + done + ' done.');
+  imgImportQueue = [];
+  $('imgApplyBtn').style.display = 'none';
+  $('imgJsonInput').value = '';
+  btn.disabled = false;
+  await loadShop();
 }
 
 checkSession();
