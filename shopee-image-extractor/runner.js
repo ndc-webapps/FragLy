@@ -119,14 +119,18 @@ async function startBatch() {
   document.getElementById('resumeFailBtn').style.display = 'none';
   logClear();
 
-  // Background tabs (active:false) get their lazy-loaded images throttled by Chrome —
-  // the page never actually renders them, so extraction reads null until a human
-  // happens to look at the tab. Fix: give the tab its own separate window, unfocused
-  // at the OS level (focused:false) so it doesn't steal your screen, but "active"
-  // inside that window so Chrome treats it as visible and actually loads images.
-  // Window is a normal (not popup) type at a common desktop resolution — a tiny
-  // 480x720 popup-shaped viewport is itself a signal Shopee's bot-check can key off.
-  var win = await chrome.windows.create({ url: 'about:blank', focused: false, type: 'normal', width: 1366, height: 900 });
+  // Chrome throttles rendering (not just JS timers) for windows the OS compositor
+  // sees as occluded — fully covered by another window on screen — regardless of
+  // whether that window has input focus. That's why images kept failing whenever
+  // another app/browser window was placed in front of this one: the runner tab got
+  // treated as effectively hidden and lazy-load images never finished decoding.
+  // Fix: put the window at off-screen coordinates instead of behind your other
+  // windows. Nothing physically overlaps it there, so Chrome never marks it occluded
+  // and keeps rendering it normally no matter what's in front of it on your display.
+  var win = await chrome.windows.create({
+    url: 'about:blank', focused: false, type: 'normal',
+    width: 1366, height: 900, left: -3000, top: 0
+  });
   var winTabs = await chrome.tabs.query({ windowId: win.id });
   state.tabId = winTabs[0].id;
   state.windowId = win.id;
