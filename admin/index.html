@@ -853,10 +853,15 @@ async function runImageImport() {
 var blankScanResults = [];
 
 // Samples actual pixel color from a saved image (not just checking the URL exists).
-// Real product photos always have some color variation (shadows, logos, edges); a
-// video-poster grab or a broken CDN asset renders as a near-uniform flat color.
-// Cross-origin images may taint the canvas read (susercontent doesn't always send
-// CORS headers) — those come back "skip" (unverifiable), never wrongly flagged.
+// v1 averaged color across the WHOLE photo and used raw variance — that missed real
+// blanks two ways: (1) a small centered product with generous white padding still
+// reads as "has variance" even though the shop's cropped tile lands entirely on the
+// padding, and (2) compression noise in a genuinely flat region gives just enough
+// variance to slip under a strict threshold. Fix: sample only the center ~70% (what
+// a cover-cropped tile actually shows) and flag by dominant-color coverage — if most
+// sampled pixels are within a small delta of the mean color, it's blank regardless of
+// scattered noise. Cross-origin images that can't be canvas-read come back "skip"
+// (unverifiable), never wrongly flagged.
 function sampleImageBlank(url) {
   return new Promise(function (resolve) {
     var img = new Image();
@@ -868,20 +873,28 @@ function sampleImageBlank(url) {
       settled = true;
       clearTimeout(timer);
       try {
+        var iw = img.naturalWidth, ih = img.naturalHeight;
+        if (!iw || !ih) { resolve('skip'); return; }
+        var cropW = iw * 0.7, cropH = ih * 0.7, cropX = (iw - cropW) / 2, cropY = (ih - cropH) / 2;
+        var size = 24;
         var c = document.createElement('canvas');
-        c.width = 16; c.height = 16;
+        c.width = size; c.height = size;
         var ctx = c.getContext('2d');
-        ctx.drawImage(img, 0, 0, 16, 16);
-        var data = ctx.getImageData(0, 0, 16, 16).data;
-        var rs = [], gs = [], bs = [];
+        ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, size, size);
+        var data = ctx.getImageData(0, 0, size, size).data;
+        var px = [];
         for (var p = 0; p < data.length; p += 4) {
-          if (data[p + 3] > 10) { rs.push(data[p]); gs.push(data[p + 1]); bs.push(data[p + 2]); }
+          if (data[p + 3] > 10) px.push([data[p], data[p + 1], data[p + 2]]);
         }
-        if (!rs.length) { resolve('blank'); return; }
-        var mean = function (a) { return a.reduce(function (s, v) { return s + v; }, 0) / a.length; };
-        var variance = function (a, m) { return a.reduce(function (s, v) { return s + (v - m) * (v - m); }, 0) / a.length; };
-        var v = (variance(rs, mean(rs)) + variance(gs, mean(gs)) + variance(bs, mean(bs))) / 3;
-        resolve(v < 12 ? 'blank' : 'ok');
+        if (!px.length) { resolve('blank'); return; }
+        var mr = 0, mg = 0, mb = 0;
+        px.forEach(function (v) { mr += v[0]; mg += v[1]; mb += v[2]; });
+        mr /= px.length; mg /= px.length; mb /= px.length;
+        var close = 0;
+        px.forEach(function (v) {
+          if (Math.abs(v[0] - mr) + Math.abs(v[1] - mg) + Math.abs(v[2] - mb) < 30) close++;
+        });
+        resolve((close / px.length) >= 0.88 ? 'blank' : 'ok');
       } catch (e) {
         resolve('skip');
       }
