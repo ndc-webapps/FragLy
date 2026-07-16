@@ -2,7 +2,7 @@
 // rendered DOM after each navigation. Browser-rendered extraction only — no API calls,
 // no server-side fetch. This is what removes the "click through 1300 pages by hand" step.
 
-var state = { running: false, stopRequested: false, items: [], idx: 0, results: [], failedItems: [], tabId: null };
+var state = { running: false, stopRequested: false, items: [], idx: 0, results: [], failedItems: [], tabId: null, windowId: null };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -87,8 +87,15 @@ async function startBatch() {
   document.getElementById('resumeFailBtn').style.display = 'none';
   logClear();
 
-  var tab = await chrome.tabs.create({ url: 'about:blank', active: false });
-  state.tabId = tab.id;
+  // Background tabs (active:false) get their lazy-loaded images throttled by Chrome —
+  // the page never actually renders them, so extraction reads null until a human
+  // happens to look at the tab. Fix: give the tab its own separate window, unfocused
+  // at the OS level (focused:false) so it doesn't steal your screen, but "active"
+  // inside that window so Chrome treats it as visible and actually loads images.
+  var win = await chrome.windows.create({ url: 'about:blank', focused: false, type: 'popup', width: 480, height: 720 });
+  var winTabs = await chrome.tabs.query({ windowId: win.id });
+  state.tabId = winTabs[0].id;
+  state.windowId = win.id;
 
   var delay = parseInt(document.getElementById('delay').value, 10) || 3000;
   var okCount = 0, failCount = 0;
@@ -121,8 +128,9 @@ async function startBatch() {
     updateProgress(state.idx + 1, state.items.length, okCount, failCount, startTime);
   }
 
-  try { await chrome.tabs.remove(state.tabId); } catch (e) {}
+  try { await chrome.windows.remove(state.windowId); } catch (e) {}
   state.tabId = null;
+  state.windowId = null;
   state.running = false;
   document.getElementById('startBtn').disabled = false;
   document.getElementById('stopBtn').disabled = true;
@@ -161,5 +169,5 @@ document.getElementById('resumeFailBtn').addEventListener('click', function () {
 });
 
 window.addEventListener('beforeunload', function () {
-  if (state.tabId) chrome.tabs.remove(state.tabId).catch(function () {});
+  if (state.windowId) chrome.windows.remove(state.windowId).catch(function () {});
 });
