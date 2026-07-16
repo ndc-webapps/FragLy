@@ -171,14 +171,17 @@ nav{animation:navIn .7s var(--ease2) backwards;}
 .sb-item.active svg{color:var(--mag2);}
 .sb-foot{padding:12px 12px 2px;font-family:var(--mono);font-size:.52rem;letter-spacing:1.5px;color:var(--muted);line-height:1.6;}
 .sb-foot b{color:var(--muted2);font-weight:500;}
-@media(min-width:1180px){
+@media(min-width:861px){
   .sidebar{display:flex;top:16px;}
   body{padding-left:270px;}
   nav{display:none;} /* sidebar owns navigation on desktop — no duplicate top bar */
   .rank-stage{left:270px;} /* center the emblem in the content region, matching body padding-left */
 }
-/* Mobile: the SAME sidebar becomes an off-canvas drawer opened by the burger */
-@media(max-width:1179.98px){
+/* True mobile only: the SAME sidebar becomes an off-canvas drawer opened by the burger.
+   Threshold matches the existing .sgrid/.tcol mobile breakpoint (860px) below — the
+   persistent sidebar stays up for any normal laptop/tablet window, only collapsing once
+   the rest of the layout is already switching to its compact/mobile arrangement. */
+@media(max-width:860px){
   .sidebar{
     display:flex;left:0;top:0;bottom:0;width:min(300px,84vw);
     border-radius:0 22px 22px 0;border-left:0;z-index:1100;
@@ -258,7 +261,7 @@ nav{animation:navIn .7s var(--ease2) backwards;}
    defined above) — it was previously gated at a separate max-width:860px rule further
    down the file, leaving a dead zone (861–1179px): nav-r force-hidden above that width,
    burger not yet shown below it, so there was no way to open navigation at all. */
-@media(max-width:1179.98px){.nav-burger{display:flex;}}
+@media(max-width:860px){.nav-burger{display:flex;}}
 .nav-pill{font-family:var(--mono);font-size:.62rem;letter-spacing:2px;padding:6px 14px;border-radius:var(--r3);border:1px solid var(--bdr);color:var(--muted2);transition:.25s var(--ease2);background:transparent;text-transform:uppercase;cursor:pointer;}
 button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);background:rgba(168,85,247,.07);box-shadow:0 0 22px rgba(168,85,247,.12);}
 .nav-pill.ok{border-color:rgba(61,255,160,.3);color:var(--green);background:rgba(61,255,160,.06);}
@@ -1462,13 +1465,13 @@ function sbNav(which, el){
     document.body.style.overflow='';
   };
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&sb().classList.contains('open'))window.closeNav();});
-  window.addEventListener('resize',function(){if(window.innerWidth>=1180&&sb().classList.contains('open'))window.closeNav();},{passive:true});
+  window.addEventListener('resize',function(){if(window.innerWidth>=861&&sb().classList.contains('open'))window.closeNav();},{passive:true});
   document.addEventListener('DOMContentLoaded',function(){
     var sc=scrim();
     if(sc)sc.addEventListener('click',window.closeNav);
     // any sidebar action closes the drawer on mobile
     sb().addEventListener('click',function(e){
-      if(window.innerWidth<1180 && e.target.closest('.sb-item,.sb-get'))window.closeNav();
+      if(window.innerWidth<861 && e.target.closest('.sb-item,.sb-get'))window.closeNav();
     });
   });
 })();
