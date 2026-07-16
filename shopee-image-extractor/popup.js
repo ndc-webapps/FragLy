@@ -89,6 +89,46 @@ function extractShopeeProducts() {
 extractShopeeProducts();
 `;
 
+var missingSet = null; // null = no list loaded, extractor returns everything unfiltered
+
+function loadMissingList() {
+  chrome.storage.local.get(['fraglyMissingList'], function(res) {
+    var list = res.fraglyMissingList || [];
+    missingSet = list.length ? new Set(list) : null;
+    var status = document.getElementById('missingStatus');
+    status.textContent = list.length ? list.length + ' itemIds loaded — extraction will filter to these.' : 'No list loaded — extraction shows everything on the page.';
+    document.getElementById('missingInput').value = list.length ? JSON.stringify(list) : '';
+  });
+}
+
+document.getElementById('saveMissingBtn').addEventListener('click', function() {
+  var raw = document.getElementById('missingInput').value.trim();
+  var status = document.getElementById('missingStatus');
+  if (!raw) {
+    chrome.storage.local.remove('fraglyMissingList', function() {
+      missingSet = null;
+      status.textContent = 'List cleared — extraction shows everything on the page.';
+    });
+    return;
+  }
+  var parsed;
+  try { parsed = JSON.parse(raw); } catch (e) {
+    status.textContent = 'Invalid JSON — paste the array copied from Admin.';
+    return;
+  }
+  if (!Array.isArray(parsed)) {
+    status.textContent = 'Expected a JSON array of itemIds.';
+    return;
+  }
+  parsed = parsed.map(String);
+  chrome.storage.local.set({ fraglyMissingList: parsed }, function() {
+    missingSet = new Set(parsed);
+    status.textContent = parsed.length + ' itemIds saved — extraction will filter to these.';
+  });
+});
+
+loadMissingList();
+
 document.getElementById('extractBtn').addEventListener('click', function() {
   var btn = document.getElementById('extractBtn');
   var status = document.getElementById('status');
@@ -128,12 +168,27 @@ document.getElementById('extractBtn').addEventListener('click', function() {
           return;
         }
 
+        var totalFound = data.length;
+        if (missingSet) {
+          data = data.filter(function(row) { return missingSet.has(String(row.itemId)); });
+        }
+
+        if (!data.length) {
+          output.style.display = 'none';
+          copyBtn.style.display = 'none';
+          status.className = 'status warn';
+          status.textContent = totalFound + ' products on page, none match your missing list. Try another page/category.';
+          return;
+        }
+
         var json = JSON.stringify(data, null, 2);
         output.value = json;
         output.style.display = 'block';
         copyBtn.style.display = 'block';
         status.className = 'status ok';
-        status.textContent = data.length + ' product' + (data.length === 1 ? '' : 's') + ' extracted.';
+        status.textContent = missingSet
+          ? data.length + ' of ' + totalFound + ' match your missing list.'
+          : data.length + ' product' + (data.length === 1 ? '' : 's') + ' extracted (no missing list loaded — showing all).';
       }
     );
   });

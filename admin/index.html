@@ -219,9 +219,11 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
         </div>
         <div class="img-actions">
           <label class="filter-chip" style="flex:none;"><input type="checkbox" id="imgMissingOnly" checked> Only update missing images</label>
+          <button type="button" class="btn btn-ghost" onclick="copyMissingList()">COPY MISSING LIST</button>
           <button type="button" class="btn btn-ghost" onclick="previewImageImport()">PREVIEW</button>
           <button type="button" class="btn btn-p" id="imgApplyBtn" style="max-width:160px;display:none;" onclick="runImageImport()">APPLY UPDATES</button>
         </div>
+        <div class="hint" style="margin:0 0 4px;">Copy Missing List → paste once into the extension's "Missing List" box. It'll then only surface products FragLy actually needs while you browse Shopee — no eyeballing which ones already have photos.</div>
         <textarea class="img-textarea" id="imgJsonInput" placeholder='[{"itemId":"50255794912","title":"Onikuma DM02","image":"https://down-ph.img.susercontent.com/..."}]' rows="5"></textarea>
         <div class="img-preview-msg" id="imgPreviewMsg"></div>
       </div>
@@ -751,6 +753,19 @@ async function runCsvImport() {
 
 /* ── Image import (paste JSON from FragLy Extractor Chrome extension) ── */
 var imgImportQueue = [];
+
+// One-way export of itemIds still missing an image — paste once into the extension's
+// "Missing List" box so it can filter Shopee pages down to only what FragLy needs,
+// instead of the admin eyeballing which products already have photos.
+function copyMissingList() {
+  var missing = shopState.items.filter(function(i) { return i.itemId && !i.image; }).map(function(i) { return i.itemId; });
+  if (!missing.length) { toast('Nothing missing an image right now.'); return; }
+  navigator.clipboard.writeText(JSON.stringify(missing)).then(function() {
+    toast(missing.length + ' missing itemIds copied — paste into the extension.');
+  }, function() {
+    toast('Clipboard write failed — check browser permissions.', true);
+  });
+}
 
 function previewImageImport() {
   var raw = $('imgJsonInput').value.trim();
