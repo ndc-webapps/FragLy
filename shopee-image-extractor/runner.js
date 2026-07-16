@@ -124,7 +124,9 @@ async function startBatch() {
   // happens to look at the tab. Fix: give the tab its own separate window, unfocused
   // at the OS level (focused:false) so it doesn't steal your screen, but "active"
   // inside that window so Chrome treats it as visible and actually loads images.
-  var win = await chrome.windows.create({ url: 'about:blank', focused: false, type: 'popup', width: 480, height: 720 });
+  // Window is a normal (not popup) type at a common desktop resolution — a tiny
+  // 480x720 popup-shaped viewport is itself a signal Shopee's bot-check can key off.
+  var win = await chrome.windows.create({ url: 'about:blank', focused: false, type: 'normal', width: 1366, height: 900 });
   var winTabs = await chrome.tabs.query({ windowId: win.id });
   state.tabId = winTabs[0].id;
   state.windowId = win.id;
@@ -156,6 +158,9 @@ async function startBatch() {
       logLine(label + ' — ' + e.message, false);
     }
     updateProgress(state.idx + 1, state.items.length, okCount, failCount, startTime);
+    if (!state.stopRequested && state.idx < state.items.length - 1) {
+      await sleep(800 + Math.floor(Math.random() * 1400));
+    }
   }
 
   try { await chrome.windows.remove(state.windowId); } catch (e) {}
