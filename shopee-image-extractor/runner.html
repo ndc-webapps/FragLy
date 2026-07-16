@@ -36,11 +36,27 @@ button{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-weigh
 .log .fail-line{color:#fca5a5;}
 .output-wrap{display:none;}
 .output-wrap label{margin-top:4px;}
+.recover-wrap{display:none;background:rgba(61,255,160,.06);border:1px solid rgba(61,255,160,.3);border-radius:10px;padding:14px;margin-bottom:16px;}
+.recover-wrap .rtitle{font-size:12px;font-weight:700;color:#3dffa0;margin-bottom:4px;letter-spacing:.5px;}
+.recover-wrap .rmsg{font-size:11px;color:#9a93b8;margin-bottom:10px;line-height:1.5;}
+.recover-wrap .row{margin-bottom:0;}
+.btn-ok{background:rgba(61,255,160,.15);border:1px solid rgba(61,255,160,.4);color:#3dffa0;}
+.btn-ok:hover{background:rgba(61,255,160,.25);}
 </style>
 </head>
 <body>
 <h2>FragLy Batch Image Runner</h2>
-<p class="sub">Paste the list copied from Admin → <b>COPY MISSING LIST</b>. This drives a background tab through every affiliate link automatically and reads the rendered image — no manual browsing. It polls every ~1s and moves on the instant an image appears — the number below is only a ceiling for slow pages.</p>
+<p class="sub">Paste the list copied from Admin → <b>COPY MISSING LIST</b>. This drives a background tab through every affiliate link automatically and reads the rendered image — no manual browsing. It polls every ~1s and moves on the instant an image appears — the number below is only a ceiling for slow pages. <b>Results auto-save after every item</b>, so closing this window never loses progress.</p>
+
+<div class="recover-wrap" id="recoverWrap">
+  <div class="rtitle">↻ Unsaved results from your last run</div>
+  <div class="rmsg" id="recoverMsg"></div>
+  <div class="row">
+    <button class="btn-ok" id="recoverBtn">RECOVER RESULTS (COPY → APPLY)</button>
+    <button class="btn-p" id="resumeBtn" style="display:none;">RESUME REMAINING</button>
+    <button class="btn-ghost" id="discardBtn">DISCARD</button>
+  </div>
+</div>
 
 <label>Missing items JSON ([{ id, itemId, link, name }])</label>
 <textarea id="input" placeholder='[{"id":"...","itemId":"...","link":"https://s.shopee.ph/...","name":"..."}]'></textarea>

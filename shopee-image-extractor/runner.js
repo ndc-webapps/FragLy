@@ -6,6 +6,49 @@ var state = { running: false, stopRequested: false, items: [], idx: 0, results: 
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
+// ── crash/close-proof persistence ───────────────────────────────────────────────
+// The runner used to hold results in memory only, so closing the window (or a crash,
+// or an accidental navigation) threw away hours of scraping. Now every result is
+// mirrored to chrome.storage.local the moment it's fetched, so nothing is ever lost:
+// on reopen the runner offers to recover the last run's results AND resume the
+// remaining unscraped items from where it stopped.
+var saveQueued = false;
+function saveProgress() {
+  // Debounced to at most one write per ~1.2s so a fast burst of results doesn't spam
+  // storage — the trailing write always captures the latest state.
+  if (saveQueued) return;
+  saveQueued = true;
+  setTimeout(function () {
+    saveQueued = false;
+    chrome.storage.local.set({ fraglyBatchProgress: {
+      ts: Date.now(),
+      items: state.items,
+      idx: state.idx,
+      results: state.results,
+      failedItems: state.failedItems
+    } });
+  }, 1200);
+}
+function saveProgressNow() {
+  return new Promise(function (resolve) {
+    chrome.storage.local.set({ fraglyBatchProgress: {
+      ts: Date.now(),
+      items: state.items,
+      idx: state.idx,
+      results: state.results,
+      failedItems: state.failedItems
+    } }, resolve);
+  });
+}
+function loadSavedProgress() {
+  return new Promise(function (resolve) {
+    chrome.storage.local.get(['fraglyBatchProgress'], function (r) {
+      resolve(r && r.fraglyBatchProgress ? r.fraglyBatchProgress : null);
+    });
+  });
+}
+function clearSavedProgress() { chrome.storage.local.remove('fraglyBatchProgress'); }
+
 function waitForTabComplete(tabId, timeoutMs) {
   return new Promise(function (resolve) {
     var done = false;
@@ -112,16 +155,22 @@ function updateProgress(done, total, ok, fail, startTime) {
   document.getElementById('statEta').textContent = fmtEta(avg * (total - done));
 }
 
-async function startBatch() {
-  var raw = document.getElementById('input').value.trim();
-  var parsed;
-  try { parsed = JSON.parse(raw); } catch (e) { alert('Invalid JSON — paste the array copied from Admin.'); return; }
-  if (!Array.isArray(parsed) || !parsed.length) { alert('Paste a non-empty JSON array first.'); return; }
-
-  state.items = parsed;
-  state.idx = 0;
-  state.results = [];
-  state.failedItems = [];
+async function startBatch(resume) {
+  if (resume !== true) {
+    var raw = document.getElementById('input').value.trim();
+    var parsed;
+    try { parsed = JSON.parse(raw); } catch (e) { alert('Invalid JSON — paste the array copied from Admin.'); return; }
+    if (!Array.isArray(parsed) || !parsed.length) { alert('Paste a non-empty JSON array first.'); return; }
+    state.items = parsed;
+    state.idx = 0;
+    state.results = [];
+    state.failedItems = [];
+    logClear();
+  } else {
+    // Resuming: state.items/idx/results/failedItems already restored from storage.
+    // Failed items from the interrupted run get re-queued at the end so they aren't lost.
+    logLine('Resuming from item ' + (state.idx + 1) + ' / ' + state.items.length + ' — ' + state.results.length + ' already fetched.', true);
+  }
   state.running = true;
   state.stopRequested = false;
 
@@ -129,7 +178,7 @@ async function startBatch() {
   document.getElementById('stopBtn').disabled = false;
   document.getElementById('outputWrap').style.display = 'none';
   document.getElementById('resumeFailBtn').style.display = 'none';
-  logClear();
+  document.getElementById('recoverWrap').style.display = 'none';
 
   // Chrome throttles rendering (not just JS timers) for windows the OS compositor
   // sees as occluded — fully covered by another window on screen — regardless of
@@ -168,10 +217,13 @@ async function startBatch() {
   state.windowId = win.id;
 
   var delay = parseInt(document.getElementById('delay').value, 10) || 3000;
-  var okCount = 0, failCount = 0;
+  var okCount = state.results.length, failCount = state.failedItems.length;
   var startTime = Date.now();
 
-  for (; state.idx < state.items.length; state.idx++) {
+  // while-loop (not for-loop with idx++): state.idx is advanced AFTER each item is
+  // fully processed and BEFORE saving, so the saved idx always points at the next
+  // UN-processed item. A resume then never re-scrapes (or duplicates) the last item.
+  while (state.idx < state.items.length) {
     if (state.stopRequested) break;
     var item = state.items[state.idx];
     var label = item.name || item.itemId || item.id || ('item ' + state.idx);
@@ -193,11 +245,14 @@ async function startBatch() {
       failCount++;
       logLine(label + ' — ' + e.message, false);
     }
-    updateProgress(state.idx + 1, state.items.length, okCount, failCount, startTime);
-    if (!state.stopRequested && state.idx < state.items.length - 1) {
+    state.idx++;
+    saveProgress(); // mirror to storage after every item so a close/crash loses nothing
+    updateProgress(state.idx, state.items.length, okCount, failCount, startTime);
+    if (!state.stopRequested && state.idx < state.items.length) {
       await sleep(800 + Math.floor(Math.random() * 1400));
     }
   }
+  await saveProgressNow(); // guarantee the final state is flushed past the debounce
 
   try { await chrome.windows.remove(state.windowId); } catch (e) {}
   state.tabId = null;
@@ -215,9 +270,12 @@ function finishBatch() {
     document.getElementById('resumeFailBtn').style.display = 'block';
     document.getElementById('resumeFailBtn').textContent = 'RETRY ' + state.failedItems.length + ' FAILED';
   }
+  // Saved progress is intentionally NOT cleared here — results stay recoverable even
+  // after a finished run, in case APPLY in the admin fails and the window gets closed.
+  // The user discards it explicitly once images are safely applied.
 }
 
-document.getElementById('startBtn').addEventListener('click', startBatch);
+document.getElementById('startBtn').addEventListener('click', function () { startBatch(false); });
 
 document.getElementById('stopBtn').addEventListener('click', function () {
   state.stopRequested = true;
@@ -238,6 +296,48 @@ document.getElementById('resumeFailBtn').addEventListener('click', function () {
   document.getElementById('outputWrap').style.display = 'none';
   window.scrollTo(0, 0);
 });
+
+// ── recovery panel (shown on load if a prior run left saved progress) ──
+async function initRecovery() {
+  var saved = await loadSavedProgress();
+  var wrap = document.getElementById('recoverWrap');
+  if (!saved || !saved.items || !saved.items.length) { wrap.style.display = 'none'; return; }
+  // Restore into memory so Recover/Resume act on it.
+  state.items = saved.items;
+  state.idx = saved.idx || 0;
+  state.results = saved.results || [];
+  state.failedItems = saved.failedItems || [];
+  var remaining = Math.max(0, state.items.length - state.idx);
+  var when = new Date(saved.ts || Date.now()).toLocaleString();
+  document.getElementById('recoverMsg').textContent =
+    state.results.length + ' images already fetched, ' + remaining + ' items not yet done (last run ' + when + ').';
+  document.getElementById('resumeBtn').style.display = remaining > 0 ? 'block' : 'none';
+  wrap.style.display = 'block';
+}
+
+document.getElementById('recoverBtn').addEventListener('click', function () {
+  // Just surface the already-fetched results for copy → admin APPLY, no re-scraping.
+  document.getElementById('output').value = JSON.stringify(state.results, null, 2);
+  document.getElementById('outputWrap').style.display = 'block';
+  if (state.failedItems.length) {
+    document.getElementById('resumeFailBtn').style.display = 'block';
+    document.getElementById('resumeFailBtn').textContent = 'RETRY ' + state.failedItems.length + ' FAILED';
+  }
+  document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
+});
+
+document.getElementById('resumeBtn').addEventListener('click', function () {
+  startBatch(true); // continue scraping the remaining items from where it stopped
+});
+
+document.getElementById('discardBtn').addEventListener('click', function () {
+  if (!confirm('Discard the saved results from the last run? Only do this after you have applied them in the admin.')) return;
+  clearSavedProgress();
+  state.items = []; state.idx = 0; state.results = []; state.failedItems = [];
+  document.getElementById('recoverWrap').style.display = 'none';
+});
+
+initRecovery();
 
 window.addEventListener('beforeunload', function () {
   if (state.windowId) chrome.windows.remove(state.windowId).catch(function () {});
