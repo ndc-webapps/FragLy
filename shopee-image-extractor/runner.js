@@ -162,15 +162,30 @@ async function startBatch() {
   // Chrome throttles rendering (not just JS timers) for windows the OS compositor
   // sees as occluded — fully covered by another window on screen — regardless of
   // whether that window has input focus. That's why images kept failing whenever
-  // another app/browser window was placed in front of this one: the runner tab got
-  // treated as effectively hidden and lazy-load images never finished decoding.
-  // Fix: put the window at off-screen coordinates instead of behind your other
-  // windows. Nothing physically overlaps it there, so Chrome never marks it occluded
-  // and keeps rendering it normally no matter what's in front of it on your display.
-  var win = await chrome.windows.create({
-    url: 'about:blank', focused: false, type: 'normal',
-    width: 1366, height: 900, left: -3000, top: 0
-  });
+  // another app/browser window was placed in front of this one.
+  // A fully off-screen window (left:-3000) seemed like the fix, but Chrome/Brave
+  // reject window bounds that aren't at least 50% within visible screen space —
+  // that create() call was throwing, which is why START BATCH did nothing. There's
+  // no "always on top" API available to regular extensions, so full immunity to
+  // occlusion isn't achievable — the closest compromise: dock it mostly off the
+  // right edge of the screen (~60% hanging off), which satisfies the 50% rule while
+  // staying out of your way. Keep this corner of your screen clear of other windows
+  // while it runs for the most reliable results.
+  var winW = 1366, winH = 900;
+  var screenW = (window.screen && window.screen.availWidth) || 1920;
+  var win;
+  try {
+    win = await chrome.windows.create({
+      url: 'about:blank', focused: false, type: 'normal',
+      width: winW, height: winH,
+      left: screenW - Math.floor(winW * 0.4), top: 0
+    });
+  } catch (e) {
+    alert('Could not open the runner window: ' + e.message);
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('stopBtn').disabled = true;
+    return;
+  }
   var winTabs = await chrome.tabs.query({ windowId: win.id });
   state.tabId = winTabs[0].id;
   state.windowId = win.id;
