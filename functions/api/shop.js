@@ -24,7 +24,7 @@ export async function loadAll(env) {
     return [];
   }
 }
-async function saveAll(env, items) {
+export async function saveAll(env, items) {
   await env.FRAGLY_ADS.put(KV_KEY, JSON.stringify(items));
 }
 function isHttpUrl(s) {

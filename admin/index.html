@@ -111,6 +111,14 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 /* ── ADD FORM ── */
 .add-card{background:linear-gradient(155deg,rgba(255,255,255,.04),rgba(255,255,255,.015));border:1px solid var(--bdr);border-radius:var(--r);padding:20px;}
 .add-card h3{font-family:var(--mono);font-size:.66rem;letter-spacing:3px;color:var(--pink);margin-bottom:16px;text-transform:uppercase;}
+.import-card{background:linear-gradient(155deg,rgba(168,85,247,.08),rgba(236,72,153,.03));border:1px solid var(--bdr);border-radius:var(--r);padding:20px;margin-bottom:20px;}
+.import-card h3{font-family:var(--mono);font-size:.66rem;letter-spacing:3px;color:var(--red);margin-bottom:6px;text-transform:uppercase;}
+.import-card input[type="file"]{color:var(--muted2);font-family:var(--mono);font-size:.72rem;}
+.pl-thumb-ph{flex:none;width:56px;height:56px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-family:var(--dp);font-weight:800;color:var(--muted);font-size:1.1rem;}
+.pl-status{font-family:var(--mono);font-size:.6rem;letter-spacing:1px;text-transform:uppercase;flex:none;padding:3px 8px;border-radius:6px;}
+.pl-status.ok{color:var(--green);background:rgba(61,255,160,.1);}
+.pl-status.dup{color:var(--gold);background:rgba(251,146,60,.1);}
+.pl-status.err{color:#fca5a5;background:rgba(239,68,68,.1);}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 @media(max-width:640px){.grid2{grid-template-columns:1fr;}}
 .field{margin-bottom:14px;}
@@ -176,6 +184,18 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
           <div class="slot-dims">One add form. Every active item here automatically: (1) rotates into the banner + square ad slots on the main site, 5 shown at a time, and (2) shows in the /shop/ storefront grid. No separate ad entry needed.</div>
         </div>
         <div class="slot-count" id="shopCount">0 items</div>
+      </div>
+
+      <div class="import-card">
+        <h3>Import Shopee CSV</h3>
+        <div class="hint" style="margin:0 0 10px;">From Shopee Affiliate → Product Offer → select items → Batch Get Link → download CSV. No images in that export — items import with a blank thumbnail; edit them in later.</div>
+        <input type="file" id="csvFile" accept=".csv" onchange="handleCsvFile(event)">
+        <div id="csvSummary" class="hint" style="display:none;margin-top:10px;"></div>
+        <div id="csvPreviewWrap" style="display:none;">
+          <div class="pl-list" id="csvPreview" data-cols="3" style="max-height:320px;margin-top:12px;"></div>
+          <button class="btn btn-p" id="csvImportBtn" style="margin-top:14px;max-width:220px;" onclick="runCsvImport()">IMPORT ALL</button>
+          <div id="csvProgress" class="hint" style="margin-top:8px;"></div>
+        </div>
       </div>
 
       <form class="add-card" onsubmit="return submitShopItem(event)">
@@ -392,7 +412,7 @@ function renderShop(){
   } else {
     list.innerHTML = filtered.map(function(i){
       return '<div class="pl-row' + (i.active ? '' : ' inactive') + '">'
-        + '<div class="pl-thumb"><img src="' + escapeHtml(i.image) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>'
+        + (i.image ? '<div class="pl-thumb"><img src="' + escapeHtml(i.image) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>' : '<div class="pl-thumb-ph">' + escapeHtml((i.category || '?').charAt(0)) + '</div>')
         + '<div class="pl-info" onmouseenter="showTip(event,\'' + escapeHtml(i.id) + '\')" onmouseleave="hideTip()" onmousemove="moveTip(event)"'
         + ' data-name="' + escapeHtml(i.name) + '" data-cat="' + escapeHtml(i.category) + '" data-price="' + escapeHtml(i.price || '') + '"'
         + ' data-link="' + escapeHtml(i.link) + '" data-active="' + (i.active ? 'Active' : 'Inactive') + '" data-featured="' + (i.featured ? '1' : '') + '">'
@@ -536,6 +556,155 @@ async function submitShopItem(evt){
     btn.disabled = false; btn.textContent = 'ADD ITEM';
   }
   return false;
+}
+
+/* ── CSV import (Shopee Affiliate "Batch Get Link" export) ── */
+var csvRows = []; // parsed + mapped preview rows, index-aligned with csvPreview DOM
+
+function parseCsv(text) {
+  var rows = [], row = [], field = '', inQuotes = false;
+  for (var i = 0; i < text.length; i++) {
+    var c = text[i];
+    if (inQuotes) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+      else field += c;
+    } else if (c === '"') inQuotes = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\r') { /* skip */ }
+    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else field += c;
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(function (r) { return r.length > 1 || r[0]; });
+}
+
+var CAT_RULES = [
+  [/mouse|mice/i, 'Mouse'], [/keyboard/i, 'Keyboard'], [/headset|headphone/i, 'Headset'],
+  [/monitor/i, 'Monitor'], [/mic(rophone)?\b/i, 'Microphone'], [/chair/i, 'Chair'],
+  [/mouse\s*pad|mousepad/i, 'Mousepad']
+];
+function detectCategory(name) {
+  for (var i = 0; i < CAT_RULES.length; i++) if (CAT_RULES[i][0].test(name)) return CAT_RULES[i][1];
+  return 'Other';
+}
+function parsePriceNum(s) {
+  var m = String(s || '').trim().match(/^([\d.]+)\s*([kK])?$/);
+  if (!m) return null;
+  var n = parseFloat(m[1]);
+  return m[2] ? n * 1000 : n;
+}
+function formatPeso(n) { return '₱' + n.toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+
+function handleCsvFile(evt) {
+  var file = evt.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function () {
+    try {
+      buildCsvPreview(String(reader.result));
+    } catch (e) {
+      toast('Could not parse that CSV — check the format.', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function buildCsvPreview(text) {
+  var table = parseCsv(text);
+  if (table.length < 2) { toast('CSV has no data rows.', true); return; }
+  var header = table[0].map(function (h) { return h.trim().toLowerCase(); });
+  var idx = {
+    itemId: header.indexOf('item id'), name: header.indexOf('item name'),
+    price: header.indexOf('price'), sales: header.indexOf('sales'),
+    shopName: header.indexOf('shop name'), commission: header.indexOf('commission'),
+    productUrl: header.indexOf('product link'), link: header.indexOf('offer link')
+  };
+  if (idx.name === -1 || idx.link === -1) {
+    toast('CSV missing "Item Name" or "Offer Link" columns.', true);
+    return;
+  }
+
+  var existingLinks = {}, existingItemIds = {};
+  shopState.items.forEach(function (i) { existingLinks[i.link] = true; if (i.itemId) existingItemIds[i.itemId] = true; });
+  var seenInBatch = {};
+
+  csvRows = table.slice(1).map(function (r) {
+    var name = (r[idx.name] || '').trim();
+    var link = (r[idx.link] || '').trim();
+    var itemId = idx.itemId > -1 ? (r[idx.itemId] || '').trim() : '';
+    var priceNum = idx.price > -1 ? parsePriceNum(r[idx.price]) : null;
+    var row = {
+      itemId: itemId,
+      name: name,
+      link: link,
+      productUrl: idx.productUrl > -1 ? (r[idx.productUrl] || '').trim() : '',
+      price: priceNum != null ? formatPeso(priceNum) : '',
+      sales: idx.sales > -1 ? Number(r[idx.sales]) || 0 : undefined,
+      commission: idx.commission > -1 ? (r[idx.commission] || '').trim() : '',
+      shopName: idx.shopName > -1 ? (r[idx.shopName] || '').trim() : '',
+      category: detectCategory(name),
+      image: ''
+    };
+    if (!name || !link) row.status = 'err';
+    else if ((itemId && existingItemIds[itemId]) || existingLinks[link] || (itemId && seenInBatch[itemId]) || seenInBatch[link]) row.status = 'dup';
+    else row.status = 'ok';
+    if (itemId) seenInBatch[itemId] = true;
+    seenInBatch[link] = true;
+    return row;
+  });
+
+  renderCsvPreview();
+}
+
+function renderCsvPreview() {
+  var ok = csvRows.filter(function (r) { return r.status === 'ok'; }).length;
+  var dup = csvRows.filter(function (r) { return r.status === 'dup'; }).length;
+  var err = csvRows.filter(function (r) { return r.status === 'err'; }).length;
+
+  var summary = $('csvSummary');
+  summary.style.display = 'block';
+  summary.textContent = csvRows.length + ' rows parsed — ' + ok + ' ready, ' + dup + ' duplicates (skipped), ' + err + ' invalid (skipped).';
+
+  $('csvPreviewWrap').style.display = ok ? 'block' : 'none';
+  $('csvImportBtn').disabled = !ok;
+
+  $('csvPreview').innerHTML = csvRows.map(function (r) {
+    var initial = escapeHtml((r.category || '?').charAt(0));
+    return '<div class="pl-row' + (r.status !== 'ok' ? ' inactive' : '') + '">'
+      + '<div class="pl-thumb-ph">' + initial + '</div>'
+      + '<div class="pl-info"><div class="pl-name">' + escapeHtml(r.name || '(no name)') + '</div>'
+      + '<span class="pl-meta">' + escapeHtml(r.category) + (r.price ? ' · ' + escapeHtml(r.price) : '') + (r.commission ? ' · comm ' + escapeHtml(r.commission) : '') + '</span></div>'
+      + '<span class="pl-status ' + r.status + '">' + (r.status === 'ok' ? 'Ready' : r.status === 'dup' ? 'Duplicate' : 'Invalid') + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+async function runCsvImport() {
+  var ready = csvRows.filter(function (r) { return r.status === 'ok'; });
+  if (!ready.length) return;
+  var btn = $('csvImportBtn');
+  btn.disabled = true;
+  var chunkSize = 40, done = 0, created = 0, skipped = 0, errors = 0;
+
+  for (var i = 0; i < ready.length; i += chunkSize) {
+    var chunk = ready.slice(i, i + chunkSize);
+    try {
+      var res = await api('/api/shop/bulk', { method: 'POST', body: JSON.stringify({ items: chunk }) });
+      created += res.created || 0; skipped += res.skipped || 0; errors += res.errors || 0;
+    } catch (e) {
+      errors += chunk.length;
+    }
+    done += chunk.length;
+    $('csvProgress').textContent = 'Imported ' + done + ' / ' + ready.length + ' — created ' + created + ', skipped ' + skipped + ', errors ' + errors + '.';
+  }
+
+  toast('Import done: ' + created + ' added.');
+  $('csvFile').value = '';
+  csvRows = [];
+  $('csvPreviewWrap').style.display = 'none';
+  $('csvSummary').style.display = 'none';
+  await loadShop();
+  btn.disabled = false;
 }
 
 checkSession();
