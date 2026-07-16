@@ -28,6 +28,14 @@ function waitForTabComplete(tabId, timeoutMs) {
   });
 }
 
+// Some Shopee images only load once they've entered the viewport (IntersectionObserver
+// lazy-load) — a freshly-navigated tab may never trigger that on its own. Nudging the
+// scroll position forces those observers to fire before we read the DOM.
+function scrollNudge() {
+  window.scrollTo(0, document.body.scrollHeight / 2);
+  window.scrollTo(0, 0);
+}
+
 // Runs inside the target tab via chrome.scripting.executeScript — must be self-contained.
 function extractSingleImage() {
   var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
@@ -56,6 +64,13 @@ function fmtEta(ms) {
   var m = Math.floor(s / 60);
   s = s % 60;
   return m + 'm ' + (s < 10 ? '0' : '') + s + 's';
+}
+
+async function tryExtract(tabId) {
+  try { await chrome.scripting.executeScript({ target: { tabId: tabId }, func: scrollNudge }); } catch (e) {}
+  await sleep(400);
+  var execResult = await chrome.scripting.executeScript({ target: { tabId: tabId }, func: extractSingleImage });
+  return execResult && execResult[0] && execResult[0].result;
 }
 
 function updateProgress(done, total, ok, fail, startTime) {
@@ -108,9 +123,16 @@ async function startBatch() {
     try {
       await chrome.tabs.update(state.tabId, { url: item.link });
       await waitForTabComplete(state.tabId, 8000);
-      await sleep(delay);
-      var execResult = await chrome.scripting.executeScript({ target: { tabId: state.tabId }, func: extractSingleImage });
-      var image = execResult && execResult[0] && execResult[0].result;
+      // Jitter avoids a perfectly uniform request cadence, which is one of the
+      // simpler signals anti-bot systems key off of.
+      await sleep(delay + Math.floor(Math.random() * 1200));
+      var image = await tryExtract(state.tabId);
+      if (!image) {
+        // SPA render can lag behind the page-load event — give it one more full
+        // delay window before giving up, instead of guessing a bigger flat delay.
+        await sleep(delay);
+        image = await tryExtract(state.tabId);
+      }
       if (image) {
         state.results.push({ id: item.id, itemId: item.itemId, image: image });
         okCount++;
