@@ -228,6 +228,17 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
         <div class="img-preview-msg" id="imgPreviewMsg"></div>
       </div>
 
+      <div class="img-import-card">
+        <h3>Scan For Blank Images</h3>
+        <div class="img-import-steps">Some saved images render solid white/blank even though a real URL is stored — usually a video-poster grab or a broken CDN asset. This samples actual pixel color on every saved image and flags ones with near-zero color variation (real photos always have shadows/contrast; a truly blank image doesn't). Review the flagged list before clearing — some products genuinely have plain white packaging.</div>
+        <div class="img-actions">
+          <button type="button" class="btn btn-ghost" id="scanBtn" onclick="scanBlankImages()">SCAN ALL IMAGES</button>
+          <button type="button" class="btn btn-p" id="clearBlankBtn" style="max-width:220px;display:none;" onclick="clearSelectedBlanks()">CLEAR SELECTED → MARK MISSING</button>
+        </div>
+        <div class="img-preview-msg" id="scanMsg"></div>
+        <div class="pl-list" id="scanResults" data-cols="3" style="display:none;max-height:360px;margin-top:12px;"></div>
+      </div>
+
       <form class="add-card" onsubmit="return submitShopItem(event)">
         <h3>Add product</h3>
         <div class="grid2">
@@ -834,6 +845,130 @@ async function runImageImport() {
   imgImportQueue = [];
   $('imgApplyBtn').style.display = 'none';
   $('imgJsonInput').value = '';
+  btn.disabled = false;
+  await loadShop();
+}
+
+/* ── Blank image scanner ── */
+var blankScanResults = [];
+
+// Samples actual pixel color from a saved image (not just checking the URL exists).
+// Real product photos always have some color variation (shadows, logos, edges); a
+// video-poster grab or a broken CDN asset renders as a near-uniform flat color.
+// Cross-origin images may taint the canvas read (susercontent doesn't always send
+// CORS headers) — those come back "skip" (unverifiable), never wrongly flagged.
+function sampleImageBlank(url) {
+  return new Promise(function (resolve) {
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    var settled = false;
+    var timer = setTimeout(function () { if (!settled) { settled = true; resolve('skip'); } }, 6000);
+    img.onload = function () {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try {
+        var c = document.createElement('canvas');
+        c.width = 16; c.height = 16;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, 16, 16);
+        var data = ctx.getImageData(0, 0, 16, 16).data;
+        var rs = [], gs = [], bs = [];
+        for (var p = 0; p < data.length; p += 4) {
+          if (data[p + 3] > 10) { rs.push(data[p]); gs.push(data[p + 1]); bs.push(data[p + 2]); }
+        }
+        if (!rs.length) { resolve('blank'); return; }
+        var mean = function (a) { return a.reduce(function (s, v) { return s + v; }, 0) / a.length; };
+        var variance = function (a, m) { return a.reduce(function (s, v) { return s + (v - m) * (v - m); }, 0) / a.length; };
+        var v = (variance(rs, mean(rs)) + variance(gs, mean(gs)) + variance(bs, mean(bs))) / 3;
+        resolve(v < 12 ? 'blank' : 'ok');
+      } catch (e) {
+        resolve('skip');
+      }
+    };
+    img.onerror = function () { if (!settled) { settled = true; clearTimeout(timer); resolve('skip'); } };
+    img.src = url;
+  });
+}
+
+async function scanBlankImages() {
+  var btn = $('scanBtn');
+  var msg = $('scanMsg');
+  var queue = shopState.items.filter(function (i) { return i.image; });
+  if (!queue.length) { toast('No items have images yet.', true); return; }
+
+  btn.disabled = true;
+  msg.style.display = 'block';
+  msg.className = 'img-preview-msg';
+  msg.textContent = 'Scanning 0 / ' + queue.length + '…';
+  blankScanResults = [];
+  $('clearBlankBtn').style.display = 'none';
+  $('scanResults').style.display = 'none';
+
+  var checked = 0, flagged = 0, skipped = 0, idx = 0;
+  var CONCURRENCY = 6;
+
+  async function worker() {
+    while (idx < queue.length) {
+      var item = queue[idx++];
+      var result = await sampleImageBlank(item.image);
+      checked++;
+      if (result === 'blank') { flagged++; blankScanResults.push(item); }
+      else if (result === 'skip') skipped++;
+      msg.textContent = 'Scanned ' + checked + ' / ' + queue.length + ' — ' + flagged + ' flagged, ' + skipped + ' unverifiable.';
+    }
+  }
+  var workers = [];
+  for (var w = 0; w < CONCURRENCY; w++) workers.push(worker());
+  await Promise.all(workers);
+
+  btn.disabled = false;
+  if (!blankScanResults.length) {
+    msg.className = 'img-preview-msg ready';
+    msg.textContent = 'Scan complete — ' + checked + ' checked, none flagged (' + skipped + ' unverifiable, skipped).';
+    return;
+  }
+  msg.className = 'img-preview-msg warn';
+  msg.textContent = checked + ' checked — ' + blankScanResults.length + ' flagged as likely blank (' + skipped + ' unverifiable). Review before clearing — uncheck any that are genuinely plain/white products.';
+  renderScanResults();
+  $('clearBlankBtn').style.display = 'inline-flex';
+}
+
+function renderScanResults() {
+  var wrap = $('scanResults');
+  wrap.style.display = 'grid';
+  wrap.innerHTML = blankScanResults.map(function (i, idx) {
+    return '<div class="pl-row">'
+      + '<div class="pl-thumb"><img src="' + escapeHtml(i.image) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>'
+      + '<div class="pl-info"><div class="pl-name">' + escapeHtml(i.name) + '</div><span class="pl-meta">' + escapeHtml(i.category || '') + '</span></div>'
+      + '<label class="filter-chip" style="flex:none;"><input type="checkbox" class="scan-check" data-idx="' + idx + '" checked> Clear</label>'
+      + '</div>';
+  }).join('');
+}
+
+async function clearSelectedBlanks() {
+  var checks = document.querySelectorAll('.scan-check:checked');
+  if (!checks.length) { toast('Nothing selected.', true); return; }
+  var btn = $('clearBlankBtn');
+  btn.disabled = true;
+  var msg = $('scanMsg');
+  var done = 0, errors = 0;
+
+  for (var i = 0; i < checks.length; i++) {
+    var idx = Number(checks[i].dataset.idx);
+    var item = blankScanResults[idx];
+    try {
+      await api('/api/shop?id=' + encodeURIComponent(item.id), { method: 'PUT', body: JSON.stringify({ image: '' }) });
+      done++;
+    } catch (e) { errors++; }
+    msg.textContent = 'Clearing ' + (done + errors) + ' / ' + checks.length + '…';
+  }
+
+  toast('Cleared ' + done + ' image' + (done === 1 ? '' : 's') + (errors ? ', ' + errors + ' errors' : '') + ' — back in Missing List for re-scan.');
+  blankScanResults = [];
+  $('scanResults').style.display = 'none';
+  $('scanResults').innerHTML = '';
+  btn.style.display = 'none';
   btn.disabled = false;
   await loadShop();
 }

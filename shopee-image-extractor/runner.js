@@ -37,13 +37,53 @@ function scrollNudge() {
 }
 
 // Runs inside the target tab via chrome.scripting.executeScript — must be self-contained.
+// Some product pages show a video as the first gallery slide instead of a photo —
+// Shopee serves that slide's poster as a blank/white placeholder until a human clicks
+// play, so grabbing "the first big image" grabs a blank. Two defenses:
+// 1. Skip any image sharing a gallery container with a <video> element (DOM-only check,
+//    no cross-origin canvas reads needed, always works).
+// 2. Best-effort canvas whiteness check as a second pass — wrapped in try/catch since
+//    susercontent images are cross-origin and may taint the canvas (fails open: if the
+//    check can't run, trust the image rather than block on it).
 function extractSingleImage() {
+  function sharesContainerWithVideo(img, videos) {
+    if (!videos.length) return false;
+    var el = img;
+    for (var d = 0; d < 5 && el; d++) {
+      for (var v = 0; v < videos.length; v++) {
+        if (el.contains(videos[v]) || videos[v].contains(el)) return true;
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+  function isLikelyBlank(img) {
+    try {
+      var c = document.createElement('canvas');
+      c.width = 8; c.height = 8;
+      var ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, 8, 8);
+      var data = ctx.getImageData(0, 0, 8, 8).data;
+      for (var p = 0; p < data.length; p += 4) {
+        if (data[p + 3] > 10 && (data[p] < 245 || data[p + 1] < 245 || data[p + 2] < 245)) return false;
+      }
+      return true;
+    } catch (e) {
+      return false; // tainted canvas — can't verify, don't block on it
+    }
+  }
+
+  var videos = Array.prototype.slice.call(document.querySelectorAll('video'));
   var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
   var candidates = imgs.filter(function (i) {
     return i.src && i.src.indexOf('susercontent') !== -1 && i.className.indexOf('avatar') === -1;
   });
   candidates.sort(function (a, b) { return (b.naturalWidth || 0) - (a.naturalWidth || 0); });
-  var best = candidates.filter(function (i) { return (i.naturalWidth || 0) >= 300; })[0] || candidates[0];
+
+  var big = candidates.filter(function (i) { return (i.naturalWidth || 0) >= 300; });
+  var pool = big.length ? big : candidates;
+  var clean = pool.filter(function (i) { return !sharesContainerWithVideo(i, videos) && !isLikelyBlank(i); });
+  var best = clean[0] || pool[0];
   return best ? best.src : null;
 }
 
