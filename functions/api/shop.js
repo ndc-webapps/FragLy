@@ -110,8 +110,12 @@ export async function onRequestPut(context) {
 
   if (body.name !== undefined) next.name = String(body.name).trim().slice(0, 120);
   if (body.image !== undefined) {
-    if (!isHttpUrl(String(body.image))) return json({ error: 'image must be a valid http(s) URL' }, 400);
-    next.image = String(body.image).trim();
+    const img = String(body.image).trim();
+    // Empty string is a valid PUT value here — it's how the admin scanner clears a
+    // blank/broken image back to "missing" so it re-enters the fetch pipeline. Only
+    // non-empty values need to pass URL validation.
+    if (img && !isHttpUrl(img)) return json({ error: 'image must be a valid http(s) URL' }, 400);
+    next.image = img;
   }
   if (body.link !== undefined) {
     if (!isHttpUrl(String(body.link))) return json({ error: 'link must be a valid http(s) URL' }, 400);
