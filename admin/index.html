@@ -834,7 +834,7 @@ async function runImageImport() {
   msg.className = 'img-preview-msg';
 
   var updates = imgImportQueue.map(function (r) { return { id: r.id, image: r.newImage }; });
-  var CHUNK = 400, updated = 0, notFound = 0, invalid = 0, failedChunks = 0;
+  var CHUNK = 150, updated = 0, notFound = 0, invalid = 0, failedChunks = 0, firstError = '';
   var total = updates.length, sent = 0;
 
   for (var i = 0; i < total; i += CHUNK) {
@@ -844,6 +844,7 @@ async function runImageImport() {
       updated += res.updated || 0; notFound += res.notFound || 0; invalid += res.invalid || 0;
     } catch (e) {
       failedChunks++;
+      if (!firstError) firstError = e.message; // keep the real reason instead of a blind count
     }
     sent += chunk.length;
     msg.textContent = 'Updating ' + sent + ' / ' + total + '…';
@@ -854,13 +855,17 @@ async function runImageImport() {
   if (notFound) parts.push(notFound + ' not found (id no longer in catalog)');
   if (invalid) parts.push(invalid + ' invalid (bad/blank URL)');
   if (failedChunks) parts.push(failedChunks + ' request(s) failed');
-  msg.textContent = 'Done — ' + parts.join(', ') + '.';
+  msg.textContent = 'Done — ' + parts.join(', ') + '.' + (firstError ? ' Error: ' + firstError : '');
   msg.className = 'img-preview-msg ' + (updated ? 'ready' : 'warn');
   toast('Images updated: ' + updated + '.', !updated);
-  imgImportQueue = [];
-  $('imgApplyBtn').style.display = 'none';
-  $('imgJsonInput').value = '';
   btn.disabled = false;
+  // Only clear the pasted JSON / queue on a fully clean run — otherwise keep them so a
+  // failed batch can be retried without re-pasting (and re-scraping).
+  if (updated > 0 && !failedChunks) {
+    imgImportQueue = [];
+    $('imgApplyBtn').style.display = 'none';
+    $('imgJsonInput').value = '';
+  }
   await loadShop();
 }
 
@@ -987,19 +992,19 @@ async function clearSelectedBlanks() {
   for (var i = 0; i < checks.length; i++) {
     updates.push({ id: blankScanResults[Number(checks[i].dataset.idx)].id, image: '' });
   }
-  var CHUNK = 400, cleared = 0, failedChunks = 0, sent = 0, total = updates.length;
+  var CHUNK = 150, cleared = 0, failedChunks = 0, sent = 0, total = updates.length, firstError = '';
   for (var j = 0; j < total; j += CHUNK) {
     var chunk = updates.slice(j, j + CHUNK);
     try {
       var res = await api('/api/shop/images', { method: 'POST', body: JSON.stringify({ updates: chunk }) });
       cleared += res.updated || 0;
-    } catch (e) { failedChunks++; }
+    } catch (e) { failedChunks++; if (!firstError) firstError = e.message; }
     sent += chunk.length;
     msg.textContent = 'Clearing ' + sent + ' / ' + total + '…';
     if (j + CHUNK < total) await new Promise(function (r) { setTimeout(r, 1200); });
   }
 
-  msg.textContent = 'Cleared ' + cleared + (failedChunks ? ' (' + failedChunks + ' request(s) failed)' : '') + ' — back in Missing List for re-fetch.';
+  msg.textContent = 'Cleared ' + cleared + (failedChunks ? ' (' + failedChunks + ' request(s) failed)' : '') + ' — back in Missing List for re-fetch.' + (firstError ? ' Error: ' + firstError : '');
   msg.className = 'img-preview-msg ' + (cleared ? 'ready' : 'warn');
   toast('Cleared ' + cleared + ' image' + (cleared === 1 ? '' : 's') + '.', !cleared);
   blankScanResults = [];
