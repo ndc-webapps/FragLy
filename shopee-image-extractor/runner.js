@@ -171,14 +171,19 @@ async function startBatch() {
   // right edge of the screen (~60% hanging off), which satisfies the 50% rule while
   // staying out of your way. Keep this corner of your screen clear of other windows
   // while it runs for the most reliable results.
+  // left = screenW - visibleWidth, so visibleWidth needs to be the KEPT fraction,
+  // not the hidden one — 0.6 here means 60% stays on-screen (40% hangs off the
+  // right edge), safely above Chrome's 50% minimum. (Previous build had this
+  // inverted — 0.4 meant only 40% visible, which is why it kept getting rejected.)
   var winW = 1366, winH = 900;
   var screenW = (window.screen && window.screen.availWidth) || 1920;
+  var left = Math.max(0, screenW - Math.floor(winW * 0.6));
   var win;
   try {
     win = await chrome.windows.create({
       url: 'about:blank', focused: false, type: 'normal',
       width: winW, height: winH,
-      left: screenW - Math.floor(winW * 0.4), top: 0
+      left: left, top: 0
     });
   } catch (e) {
     alert('Could not open the runner window: ' + e.message);
