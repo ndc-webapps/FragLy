@@ -40,13 +40,13 @@ button{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-weigh
 </head>
 <body>
 <h2>FragLy Batch Image Runner</h2>
-<p class="sub">Paste the list copied from Admin → <b>COPY MISSING LIST</b>. This drives a background tab through every affiliate link automatically and reads the rendered image — no manual browsing.</p>
+<p class="sub">Paste the list copied from Admin → <b>COPY MISSING LIST</b>. This drives a background tab through every affiliate link automatically and reads the rendered image — no manual browsing. It polls every ~1s and moves on the instant an image appears — the number below is only a ceiling for slow pages.</p>
 
 <label>Missing items JSON ([{ id, itemId, link, name }])</label>
 <textarea id="input" placeholder='[{"id":"...","itemId":"...","link":"https://s.shopee.ph/...","name":"..."}]'></textarea>
 
 <div class="row">
-  <div class="field-inline">Delay per item (ms) <input type="number" id="delay" value="4000" min="2000" step="500"></div>
+  <div class="field-inline">Max wait per item (ms) <input type="number" id="delay" value="20000" min="5000" step="1000"></div>
   <button class="btn-p" id="startBtn">START BATCH</button>
   <button class="btn-stop" id="stopBtn" disabled>STOP</button>
 </div>

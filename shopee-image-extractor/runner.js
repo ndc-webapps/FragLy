@@ -67,10 +67,27 @@ function fmtEta(ms) {
 }
 
 async function tryExtract(tabId) {
-  try { await chrome.scripting.executeScript({ target: { tabId: tabId }, func: scrollNudge }); } catch (e) {}
-  await sleep(400);
   var execResult = await chrome.scripting.executeScript({ target: { tabId: tabId }, func: extractSingleImage });
   return execResult && execResult[0] && execResult[0].result;
+}
+
+// Polls instead of sleeping a flat amount: checks every ~900ms and returns the moment
+// an image shows up (fast pages don't waste the rest of maxWaitMs), only actually
+// waiting the full ceiling for pages that are genuinely slow to render.
+async function pollForImage(tabId, maxWaitMs) {
+  var start = Date.now();
+  var nudged = false;
+  while (true) {
+    var image = await tryExtract(tabId);
+    if (image) return image;
+    var elapsed = Date.now() - start;
+    if (elapsed >= maxWaitMs) return null;
+    if (!nudged && elapsed > 1500) {
+      try { await chrome.scripting.executeScript({ target: { tabId: tabId }, func: scrollNudge }); } catch (e) {}
+      nudged = true;
+    }
+    await sleep(Math.min(900, maxWaitMs - elapsed));
+  }
 }
 
 function updateProgress(done, total, ok, fail, startTime) {
@@ -123,16 +140,7 @@ async function startBatch() {
     try {
       await chrome.tabs.update(state.tabId, { url: item.link });
       await waitForTabComplete(state.tabId, 8000);
-      // Jitter avoids a perfectly uniform request cadence, which is one of the
-      // simpler signals anti-bot systems key off of.
-      await sleep(delay + Math.floor(Math.random() * 1200));
-      var image = await tryExtract(state.tabId);
-      if (!image) {
-        // SPA render can lag behind the page-load event — give it one more full
-        // delay window before giving up, instead of guessing a bigger flat delay.
-        await sleep(delay);
-        image = await tryExtract(state.tabId);
-      }
+      var image = await pollForImage(state.tabId, delay);
       if (image) {
         state.results.push({ id: item.id, itemId: item.itemId, image: image });
         okCount++;
