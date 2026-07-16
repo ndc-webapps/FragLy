@@ -820,28 +820,43 @@ function previewImageImport() {
   if (!matched) toast('No matches found. Import the CSV first so itemIds exist in catalog.', true);
 }
 
+// One PUT-per-item used to fail en masse: every PUT rewrites the whole shop_items KV
+// key, and Cloudflare KV only allows ~1 write/sec to the same key — 186 rapid writes =
+// "0 updated, 186 errors". Now we send the whole batch to /api/shop/images, which does
+// ONE KV write for all of them. Chunked (each chunk = 1 write) with a >1s gap between
+// chunks so multi-chunk batches still respect the per-key write limit.
 async function runImageImport() {
   if (!imgImportQueue.length) return;
   var btn = $('imgApplyBtn');
   btn.disabled = true;
   var msg = $('imgPreviewMsg');
-  var done = 0, errors = 0, total = imgImportQueue.length;
+  msg.style.display = 'block';
+  msg.className = 'img-preview-msg';
 
-  for (var i = 0; i < total; i++) {
-    var row = imgImportQueue[i];
+  var updates = imgImportQueue.map(function (r) { return { id: r.id, image: r.newImage }; });
+  var CHUNK = 400, updated = 0, notFound = 0, invalid = 0, failedChunks = 0;
+  var total = updates.length, sent = 0;
+
+  for (var i = 0; i < total; i += CHUNK) {
+    var chunk = updates.slice(i, i + CHUNK);
     try {
-      await api('/api/shop?id=' + encodeURIComponent(row.id), {
-        method: 'PUT',
-        body: JSON.stringify({ image: row.newImage })
-      });
-      done++;
-    } catch (e) { errors++; }
-    msg.textContent = 'Updating ' + (done + errors) + ' / ' + total + '…';
+      var res = await api('/api/shop/images', { method: 'POST', body: JSON.stringify({ updates: chunk }) });
+      updated += res.updated || 0; notFound += res.notFound || 0; invalid += res.invalid || 0;
+    } catch (e) {
+      failedChunks++;
+    }
+    sent += chunk.length;
+    msg.textContent = 'Updating ' + sent + ' / ' + total + '…';
+    if (i + CHUNK < total) await new Promise(function (r) { setTimeout(r, 1200); });
   }
 
-  msg.textContent = 'Done — ' + done + ' updated' + (errors ? ', ' + errors + ' errors' : '') + '.';
-  msg.className = 'img-preview-msg ' + (errors ? 'warn' : 'ready');
-  toast('Images updated: ' + done + ' done.');
+  var parts = [updated + ' updated'];
+  if (notFound) parts.push(notFound + ' not found (id no longer in catalog)');
+  if (invalid) parts.push(invalid + ' invalid (bad/blank URL)');
+  if (failedChunks) parts.push(failedChunks + ' request(s) failed');
+  msg.textContent = 'Done — ' + parts.join(', ') + '.';
+  msg.className = 'img-preview-msg ' + (updated ? 'ready' : 'warn');
+  toast('Images updated: ' + updated + '.', !updated);
   imgImportQueue = [];
   $('imgApplyBtn').style.display = 'none';
   $('imgJsonInput').value = '';
@@ -965,19 +980,28 @@ async function clearSelectedBlanks() {
   var btn = $('clearBlankBtn');
   btn.disabled = true;
   var msg = $('scanMsg');
-  var done = 0, errors = 0;
 
+  // Same fix as the image import: one bulk KV write (image:'' = clear) instead of one
+  // PUT per item, which would hit KV's ~1 write/sec-per-key limit and mostly fail.
+  var updates = [];
   for (var i = 0; i < checks.length; i++) {
-    var idx = Number(checks[i].dataset.idx);
-    var item = blankScanResults[idx];
+    updates.push({ id: blankScanResults[Number(checks[i].dataset.idx)].id, image: '' });
+  }
+  var CHUNK = 400, cleared = 0, failedChunks = 0, sent = 0, total = updates.length;
+  for (var j = 0; j < total; j += CHUNK) {
+    var chunk = updates.slice(j, j + CHUNK);
     try {
-      await api('/api/shop?id=' + encodeURIComponent(item.id), { method: 'PUT', body: JSON.stringify({ image: '' }) });
-      done++;
-    } catch (e) { errors++; }
-    msg.textContent = 'Clearing ' + (done + errors) + ' / ' + checks.length + '…';
+      var res = await api('/api/shop/images', { method: 'POST', body: JSON.stringify({ updates: chunk }) });
+      cleared += res.updated || 0;
+    } catch (e) { failedChunks++; }
+    sent += chunk.length;
+    msg.textContent = 'Clearing ' + sent + ' / ' + total + '…';
+    if (j + CHUNK < total) await new Promise(function (r) { setTimeout(r, 1200); });
   }
 
-  toast('Cleared ' + done + ' image' + (done === 1 ? '' : 's') + (errors ? ', ' + errors + ' errors' : '') + ' — back in Missing List for re-scan.');
+  msg.textContent = 'Cleared ' + cleared + (failedChunks ? ' (' + failedChunks + ' request(s) failed)' : '') + ' — back in Missing List for re-fetch.';
+  msg.className = 'img-preview-msg ' + (cleared ? 'ready' : 'warn');
+  toast('Cleared ' + cleared + ' image' + (cleared === 1 ? '' : 's') + '.', !cleared);
   blankScanResults = [];
   $('scanResults').style.display = 'none';
   $('scanResults').innerHTML = '';
