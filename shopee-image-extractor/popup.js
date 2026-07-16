@@ -129,6 +129,10 @@ document.getElementById('saveMissingBtn').addEventListener('click', function() {
 
 loadMissingList();
 
+document.getElementById('batchBtn').addEventListener('click', function () {
+  chrome.windows.create({ url: chrome.runtime.getURL('runner.html'), type: 'popup', width: 520, height: 720 });
+});
+
 document.getElementById('extractBtn').addEventListener('click', function() {
   var btn = document.getElementById('extractBtn');
   var status = document.getElementById('status');

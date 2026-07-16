@@ -754,14 +754,16 @@ async function runCsvImport() {
 /* ── Image import (paste JSON from FragLy Extractor Chrome extension) ── */
 var imgImportQueue = [];
 
-// One-way export of itemIds still missing an image — paste once into the extension's
-// "Missing List" box so it can filter Shopee pages down to only what FragLy needs,
-// instead of the admin eyeballing which products already have photos.
+// One-way export of items still missing an image (id + itemId + link) — paste into the
+// extension's Batch Runner, which auto-navigates each affiliate link in a background
+// tab and pulls the rendered image itself. No manual browsing required.
 function copyMissingList() {
-  var missing = shopState.items.filter(function(i) { return i.itemId && !i.image; }).map(function(i) { return i.itemId; });
+  var missing = shopState.items
+    .filter(function(i) { return !i.image && i.link; })
+    .map(function(i) { return { id: i.id, itemId: i.itemId || '', link: i.link, name: i.name }; });
   if (!missing.length) { toast('Nothing missing an image right now.'); return; }
   navigator.clipboard.writeText(JSON.stringify(missing)).then(function() {
-    toast(missing.length + ' missing itemIds copied — paste into the extension.');
+    toast(missing.length + ' items copied — paste into the extension\'s Batch Runner.');
   }, function() {
     toast('Clipboard write failed — check browser permissions.', true);
   });
@@ -775,18 +777,20 @@ function previewImageImport() {
   if (!Array.isArray(parsed)) { toast('Expected a JSON array.', true); return; }
 
   var missingOnly = $('imgMissingOnly').checked;
-  var byItemId = {};
-  shopState.items.forEach(function(i) { if (i.itemId) byItemId[i.itemId] = i; });
+  var byId = {}, byItemId = {};
+  shopState.items.forEach(function(i) { byId[i.id] = i; if (i.itemId) byItemId[i.itemId] = i; });
 
   var matched = 0, alreadyHas = 0, unmatched = 0, noImg = 0;
   imgImportQueue = [];
 
   parsed.forEach(function(row) {
+    // Batch Runner output carries FragLy's own id (direct match, no lookup needed);
+    // the single-page manual extractor only knows Shopee's itemId (fallback).
+    var id = String(row.id || '').trim();
     var itemId = String(row.itemId || '').trim();
     var image = String(row.image || '').trim();
-    if (!itemId) { unmatched++; return; }
     if (!image) { noImg++; return; }
-    var item = byItemId[itemId];
+    var item = id ? byId[id] : (itemId ? byItemId[itemId] : null);
     if (!item) { unmatched++; return; }
     if (missingOnly && item.image) { alreadyHas++; return; }
     imgImportQueue.push({ id: item.id, name: item.name, newImage: image });

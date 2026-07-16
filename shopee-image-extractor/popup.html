@@ -31,8 +31,12 @@ summary{cursor:pointer;font-size:11px;color:#9a93b8;font-weight:700;letter-spaci
 </head>
 <body>
 <h2>FragLy Extractor</h2>
-<p class="sub">Extracts product images from the current Shopee Affiliate page.</p>
-<button class="btn-extract" id="extractBtn">EXTRACT PRODUCTS</button>
+<p class="sub">For 1300+ products: use <b>Batch Runner</b> — it auto-drives a background tab through every affiliate link, hands-off.</p>
+<button class="btn-extract" id="batchBtn" style="margin-bottom:14px;">OPEN BATCH RUNNER</button>
+
+<details id="manualDetails">
+<summary>Manual single-page extract (for ad-hoc use)</summary>
+<button class="btn-extract" id="extractBtn" style="margin-top:8px;">EXTRACT PRODUCTS ON THIS PAGE</button>
 <div class="status" id="status">Open a Shopee Affiliate product page first.</div>
 <textarea id="output" readonly rows="6"></textarea>
 <button class="btn-copy" id="copyBtn">COPY JSON</button>
@@ -43,13 +47,13 @@ summary{cursor:pointer;font-size:11px;color:#9a93b8;font-weight:700;letter-spaci
   <button class="btn-save" id="saveMissingBtn">SAVE LIST</button>
   <div class="missing-status" id="missingStatus"></div>
 </details>
+</details>
 
 <div class="hint">
-  <b>How to use:</b><br>
-  1. Admin → Import Images → COPY MISSING LIST → paste above, SAVE<br>
-  2. Open Shopee Affiliate → browse products<br>
-  3. EXTRACT PRODUCTS (auto-filters to only what's missing) → COPY JSON<br>
-  4. Paste JSON in Admin → PREVIEW → APPLY
+  <b>Batch (recommended for bulk):</b><br>
+  1. Admin → Import Images → COPY MISSING LIST<br>
+  2. OPEN BATCH RUNNER → paste → START BATCH → let it run<br>
+  3. COPY RESULT JSON → paste in Admin → PREVIEW → APPLY
 </div>
 <script src="popup.js"></script>
 </body>

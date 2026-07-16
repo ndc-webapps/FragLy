@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FragLy Batch Runner</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0B0C10;color:#ECE8F5;font-family:'Segoe UI',sans-serif;font-size:13px;padding:20px;min-height:100vh;}
+h2{font-size:16px;font-weight:700;letter-spacing:.5px;margin-bottom:4px;color:#A855F7;}
+.sub{font-size:11px;color:#6a6a8a;margin-bottom:16px;line-height:1.6;}
+.sub b{color:#9a93b8;}
+label{display:block;font-size:11px;color:#9a93b8;font-weight:700;letter-spacing:.5px;margin-bottom:6px;}
+textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#ECE8F5;font-family:monospace;font-size:11px;padding:10px;resize:vertical;min-height:100px;outline:none;margin-bottom:12px;}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+button{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:12px;letter-spacing:1px;transition:.2s;}
+.btn-p{background:linear-gradient(135deg,#A855F7,#EC4899);color:#fff;}
+.btn-p:hover{opacity:.9;}
+.btn-p:disabled{opacity:.4;cursor:not-allowed;}
+.btn-stop{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;}
+.btn-stop:hover{background:rgba(239,68,68,.25);}
+.btn-stop:disabled{opacity:.4;cursor:not-allowed;}
+.btn-ghost{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#ECE8F5;}
+.btn-ghost:hover{background:rgba(255,255,255,.1);}
+.field-inline{display:flex;align-items:center;gap:6px;font-size:11px;color:#9a93b8;}
+.field-inline input{width:60px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#ECE8F5;padding:6px 8px;font-family:monospace;font-size:11px;}
+.progress-wrap{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;margin-bottom:14px;}
+.progress-bar{height:8px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden;margin-bottom:10px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,#A855F7,#EC4899);width:0%;transition:width .2s;}
+.stats{display:flex;gap:16px;font-family:monospace;font-size:11px;color:#9a93b8;flex-wrap:wrap;}
+.stats b{color:#ECE8F5;}
+.stats .ok{color:#3dffa0;}
+.stats .fail{color:#fca5a5;}
+.log{height:140px;overflow-y:auto;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px 10px;font-family:monospace;font-size:10.5px;color:#6a6a8a;margin-bottom:14px;}
+.log div{padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.log .ok-line{color:#3dffa0;}
+.log .fail-line{color:#fca5a5;}
+.output-wrap{display:none;}
+.output-wrap label{margin-top:4px;}
+</style>
+</head>
+<body>
+<h2>FragLy Batch Image Runner</h2>
+<p class="sub">Paste the list copied from Admin → <b>COPY MISSING LIST</b>. This drives a background tab through every affiliate link automatically and reads the rendered image — no manual browsing.</p>
+
+<label>Missing items JSON ([{ id, itemId, link, name }])</label>
+<textarea id="input" placeholder='[{"id":"...","itemId":"...","link":"https://s.shopee.ph/...","name":"..."}]'></textarea>
+
+<div class="row">
+  <div class="field-inline">Delay per item (ms) <input type="number" id="delay" value="3000" min="1500" step="500"></div>
+  <button class="btn-p" id="startBtn">START BATCH</button>
+  <button class="btn-stop" id="stopBtn" disabled>STOP</button>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="stats">
+    <span>Progress: <b id="statProgress">0 / 0</b></span>
+    <span class="ok">Found: <b id="statOk">0</b></span>
+    <span class="fail">No image: <b id="statFail">0</b></span>
+    <span>ETA: <b id="statEta">—</b></span>
+  </div>
+</div>
+
+<div class="log" id="log"></div>
+
+<div class="output-wrap" id="outputWrap">
+  <label>Result JSON — paste this into Admin → Import Images</label>
+  <textarea id="output" readonly style="min-height:140px;"></textarea>
+  <div class="row">
+    <button class="btn-p" id="copyBtn">COPY RESULT JSON</button>
+    <button class="btn-ghost" id="resumeFailBtn" style="display:none;">RETRY FAILED ONLY</button>
+  </div>
+</div>
+
+<script src="runner.js"></script>
+</body>
+</html>
