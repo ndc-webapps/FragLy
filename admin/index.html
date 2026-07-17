@@ -240,8 +240,8 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
       </div>
 
       <div class="img-import-card">
-        <h3>Auto-Fill Blank Images (Real Photos)</h3>
-        <div class="img-import-steps">Fills every blank product with a real category photo from Openverse (openverse.org — free, keyless, Creative-Commons image search). Each item gets a different real photo of its category (mouse, keyboard, headset…), picked consistently per item. Not the exact product — a representative stock photo — but real, relevant, and reliable. Visitors click through to the actual Shopee listing anyway.</div>
+        <h3>Auto-Fill Blank Images (Real Product Photos)</h3>
+        <div class="img-import-steps">Searches each blank product's <b>brand + model</b> (parsed from its name — e.g. "Logitech G402") on Bing Images and stores the top real product photo. Recognizable brands (Logitech, Razer, HyperX…) get the actual product; ultra-niche brands with no web photos are left blank (clean placeholder) instead of a wrong image. Not guaranteed exact — visitors click through to the real Shopee listing anyway. Runs a live search per item, so a full catalog takes a few minutes.</div>
         <div class="img-actions">
           <label class="filter-chip" style="flex:none;"><input type="checkbox" id="autofillIncludeShopee"> Also replace Shopee-hosted images (susercontent — the unreliable/blank ones)</label>
           <button type="button" class="btn btn-p" id="autofillBtn" style="max-width:240px;" onclick="autofillBlankImages()">AUTO-FILL WITH REAL PHOTOS</button>
@@ -1025,43 +1025,39 @@ async function clearSelectedBlanks() {
   await loadShop();
 }
 
-/* ── Auto-fill blank images with real category photos from Openverse ──
-   Openverse (openverse.org/api) is a keyless, CORS-open (Access-Control-Allow-Origin:*)
-   Creative-Commons image search — so the admin browser calls it directly, no proxy.
-   Strategy: pull a ~60-photo pool per category (3 pages × 20, the API's max page size),
-   then give each blank item a photo indexed by a hash of its id — deterministic per item,
-   spread across the pool so items in the same category don't all show the same picture.
-   One bulk /api/shop/images write at the end (KV-write-friendly). */
-var OV_QUERY = {
-  Mouse: 'computer mouse', Keyboard: 'mechanical keyboard', Headset: 'gaming headset',
-  Monitor: 'computer monitor', Microphone: 'usb microphone', Mousepad: 'mousepad',
-  Chair: 'gaming chair', Other: 'computer peripheral'
-};
-function ovQueryFor(cat) { return OV_QUERY[cat] || ('gaming ' + String(cat || 'gear').toLowerCase()); }
-function hashStr(s) {
-  var h = 5381;
-  for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
-  return h;
-}
-async function fetchOpenversePool(query, pages) {
-  var pool = [];
-  for (var p = 1; p <= pages; p++) {
-    try {
-      var r = await fetch('https://api.openverse.org/v1/images/?q=' + encodeURIComponent(query) + '&page_size=20&page=' + p, { headers: { 'Accept': 'application/json' } });
-      if (!r.ok) break;
-      var data = await r.json();
-      (data.results || []).forEach(function (it) { if (it.thumbnail) pool.push(it.thumbnail); });
-      if (!data.results || data.results.length < 20) break; // no more pages
-    } catch (e) { break; }
-    await new Promise(function (res) { setTimeout(res, 300); }); // gentle on the public API
-  }
-  return pool;
+/* ── Auto-fill blank images with real product photos (brand + model via Bing) ──
+   A Creative-Commons corpus (Openverse) was useless here — "computer mouse" there
+   returns photos of live animals. Instead we search Bing Images server-side
+   (/api/admin/imgsearch) with a cleaned brand+model query built from each product's
+   name, and store the top real product photo's Bing-hosted thumbnail. Known brands
+   (Logitech, Razer, HyperX…) resolve to the real product; ultra-niche brands with no
+   web image footprint (some RAKK/Attack Shark SKUs) return nothing and are left blank
+   (clean placeholder) rather than filled with an irrelevant photo. */
+
+// Turns a messy listing title into a lean brand+model search query:
+//  "✸ ◩ Easypc | RAKK MAG-AN wireless gaming mouse" -> "RAKK MAG-AN wireless gaming mouse"
+// Drops reseller prefixes (text before the last "|"), emoji/symbol noise, promo tags,
+// and over-long tails so the query is specific enough for Bing to match the real product.
+function buildImgQuery(name, category) {
+  var s = String(name || '');
+  if (s.indexOf('|') !== -1) s = s.split('|').pop();           // drop "Easypc |" reseller prefix
+  s = s.replace(/\[[^\]]*\]/g, ' ');                            // drop "[CLEARANCE]" etc
+  s = s.replace(/[^\x20-\x7E]/g, ' ');                          // strip emoji / non-ASCII symbols
+  s = s.replace(/\b(brand ?new|original|legit|onhand|cod|freebie|sale)\b/gi, ' ');
+  s = s.replace(/[^A-Za-z0-9 /-]/g, ' ').replace(/\s+/g, ' ').trim();
+  var words = s.split(' ').filter(Boolean).slice(0, 7);        // keep it specific but not a paragraph
+  s = words.join(' ');
+  if (category && s.toLowerCase().indexOf(category.toLowerCase()) === -1) s += ' ' + category;
+  return s.trim();
 }
 
 async function autofillBlankImages() {
   var includeShopee = $('autofillIncludeShopee').checked;
+  // Always re-target blanks AND any previously auto-filled openverse junk; optionally the
+  // unreliable Shopee (susercontent) images too.
   var targets = shopState.items.filter(function (i) {
     if (!i.image) return true;
+    if (i.image.indexOf('openverse.org') !== -1) return true;
     if (includeShopee && i.image.indexOf('susercontent') !== -1) return true;
     return false;
   });
@@ -1073,46 +1069,49 @@ async function autofillBlankImages() {
   var btn = $('autofillBtn');
   btn.disabled = true;
 
-  // 1) distinct categories among targets -> fetch one pool each
-  var cats = {};
-  targets.forEach(function (i) { cats[i.category || 'Other'] = true; });
-  var catList = Object.keys(cats);
-  var pools = {};
-  for (var c = 0; c < catList.length; c++) {
-    msg.textContent = 'Fetching photos for "' + catList[c] + '" (' + (c + 1) + '/' + catList.length + ')…';
-    pools[catList[c]] = await fetchOpenversePool(ovQueryFor(catList[c]), 3);
+  // 1) resolve a real product photo per item via Bing (bounded concurrency to be polite
+  //    and avoid tripping rate limits). Non-matches come back '' and are left blank.
+  var updates = [], noMatch = 0, done = 0, total = targets.length, idx = 0, searchErr = '';
+  var CONC = 3;
+  async function worker() {
+    while (idx < targets.length) {
+      var item = targets[idx++];
+      var q = buildImgQuery(item.name, item.category);
+      try {
+        var r = await api('/api/admin/imgsearch?q=' + encodeURIComponent(q));
+        if (r && r.image) updates.push({ id: item.id, image: r.image });
+        else noMatch++;
+      } catch (e) { noMatch++; if (!searchErr) searchErr = e.message; }
+      done++;
+      if (done % 5 === 0 || done === total) msg.textContent = 'Searching photos ' + done + ' / ' + total + ' — ' + updates.length + ' matched…';
+    }
   }
-
-  // 2) assign each target a pooled photo by hashed id (deterministic + spread)
-  var updates = [], noPool = 0;
-  targets.forEach(function (i) {
-    var pool = pools[i.category || 'Other'] || [];
-    if (!pool.length) { noPool++; return; }
-    updates.push({ id: i.id, image: pool[hashStr(i.id) % pool.length] });
-  });
+  var workers = [];
+  for (var w = 0; w < CONC; w++) workers.push(worker());
+  await Promise.all(workers);
 
   if (!updates.length) {
-    msg.textContent = 'Could not fetch any photos (Openverse returned nothing for these categories).';
+    msg.textContent = 'No product photos matched (Bing returned nothing usable for these names).' + (searchErr ? ' Error: ' + searchErr : '');
     msg.className = 'img-preview-msg warn';
     btn.disabled = false;
     return;
   }
 
-  // 3) one bulk write per chunk
-  var CHUNK = 150, filled = 0, failedChunks = 0, sent = 0, total = updates.length, firstError = '';
-  for (var j = 0; j < total; j += CHUNK) {
+  // 2) one bulk write per chunk
+  var CHUNK = 150, filled = 0, failedChunks = 0, sent = 0, utotal = updates.length, firstError = '';
+  for (var j = 0; j < utotal; j += CHUNK) {
     var chunk = updates.slice(j, j + CHUNK);
     try {
       var res = await api('/api/shop/images', { method: 'POST', body: JSON.stringify({ updates: chunk }) });
       filled += res.updated || 0;
     } catch (e) { failedChunks++; if (!firstError) firstError = e.message; }
     sent += chunk.length;
-    msg.textContent = 'Applying ' + sent + ' / ' + total + '…';
-    if (j + CHUNK < total) await new Promise(function (r) { setTimeout(r, 2000); });
+    msg.textContent = 'Applying ' + sent + ' / ' + utotal + '…';
+    if (j + CHUNK < utotal) await new Promise(function (r) { setTimeout(r, 2000); });
   }
 
-  msg.textContent = 'Filled ' + filled + ' of ' + targets.length + ' with real photos'
-    + (noPool ? ', ' + noPool + ' skipped (no pool)' : '')
+  msg.textContent = 'Filled ' + filled + ' of ' + total + ' with real product photos'
+    + (noMatch ? ', ' + noMatch + ' left blank (no match — niche brand)' : '')
     + (failedChunks ? ', ' + failedChunks + ' request(s) failed' : '') + '.'
     + (firstError ? ' Error: ' + firstError : '');
   msg.className = 'img-preview-msg ' + (filled ? 'ready' : 'warn');
