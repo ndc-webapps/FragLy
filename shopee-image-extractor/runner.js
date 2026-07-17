@@ -101,24 +101,33 @@ function scrollNudge() {
 // sessions entirely (even the s.shopee.ph affiliate-link trick that worked before), so
 // this is built from the exact DOM structure in the user's own screenshot, not confirmed
 // end-to-end. Watch the next run's success rate closely.
-function isSmallThumb(img) {
-  var w = img.offsetWidth || img.width || 0;
-  return w >= 28 && w <= 110 && img.src && img.src.indexOf('susercontent') !== -1 && img.className.indexOf('avatar') === -1;
-}
-function thumbIsVideo(img) {
-  var scope = img.closest('button,li,div,a') || img;
-  return !!(scope.querySelector('video') || scope.querySelector('svg'));
-}
-function bigProductImage() {
-  var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
-  var candidates = imgs.filter(function (i) {
-    return i.src && i.src.indexOf('susercontent') !== -1 && i.className.indexOf('avatar') === -1;
-  });
-  candidates.sort(function (a, b) { return (b.naturalWidth || 0) - (a.naturalWidth || 0); });
-  var best = candidates.filter(function (i) { return (i.naturalWidth || 0) >= 300; })[0] || candidates[0];
-  return best ? best.src : null;
-}
+// IMPORTANT: chrome.scripting.executeScript serializes ONLY this function (via
+// toString()) and re-runs it in total isolation inside the target page — it does NOT
+// carry along any other top-level function in this file. A version that called out to
+// separate helper functions (isSmallThumb/thumbIsVideo/bigProductImage declared
+// elsewhere) threw "X is not defined" on literally every page, and tryExtract's error
+// handling silently swallowed that into "no image found" — 100% failure, on pages with
+// perfectly good photos, with zero visible reason why. Every helper MUST be nested
+// inside this function's own body so it gets serialized along with it.
 async function extractSingleImage() {
+  function isSmallThumb(img) {
+    var w = img.offsetWidth || img.width || 0;
+    return w >= 28 && w <= 110 && img.src && img.src.indexOf('susercontent') !== -1 && img.className.indexOf('avatar') === -1;
+  }
+  function thumbIsVideo(img) {
+    var scope = img.closest('button,li,div,a') || img;
+    return !!(scope.querySelector('video') || scope.querySelector('svg'));
+  }
+  function bigProductImage() {
+    var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
+    var candidates = imgs.filter(function (i) {
+      return i.src && i.src.indexOf('susercontent') !== -1 && i.className.indexOf('avatar') === -1;
+    });
+    candidates.sort(function (a, b) { return (b.naturalWidth || 0) - (a.naturalWidth || 0); });
+    var best = candidates.filter(function (i) { return (i.naturalWidth || 0) >= 300; })[0] || candidates[0];
+    return best ? best.src : null;
+  }
+
   var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
   var thumbs = imgs.filter(isSmallThumb).slice(0, 8);
   var videoSkipped = false;
@@ -163,7 +172,14 @@ function fmtEta(ms) {
 
 async function tryExtract(tabId) {
   var execResult = await chrome.scripting.executeScript({ target: { tabId: tabId }, func: extractSingleImage });
-  return (execResult && execResult[0] && execResult[0].result) || { image: null, thumbCount: 0, videoSkipped: false };
+  var entry = execResult && execResult[0];
+  // executeScript resolves normally even when the injected function threw — the error
+  // lands on entry.error, NOT as a rejected promise. Silently falling back to a blank
+  // result here is exactly the "no image found" wall with no real reason. Surface it.
+  if (entry && entry.error) {
+    return { image: null, thumbCount: 0, videoSkipped: false, error: (entry.error.message || String(entry.error)) };
+  }
+  return (entry && entry.result) || { image: null, thumbCount: 0, videoSkipped: false };
 }
 
 // Polls instead of sleeping a flat amount: checks every ~900ms and returns the moment
@@ -176,6 +192,10 @@ async function pollForImage(tabId, maxWaitMs) {
   while (true) {
     last = await tryExtract(tabId);
     if (last.image) return last;
+    // A real script error (e.g. a typo/ReferenceError in the injected function) will
+    // fail identically every time — polling it for the full 20s ceiling just burns
+    // time for nothing. Bail immediately so it surfaces as a real error, not a timeout.
+    if (last.error) return last;
     var elapsed = Date.now() - start;
     if (elapsed >= maxWaitMs) return last;
     if (!nudged && elapsed > 1500) {
@@ -277,6 +297,10 @@ async function startBatch(resume) {
         state.results.push({ id: item.id, itemId: item.itemId, image: res.image });
         okCount++;
         logLine(label + tag, true);
+      } else if (res.error) {
+        state.failedItems.push(item);
+        failCount++;
+        logLine(label + ' — script error: ' + res.error, false);
       } else {
         state.failedItems.push(item);
         failCount++;
