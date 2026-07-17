@@ -87,12 +87,29 @@ function scrollNudge() {
 // flagged the CORRECT main product image as "video-adjacent" just because some unrelated
 // video shared a distant ancestor within 5 levels — on a component-based SPA that's true
 // of almost any two elements. That heuristic was rejecting good images far more often
-// than it was catching real video-poster blanks. Removed it. Confirmed live: picking
-// the largest non-avatar susercontent image (no video check at all) matches exactly what
-// right-clicking the real displayed image and "copy image address" gives.
-// (The canvas-whiteness check was also verified dead in practice — susercontent has no
-// CORS headers, so getImageData always throws "tainted canvas" and never actually runs.)
-function extractSingleImage() {
+// than it was catching real video-poster blanks. Removed it.
+//
+// v3: the real bug (confirmed against user screenshots) is narrower than v2 assumed —
+// when the gallery's FIRST slide is a video, the main viewer shows that video's blank
+// poster until a human clicks past it to a real photo thumbnail. v2 scanned the WHOLE
+// page for videos (too broad, false positives). v3 only looks inside the small gallery
+// THUMBNAIL STRIP near the top of the page (thumbnails are consistently small, ~30-110px,
+// unlike the unrelated full-size videos elsewhere that broke v2) — if a video thumb is
+// found there, click the first real-photo thumb next to it (mirrors what "copy image
+// address" gives after manually clicking past the video) and re-read the main image.
+// NOTE: could not verify this live — Shopee is currently bot-blocking automated browser
+// sessions entirely (even the s.shopee.ph affiliate-link trick that worked before), so
+// this is built from the exact DOM structure in the user's own screenshot, not confirmed
+// end-to-end. Watch the next run's success rate closely.
+function isSmallThumb(img) {
+  var w = img.offsetWidth || img.width || 0;
+  return w >= 28 && w <= 110 && img.src && img.src.indexOf('susercontent') !== -1 && img.className.indexOf('avatar') === -1;
+}
+function thumbIsVideo(img) {
+  var scope = img.closest('button,li,div,a') || img;
+  return !!(scope.querySelector('video') || scope.querySelector('svg'));
+}
+function bigProductImage() {
   var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
   var candidates = imgs.filter(function (i) {
     return i.src && i.src.indexOf('susercontent') !== -1 && i.className.indexOf('avatar') === -1;
@@ -100,6 +117,29 @@ function extractSingleImage() {
   candidates.sort(function (a, b) { return (b.naturalWidth || 0) - (a.naturalWidth || 0); });
   var best = candidates.filter(function (i) { return (i.naturalWidth || 0) >= 300; })[0] || candidates[0];
   return best ? best.src : null;
+}
+async function extractSingleImage() {
+  var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
+  var thumbs = imgs.filter(isSmallThumb).slice(0, 8);
+  var videoSkipped = false;
+
+  if (thumbs.length >= 2 && thumbIsVideo(thumbs[0])) {
+    var photoThumb = null;
+    for (var k = 1; k < thumbs.length; k++) {
+      if (!thumbIsVideo(thumbs[k])) { photoThumb = thumbs[k]; break; }
+    }
+    if (photoThumb) {
+      var target = photoThumb.closest('button,li,div,a') || photoThumb;
+      target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      await new Promise(function (r) { setTimeout(r, 700); });
+      videoSkipped = true;
+    }
+  }
+
+  // Object return (not just the URL) so the runner's log can show WHETHER the video-skip
+  // logic engaged — visibility into what happened instead of a silent guess if a result
+  // still comes back blank.
+  return { image: bigProductImage(), thumbCount: thumbs.length, videoSkipped: videoSkipped };
 }
 
 function logLine(text, ok) {
@@ -123,7 +163,7 @@ function fmtEta(ms) {
 
 async function tryExtract(tabId) {
   var execResult = await chrome.scripting.executeScript({ target: { tabId: tabId }, func: extractSingleImage });
-  return execResult && execResult[0] && execResult[0].result;
+  return (execResult && execResult[0] && execResult[0].result) || { image: null, thumbCount: 0, videoSkipped: false };
 }
 
 // Polls instead of sleeping a flat amount: checks every ~900ms and returns the moment
@@ -132,11 +172,12 @@ async function tryExtract(tabId) {
 async function pollForImage(tabId, maxWaitMs) {
   var start = Date.now();
   var nudged = false;
+  var last = { image: null, thumbCount: 0, videoSkipped: false };
   while (true) {
-    var image = await tryExtract(tabId);
-    if (image) return image;
+    last = await tryExtract(tabId);
+    if (last.image) return last;
     var elapsed = Date.now() - start;
-    if (elapsed >= maxWaitMs) return null;
+    if (elapsed >= maxWaitMs) return last;
     if (!nudged && elapsed > 1500) {
       try { await chrome.scripting.executeScript({ target: { tabId: tabId }, func: scrollNudge }); } catch (e) {}
       nudged = true;
@@ -230,15 +271,16 @@ async function startBatch(resume) {
     try {
       await chrome.tabs.update(state.tabId, { url: item.link });
       await waitForTabComplete(state.tabId, 8000);
-      var image = await pollForImage(state.tabId, delay);
-      if (image) {
-        state.results.push({ id: item.id, itemId: item.itemId, image: image });
+      var res = await pollForImage(state.tabId, delay);
+      var tag = res.videoSkipped ? ' [video skipped→photo]' : (res.thumbCount ? ' [' + res.thumbCount + ' thumbs]' : ' [no thumb strip]');
+      if (res.image) {
+        state.results.push({ id: item.id, itemId: item.itemId, image: res.image });
         okCount++;
-        logLine(label, true);
+        logLine(label + tag, true);
       } else {
         state.failedItems.push(item);
         failCount++;
-        logLine(label + ' — no image found', false);
+        logLine(label + ' — no image found' + tag, false);
       }
     } catch (e) {
       state.failedItems.push(item);
