@@ -147,6 +147,30 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .img-preview-msg{font-family:var(--mono);font-size:.64rem;color:var(--muted2);margin-top:10px;display:none;padding:8px 10px;border-radius:var(--r2);background:rgba(0,0,0,.25);border:1px solid var(--bdr);}
 .img-preview-msg.ready{color:#3dffa0;}
 .img-preview-msg.warn{color:var(--gold);}
+
+/* bulk-select bar + per-row checkbox + edit button */
+.bulk-bar{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border-radius:var(--r2);background:linear-gradient(100deg,rgba(168,85,247,.12),rgba(236,72,153,.05));border:1px solid rgba(168,85,247,.3);}
+.bulk-bar.on{display:flex;}
+.bulk-bar .bulk-count{font-family:var(--mono);font-size:.7rem;color:var(--txt);letter-spacing:.5px;}
+.bulk-bar .btn{padding:8px 14px;font-size:.7rem;}
+.bulk-bar .btn-danger{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;}
+.bulk-bar .btn-danger:hover{background:rgba(239,68,68,.28);}
+.pl-check{flex:none;width:18px;height:18px;accent-color:var(--red);cursor:pointer;margin-right:2px;}
+.pl-row.sel{border-color:rgba(168,85,247,.55);background:linear-gradient(155deg,rgba(168,85,247,.12),rgba(255,255,255,.02));}
+.icon-btn.edit:hover{color:var(--gold);border-color:rgba(251,146,60,.5);background:rgba(251,146,60,.08);}
+
+/* edit modal */
+.modal-scrim{position:fixed;inset:0;z-index:3000;background:rgba(4,4,10,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-scrim.on{display:flex;}
+.modal-card{width:min(520px,100%);max-height:90vh;overflow-y:auto;background:linear-gradient(155deg,#171922,#101218);border:1px solid var(--bdr-hi,rgba(255,255,255,.16));border-radius:var(--r);padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.6);}
+.modal-card h3{font-family:var(--dp);font-size:1.3rem;font-weight:800;letter-spacing:.5px;margin-bottom:4px;}
+.modal-card .modal-sub{font-family:var(--mono);font-size:.62rem;color:var(--muted);margin-bottom:18px;word-break:break-all;}
+.modal-card .field label{color:var(--gold);}
+.modal-preview{width:72px;height:72px;border-radius:10px;background:#000;border:1px solid var(--bdr);object-fit:cover;flex:none;}
+.modal-actions{display:flex;gap:10px;margin-top:8px;}
+.modal-actions .btn{flex:1;padding:12px;}
+.btn-cancel{background:rgba(255,255,255,.05);border:1px solid var(--bdr);color:var(--muted2);}
+.btn-cancel:hover{color:var(--txt);border-color:var(--bdr-hi,rgba(255,255,255,.2));}
 </style>
 </head>
 <body>
@@ -287,12 +311,51 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
           <button type="button" data-cols="1" onclick="setDensity(1)">Wide</button>
         </div>
       </div>
+
+      <div class="bulk-bar" id="bulkBar">
+        <label class="filter-chip" style="flex:none;"><input type="checkbox" id="bulkSelectAll" onchange="toggleSelectAll(this.checked)"> Select all shown</label>
+        <span class="bulk-count" id="bulkCount">0 selected</span>
+        <button type="button" class="btn btn-ghost" onclick="bulkClearImages()">Clear images</button>
+        <button type="button" class="btn btn-danger" onclick="bulkDelete()">Delete selected</button>
+        <button type="button" class="btn btn-ghost" onclick="clearSelection()">Cancel</button>
+      </div>
       <div class="pl-list" id="shopList" data-cols="3"></div>
     </div>
   </div>
 </div>
 
 <div class="pl-tip" id="plTip"></div>
+
+<!-- Edit item modal -->
+<div class="modal-scrim" id="editScrim">
+  <div class="modal-card">
+    <h3>Edit product</h3>
+    <div class="modal-sub" id="editId"></div>
+    <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;">
+      <img class="modal-preview" id="editPreview" alt="" onerror="this.style.opacity=.2">
+      <div class="field" style="flex:1;margin:0;"><label>Image URL</label>
+        <input type="url" id="edit_image" placeholder="https://…" oninput="document.getElementById('editPreview').src=this.value">
+      </div>
+    </div>
+    <div class="field"><label>Product name</label><input type="text" id="edit_name" maxlength="120"></div>
+    <div class="field"><label>Affiliate link</label><input type="url" id="edit_link"></div>
+    <div class="grid2">
+      <div class="field"><label>Category</label><input type="text" id="edit_category" list="shop_cat_list" maxlength="40"></div>
+      <div class="field"><label>Price</label><input type="text" id="edit_price" maxlength="40" placeholder="e.g. ₱4,290"></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.68rem;color:var(--muted2);margin-bottom:6px;cursor:pointer;">
+      <input type="checkbox" id="edit_featured" style="width:16px;height:16px;"> Featured ("Pick of the week")
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.68rem;color:var(--muted2);margin-bottom:16px;cursor:pointer;">
+      <input type="checkbox" id="edit_active" style="width:16px;height:16px;"> Active on site
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeEdit()">CANCEL</button>
+      <button class="btn btn-p" id="editSaveBtn" style="margin:0;" onclick="saveEdit()">SAVE CHANGES</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -422,7 +485,16 @@ function escapeHtml(s){
 }
 
 /* ── Products (one catalog — feeds shop grid + banner/square ad rotation) ── */
-var shopState = { items: [], search: '', category: '', activeOnly: false };
+var shopState = { items: [], search: '', category: '', activeOnly: false, selected: {} };
+
+function getFilteredItems(){
+  return shopState.items.filter(function(i){
+    if (shopState.activeOnly && !i.active) return false;
+    if (shopState.category && i.category !== shopState.category) return false;
+    if (shopState.search && i.name.toLowerCase().indexOf(shopState.search) === -1) return false;
+    return true;
+  });
+}
 
 function onShopFilterChange(){
   shopState.search = $('shop_search').value.trim().toLowerCase();
@@ -448,12 +520,7 @@ function renderShop(){
   var items = shopState.items;
   $('shopCount').textContent = items.length + ' item' + (items.length===1?'':'s') + ' (' + items.filter(function(i){return i.active;}).length + ' active)';
 
-  var filtered = items.filter(function(i){
-    if (shopState.activeOnly && !i.active) return false;
-    if (shopState.category && i.category !== shopState.category) return false;
-    if (shopState.search && i.name.toLowerCase().indexOf(shopState.search) === -1) return false;
-    return true;
-  });
+  var filtered = getFilteredItems();
 
   var list = $('shopList');
   if (!items.length){
@@ -462,7 +529,9 @@ function renderShop(){
     list.innerHTML = '<div class="empty-note">No products match this filter.</div>';
   } else {
     list.innerHTML = filtered.map(function(i){
-      return '<div class="pl-row' + (i.active ? '' : ' inactive') + '">'
+      var sel = !!shopState.selected[i.id];
+      return '<div class="pl-row' + (i.active ? '' : ' inactive') + (sel ? ' sel' : '') + '">'
+        + '<input type="checkbox" class="pl-check"' + (sel ? ' checked' : '') + ' title="Select" onchange="toggleSelect(\'' + i.id + '\',this)">'
         + (i.image ? '<div class="pl-thumb"><img src="' + escapeHtml(i.image) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>' : '<div class="pl-thumb-ph">' + escapeHtml((i.category || '?').charAt(0)) + '</div>')
         + '<div class="pl-info" onmouseenter="showTip(event,\'' + escapeHtml(i.id) + '\')" onmouseleave="hideTip()" onmousemove="moveTip(event)"'
         + ' data-name="' + escapeHtml(i.name) + '" data-cat="' + escapeHtml(i.category) + '" data-price="' + escapeHtml(i.price || '') + '"'
@@ -471,12 +540,14 @@ function renderShop(){
         + '  <span class="pl-meta">' + escapeHtml(i.category) + (i.price ? ' · ' + escapeHtml(i.price) : '') + ' · ' + escapeHtml(i.link) + '</span>'
         + '</div>'
         + '<div class="pl-actions">'
+        + '  <button class="icon-btn edit" title="Edit" onclick="openEdit(\'' + i.id + '\')">✎</button>'
         + '  <div class="tog' + (i.active ? ' on' : '') + '" title="Active on site" onclick="toggleShopActive(\'' + i.id + '\',' + !i.active + ')"></div>'
         + '  <button class="icon-btn danger" title="Delete" onclick="deleteShopItem(\'' + i.id + '\')">✕</button>'
         + '</div>'
       + '</div>';
     }).join('');
   }
+  updateBulkBar();
 
   var cats = Array.from(new Set(items.map(function(i){ return i.category; }).filter(Boolean))).sort();
   $('shop_cat_list').innerHTML = cats.map(function(c){ return '<option value="' + escapeHtml(c) + '">'; }).join('');
@@ -535,6 +606,118 @@ async function deleteShopItem(id){
     await loadShop();
   } catch (e) {
     toast(e.message, true);
+  }
+}
+
+/* ── bulk selection: delete or clear-image across many items at once ── */
+function toggleSelect(id, el){
+  var on = el.checked;
+  if (on) shopState.selected[id] = true; else delete shopState.selected[id];
+  var row = el.closest('.pl-row');
+  if (row) row.classList.toggle('sel', on);
+  updateBulkBar();
+}
+function toggleSelectAll(on){
+  shopState.selected = {};
+  if (on) getFilteredItems().forEach(function(i){ shopState.selected[i.id] = true; });
+  renderShop();
+}
+function clearSelection(){
+  shopState.selected = {};
+  $('bulkSelectAll').checked = false;
+  renderShop();
+}
+function selectedIds(){ return Object.keys(shopState.selected); }
+function updateBulkBar(){
+  var n = selectedIds().length;
+  $('bulkBar').classList.toggle('on', n > 0);
+  $('bulkCount').textContent = n + ' selected';
+}
+async function bulkDelete(){
+  var ids = selectedIds();
+  if (!ids.length) return;
+  if (!confirm('Delete ' + ids.length + ' selected item' + (ids.length===1?'':'s') + '? This cannot be undone.')) return;
+  var bar = $('bulkBar');
+  bar.querySelectorAll('button,input').forEach(function(b){ b.disabled = true; });
+  var done = 0, errors = 0;
+  // DELETE has no bulk endpoint — go one at a time, but pace them so KV's ~1 write/sec
+  // per-key limit (every delete rewrites the whole shop_items array) doesn't reject them.
+  for (var k = 0; k < ids.length; k++){
+    try { await api('/api/shop?id=' + encodeURIComponent(ids[k]), { method: 'DELETE' }); done++; }
+    catch (e){ errors++; }
+    $('bulkCount').textContent = 'Deleting ' + (done+errors) + ' / ' + ids.length + '…';
+    if (k < ids.length - 1) await new Promise(function(r){ setTimeout(r, 1100); });
+  }
+  toast('Deleted ' + done + (errors ? ', ' + errors + ' failed' : '') + '.', !!errors);
+  shopState.selected = {};
+  $('bulkSelectAll').checked = false;
+  bar.querySelectorAll('button,input').forEach(function(b){ b.disabled = false; });
+  await loadShop();
+}
+async function bulkClearImages(){
+  var ids = selectedIds();
+  if (!ids.length) return;
+  if (!confirm('Clear the image on ' + ids.length + ' selected item' + (ids.length===1?'':'s') + '? They\'ll show a placeholder until re-filled.')) return;
+  var bar = $('bulkBar');
+  bar.querySelectorAll('button,input').forEach(function(b){ b.disabled = true; });
+  var updates = ids.map(function(id){ return { id: id, image: '' }; });
+  var CHUNK = 150, cleared = 0, sent = 0, failedChunks = 0, firstErr = '';
+  for (var j = 0; j < updates.length; j += CHUNK){
+    var chunk = updates.slice(j, j + CHUNK);
+    try { var res = await api('/api/shop/images', { method: 'POST', body: JSON.stringify({ updates: chunk }) }); cleared += res.updated || 0; }
+    catch (e){ failedChunks++; if (!firstErr) firstErr = e.message; }
+    sent += chunk.length;
+    $('bulkCount').textContent = 'Clearing ' + sent + ' / ' + updates.length + '…';
+    if (j + CHUNK < updates.length) await new Promise(function(r){ setTimeout(r, 2000); });
+  }
+  toast('Cleared ' + cleared + ' image' + (cleared===1?'':'s') + (failedChunks?', ' + failedChunks + ' failed':'') + '.', !cleared);
+  shopState.selected = {};
+  $('bulkSelectAll').checked = false;
+  bar.querySelectorAll('button,input').forEach(function(b){ b.disabled = false; });
+  await loadShop();
+}
+
+/* ── per-item edit ── */
+var editingId = null;
+function openEdit(id){
+  var it = shopState.items.filter(function(i){ return i.id === id; })[0];
+  if (!it) return;
+  editingId = id;
+  $('editId').textContent = 'ID ' + id;
+  $('edit_name').value = it.name || '';
+  $('edit_link').value = it.link || '';
+  $('edit_image').value = it.image || '';
+  $('edit_category').value = it.category || '';
+  $('edit_price').value = it.price || '';
+  $('edit_featured').checked = !!it.featured;
+  $('edit_active').checked = !!it.active;
+  var pv = $('editPreview'); pv.style.opacity = 1; pv.src = it.image || '';
+  $('editScrim').classList.add('on');
+}
+function closeEdit(){ $('editScrim').classList.remove('on'); editingId = null; }
+async function saveEdit(){
+  if (!editingId) return;
+  var body = {
+    name: $('edit_name').value.trim(),
+    link: $('edit_link').value.trim(),
+    image: $('edit_image').value.trim(),
+    category: $('edit_category').value.trim() || 'Other',
+    price: $('edit_price').value.trim(),
+    featured: $('edit_featured').checked,
+    active: $('edit_active').checked
+  };
+  if (!body.name || !body.link){ toast('Name and link are required.', true); return; }
+  var btn = $('editSaveBtn');
+  btn.disabled = true; btn.textContent = 'SAVING…';
+  try {
+    await api('/api/shop?id=' + encodeURIComponent(editingId), { method: 'PUT', body: JSON.stringify(body) });
+    toast('Item updated.');
+    closeEdit();
+    await loadShop();
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'SAVE CHANGES';
   }
 }
 
@@ -1072,7 +1255,7 @@ async function autofillBlankImages() {
   // 1) resolve a real product photo per item via Bing (bounded concurrency to be polite
   //    and avoid tripping rate limits). Non-matches come back '' and are left blank.
   var updates = [], noMatch = 0, done = 0, total = targets.length, idx = 0, searchErr = '';
-  var CONC = 3;
+  var CONC = 3, cleared = 0;
   async function worker() {
     while (idx < targets.length) {
       var item = targets[idx++];
@@ -1080,10 +1263,11 @@ async function autofillBlankImages() {
       try {
         var r = await api('/api/admin/imgsearch?q=' + encodeURIComponent(q));
         if (r && r.image) updates.push({ id: item.id, image: r.image });
+        else if (item.image) { updates.push({ id: item.id, image: '' }); cleared++; } // no match → wipe the junk photo back to a clean placeholder
         else noMatch++;
       } catch (e) { noMatch++; if (!searchErr) searchErr = e.message; }
       done++;
-      if (done % 5 === 0 || done === total) msg.textContent = 'Searching photos ' + done + ' / ' + total + ' — ' + updates.length + ' matched…';
+      if (done % 5 === 0 || done === total) msg.textContent = 'Searching photos ' + done + ' / ' + total + ' — ' + (updates.length - cleared) + ' matched, ' + cleared + ' junk cleared…';
     }
   }
   var workers = [];
@@ -1110,12 +1294,13 @@ async function autofillBlankImages() {
     if (j + CHUNK < utotal) await new Promise(function (r) { setTimeout(r, 2000); });
   }
 
-  msg.textContent = 'Filled ' + filled + ' of ' + total + ' with real product photos'
-    + (noMatch ? ', ' + noMatch + ' left blank (no match — niche brand)' : '')
+  var matchedFilled = filled - cleared;
+  msg.textContent = 'Done — ' + (matchedFilled < 0 ? filled : matchedFilled) + ' real product photos, ' + cleared + ' junk cleared to placeholder'
+    + (noMatch ? ', ' + noMatch + ' already blank' : '')
     + (failedChunks ? ', ' + failedChunks + ' request(s) failed' : '') + '.'
     + (firstError ? ' Error: ' + firstError : '');
   msg.className = 'img-preview-msg ' + (filled ? 'ready' : 'warn');
-  toast('Auto-filled ' + filled + ' image' + (filled === 1 ? '' : 's') + '.', !filled);
+  toast('Auto-fill done: ' + filled + ' image' + (filled === 1 ? '' : 's') + ' updated.', !filled);
   btn.disabled = false;
   await loadShop();
 }
