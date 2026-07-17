@@ -184,7 +184,7 @@ function renderGrid(){
   grid.innerHTML = list.map(function(i){
     return '<a class="sh-card" href="'+esc(i.link)+'" target="_blank" rel="noopener sponsored nofollow">'
       + '<div class="sh-card-img-wrap">'
-        + (i.image ? '<img src="'+esc(i.image)+'" alt="" loading="lazy" onerror="this.style.opacity=0">' : '<span class="sh-noimg">'+esc((i.category||'?').charAt(0))+'</span>')
+        + (i.image ? '<img src="'+esc(i.image)+'" alt="" loading="lazy" onerror="this.outerHTML=\'<span class=&quot;sh-noimg&quot;>'+esc((i.category||'?').charAt(0))+'</span>\'">' : '<span class="sh-noimg">'+esc((i.category||'?').charAt(0))+'</span>')
         + (i.featured ? '<span class="sh-featured-badge">Pick of the week</span>' : '')
       + '</div>'
       + '<div class="sh-card-body">'
