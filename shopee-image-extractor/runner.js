@@ -110,45 +110,62 @@ function scrollNudge() {
 // perfectly good photos, with zero visible reason why. Every helper MUST be nested
 // inside this function's own body so it gets serialized along with it.
 async function extractSingleImage() {
-  function isSmallThumb(img) {
+  // Gallery thumbnails ARE small copies of the real photos — a photo thumb's src carries
+  // the same image hash as the full picture, just with a size suffix (…_tn, @resize…).
+  // So the robust fix is: find the thumbnail STRIP, skip the video slide, take the first
+  // real-photo thumb, and normalize its URL to the full-size image. No blind guessing at
+  // "largest image on page" (which grabbed unrelated recommendation photos), and no
+  // reliance on a click landing. We also hover+click the chosen thumb as a backup so the
+  // main viewer swaps too.
+  function normalize(src) {
+    if (!src) return null;
+    src = src.split('?')[0];                 // drop query/size params
+    src = src.replace(/_tn$/, '');           // Shopee thumbnail suffix -> full image
+    src = src.replace(/\.(webp|jpg|jpeg|png)$/i, '');
+    return src;
+  }
+  function isThumb(img) {
     var w = img.offsetWidth || img.width || 0;
-    return w >= 28 && w <= 110 && img.src && img.src.indexOf('susercontent') !== -1 && img.className.indexOf('avatar') === -1;
+    return w >= 24 && w <= 120 && img.src && img.src.indexOf('susercontent') !== -1 && img.className.indexOf('avatar') === -1;
   }
-  function thumbIsVideo(img) {
-    var scope = img.closest('button,li,div,a') || img;
-    return !!(scope.querySelector('video') || scope.querySelector('svg'));
-  }
-  function bigProductImage() {
-    var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
-    var candidates = imgs.filter(function (i) {
-      return i.src && i.src.indexOf('susercontent') !== -1 && i.className.indexOf('avatar') === -1;
-    });
-    candidates.sort(function (a, b) { return (b.naturalWidth || 0) - (a.naturalWidth || 0); });
-    var best = candidates.filter(function (i) { return (i.naturalWidth || 0) >= 300; })[0] || candidates[0];
-    return best ? best.src : null;
+  function isVideoThumb(img) {
+    var box = img.closest('div,li,button,a') || img;
+    // Shopee marks the video slide with a <video>, a play-circle svg, or a "video"/"play"
+    // class on the thumb container.
+    if (box.querySelector('video')) return true;
+    if (box.querySelector('[class*="video" i],[class*="play" i],[class*="duration" i]')) return true;
+    if (box.querySelector('svg')) return true;
+    return false;
   }
 
   var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
-  var thumbs = imgs.filter(isSmallThumb).slice(0, 8);
-  var videoSkipped = false;
+  var thumbs = imgs.filter(isThumb).slice(0, 10);
+  var videoSkipped = false, chosen = null;
 
-  if (thumbs.length >= 2 && thumbIsVideo(thumbs[0])) {
-    var photoThumb = null;
-    for (var k = 1; k < thumbs.length; k++) {
-      if (!thumbIsVideo(thumbs[k])) { photoThumb = thumbs[k]; break; }
-    }
-    if (photoThumb) {
-      var target = photoThumb.closest('button,li,div,a') || photoThumb;
-      target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-      await new Promise(function (r) { setTimeout(r, 700); });
-      videoSkipped = true;
-    }
+  // Pick the first NON-video thumb (this is the "click the 2nd option" the user asked for).
+  for (var k = 0; k < thumbs.length; k++) {
+    if (isVideoThumb(thumbs[k])) { if (k === 0) videoSkipped = true; continue; }
+    chosen = thumbs[k];
+    if (k > 0) videoSkipped = true;
+    break;
   }
 
-  // Object return (not just the URL) so the runner's log can show WHETHER the video-skip
-  // logic engaged — visibility into what happened instead of a silent guess if a result
-  // still comes back blank.
-  return { image: bigProductImage(), thumbCount: thumbs.length, videoSkipped: videoSkipped };
+  if (chosen) {
+    // Backup: hover + click so the big viewer swaps to this photo too.
+    var box = chosen.closest('div,li,button,a') || chosen;
+    ['mouseover', 'mouseenter', 'click'].forEach(function (ev) {
+      box.dispatchEvent(new MouseEvent(ev, { bubbles: true, cancelable: true }));
+    });
+    await new Promise(function (r) { setTimeout(r, 500); });
+    // The chosen thumb's own hash IS the real photo — most reliable source.
+    return { image: normalize(chosen.src), thumbCount: thumbs.length, videoSkipped: videoSkipped };
+  }
+
+  // No thumb strip found — fall back to the largest real product image on the page.
+  var big = imgs.filter(function (i) {
+    return i.src && i.src.indexOf('susercontent') !== -1 && i.className.indexOf('avatar') === -1;
+  }).sort(function (a, b) { return (b.naturalWidth || 0) - (a.naturalWidth || 0); })[0];
+  return { image: big ? normalize(big.src) : null, thumbCount: thumbs.length, videoSkipped: videoSkipped };
 }
 
 function logLine(text, ok) {
