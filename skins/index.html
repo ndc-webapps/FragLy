@@ -299,6 +299,7 @@ var currentWeaponId = null;
 var currentTier = 'all';
 var currentSkins = [];      // filtered view of currentWeapon.skins
 var activeSkin = null;
+var activeChromaIdx = 0;   // which colour variant is currently on the stage
 
 async function loadWeaponList(){
   var meta = document.getElementById('skMeta');
@@ -375,7 +376,7 @@ function slotHTML(w){
     + '<div class="lo-slot-img">'+(img?'<img src="'+esc(img)+'" alt="" loading="lazy"'+(eq?'':' class="plain"')+' onerror="this.style.display=\'none\'">':'')+'</div>'
     + '<div class="lo-slot-foot">'
       + '<div class="lo-wpn-lbl">'+esc(w.name)+'</div>'
-      + (eq ? '<div class="lo-skin-lbl">'+esc(eq.name)+'</div>' : '')
+      + (eq ? '<div class="lo-skin-lbl">'+esc(eq.name)+(eq.chromaName && !/^standard$/i.test(eq.chromaName) ? ' <span style="opacity:.75;font-weight:400">· '+esc(eq.chromaName)+'</span>' : '')+'</div>' : '')
     + '</div>'
     + '<div class="lo-slot-bar"></div>'
   + '</div>';
@@ -418,11 +419,17 @@ async function pickSkinFor(weaponId){
 
 function equipCurrent(){
   if(!activeSkin || !currentWeapon) return;
+  // Save the SELECTED colour variant's art, not the skin's base render — otherwise the
+  // slot shows the default colour even though the user picked e.g. the green chroma.
+  var c = activeSkin.chromas && activeSkin.chromas[activeChromaIdx];
+  var art = (c && c.render) || activeSkin.render || activeSkin.icon || '';
   loadout[currentWeapon.id] = {
     skinId: activeSkin.id,
     name: activeSkin.name,
     tier: activeSkin.tier,
-    render: activeSkin.render || activeSkin.icon || '',
+    chromaIdx: activeChromaIdx,
+    chromaName: (c && c.name) || '',
+    render: art,
     icon: activeSkin.icon || ''
   };
   writeLoadout(loadout);
@@ -652,43 +659,55 @@ function openSkin(i){
   document.getElementById('skStage').style.setProperty('--stage-glow', tierGlow(s.tier));
 
   var hasChromas = s.chromas && s.chromas.length > 1;
-  var firstChroma = hasChromas ? s.chromas[0] : null;
+  // If this exact skin is already equipped, reopen on the colour variant that's equipped
+  // (not always the base one) so the modal reflects what's actually on the loadout.
+  var eqNow = currentWeapon && loadout[currentWeapon.id];
+  activeChromaIdx = (eqNow && eqNow.skinId === s.id && eqNow.chromaIdx > 0 && s.chromas && s.chromas[eqNow.chromaIdx]) ? eqNow.chromaIdx : 0;
+  var startChroma = hasChromas ? s.chromas[activeChromaIdx] : null;
   // The "Standard" chroma almost never carries its own streamedVideo — the skin's base
   // animated preview lives on its upgrade levels instead (skin.video). Fall back to that
   // so a skin with an animated preview actually shows it by default, not a static image.
-  showVariant((firstChroma && firstChroma.video) || s.video, (firstChroma && firstChroma.render) || s.render || s.icon);
+  showVariant((startChroma && startChroma.video) || s.video, (startChroma && startChroma.render) || s.render || s.icon);
   document.getElementById('skStageHint').style.display = hasChromas ? 'none' : '';
 
   var row = document.getElementById('skChromaRow');
   if(hasChromas){
     row.innerHTML = s.chromas.map(function(c, ci){
       var bg = c.swatch || c.render;
-      return '<div class="sk-chroma-swatch'+(ci===0?' on':'')+'" style="background-image:url(\''+esc(bg)+'\')" title="'+esc(c.name)+'" onclick="pickChroma('+ci+')"></div>';
+      return '<div class="sk-chroma-swatch'+(ci===activeChromaIdx?' on':'')+'" style="background-image:url(\''+esc(bg)+'\')" title="'+esc(c.name)+'" onclick="pickChroma('+ci+')"></div>';
     }).join('');
   }else{
     row.innerHTML = '';
   }
 
-  // Equip controls — always available, since a weapon is always selected in the gallery.
-  var eq = currentWeapon && loadout[currentWeapon.id];
-  var isThis = eq && eq.skinId === s.id;
-  document.getElementById('skEquipRow').style.display = '';
-  document.getElementById('skEquipBtn').textContent = isThis ? '✓ EQUIPPED' : 'EQUIP TO LOADOUT';
-  document.getElementById('skEquipBtn').disabled = !!isThis;
-  document.getElementById('skUnequipBtn').style.display = isThis ? '' : 'none';
+  syncEquipBtn();
 
   document.getElementById('skScrim').classList.add('on');
   document.getElementById('skModal').classList.add('on');
   document.body.style.overflow = 'hidden';
 }
 
+// Equip controls reflect skin AND colour variant — equipping the green chroma of a skin
+// whose base colour is already equipped must still be offered, not shown as "equipped".
+function syncEquipBtn(){
+  var eq = currentWeapon && loadout[currentWeapon.id];
+  var isThis = !!(eq && activeSkin && eq.skinId === activeSkin.id && (eq.chromaIdx || 0) === activeChromaIdx);
+  var sameSkin = !!(eq && activeSkin && eq.skinId === activeSkin.id);
+  document.getElementById('skEquipRow').style.display = '';
+  document.getElementById('skEquipBtn').textContent = isThis ? '✓ EQUIPPED' : 'EQUIP TO LOADOUT';
+  document.getElementById('skEquipBtn').disabled = isThis;
+  document.getElementById('skUnequipBtn').style.display = sameSkin ? '' : 'none';
+}
+
 function pickChroma(ci){
   if(!activeSkin || !activeSkin.chromas[ci]) return;
+  activeChromaIdx = ci;
   document.querySelectorAll('.sk-chroma-swatch').forEach(function(x, i){ x.classList.toggle('on', i===ci); });
   var c = activeSkin.chromas[ci];
   // Prefer this color's own video; if it doesn't have one, fall back to the skin's base
   // animated preview rather than dropping to a static image (see openSkin for why).
   showVariant(c.video || activeSkin.video, c.render || activeSkin.render);
+  syncEquipBtn();
 }
 
 // Shows either that specific color variant's real animated video (if Riot has one for
