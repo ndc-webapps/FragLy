@@ -2,7 +2,9 @@
 // rendered DOM after each navigation. Browser-rendered extraction only — no API calls,
 // no server-side fetch. This is what removes the "click through 1300 pages by hand" step.
 
-var state = { running: false, stopRequested: false, items: [], idx: 0, results: [], failedItems: [], tabId: null, windowId: null };
+// mode: 'images' = scrape a product photo per item (original behaviour)
+//       'links'  = classify each link live/dead/unsure (delisted-product detection)
+var state = { running: false, stopRequested: false, items: [], idx: 0, results: [], failedItems: [], tabId: null, windowId: null, mode: 'images' };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -187,6 +189,60 @@ function fmtEta(ms) {
   return m + 'm ' + (s < 10 ? '0' : '') + s + 's';
 }
 
+// ── DEAD LINK CHECK (runs in the target tab, must be self-contained) ─────────────
+// Server-side detection is impossible for this case and that was verified, not assumed:
+// a delisted product's short link still redirects to a NORMAL product URL (not Shopee's
+// error page), the product page returns HTTP 200 with a byte-identical 163KB
+// client-rendered shell whether the product exists or not, and every Shopee API
+// (v4/item/get, v4/pdp/get_pc) returns the same bot-block error 90309999 for live and
+// dead items alike. Only a real rendered browser tab can tell the difference — which is
+// exactly what this runner already does for images.
+//
+// Deliberately conservative: it only says DEAD on a positive "doesn't exist" match, and
+// only says LIVE with positive evidence of a real product. Anything else is UNKNOWN,
+// so a slow render or a layout change can never cause a good product to be deleted.
+function checkProductAlive() {
+  var text = (document.body && document.body.innerText || '').toLowerCase();
+  var DEAD_PATTERNS = [
+    "product doesn't exist", 'product does not exist',
+    'produk tidak ada', 'this product is no longer available',
+    'page not found', 'oops! the page you requested'
+  ];
+  for (var i = 0; i < DEAD_PATTERNS.length; i++) {
+    if (text.indexOf(DEAD_PATTERNS[i]) !== -1) {
+      return { status: 'dead', evidence: DEAD_PATTERNS[i] };
+    }
+  }
+  // Positive proof of life: a real product photo actually rendered.
+  var imgs = Array.prototype.slice.call(document.querySelectorAll('img'));
+  var product = imgs.filter(function (im) {
+    return im.src && im.src.indexOf('susercontent') !== -1 &&
+      im.className.indexOf('avatar') === -1 && (im.naturalWidth || 0) >= 200;
+  });
+  if (product.length) return { status: 'live', evidence: 'product image rendered' };
+  // Page may simply not have finished rendering yet — caller polls before giving up.
+  return { status: 'unknown', evidence: (text ? 'no product image yet' : 'page empty') };
+}
+
+async function pollLinkStatus(tabId, maxWaitMs) {
+  var start = Date.now();
+  var last = { status: 'unknown', evidence: 'not run' };
+  while (true) {
+    try {
+      var r = await chrome.scripting.executeScript({ target: { tabId: tabId }, func: checkProductAlive });
+      var entry = r && r[0];
+      if (entry && entry.error) { last = { status: 'unknown', evidence: 'script error: ' + (entry.error.message || entry.error) }; }
+      else if (entry && entry.result) { last = entry.result; }
+    } catch (e) {
+      last = { status: 'unknown', evidence: 'inject failed: ' + (e && e.message) };
+    }
+    // A decisive answer either way ends the wait; only 'unknown' keeps polling.
+    if (last.status === 'dead' || last.status === 'live') return last;
+    if (Date.now() - start >= maxWaitMs) return last;
+    await sleep(700);
+  }
+}
+
 async function tryExtract(tabId) {
   var execResult = await chrome.scripting.executeScript({ target: { tabId: tabId }, func: extractSingleImage });
   var entry = execResult && execResult[0];
@@ -233,12 +289,39 @@ function updateProgress(done, total, ok, fail, startTime) {
   document.getElementById('statEta').textContent = fmtEta(avg * (total - done));
 }
 
+// Stat/output wording follows the selected mode — "No image: 12" during a dead-link scan
+// would be actively misleading about what the run actually found.
+function applyModeLabels() {
+  var links = state.mode === 'links';
+  var set = function (id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; };
+  set('statOkLbl', links ? 'Live' : 'Found');
+  set('statFailLbl', links ? 'Dead/unsure' : 'No image');
+  set('outLabel', links
+    ? 'Result JSON — paste this into Admin → Dead Link Checker'
+    : 'Result JSON — paste this into Admin → Import Images');
+}
+document.querySelectorAll('input[name="runMode"]').forEach(function (r) {
+  r.addEventListener('change', function () {
+    state.mode = r.value;
+    applyModeLabels();
+    var hint = document.getElementById('modeHint');
+    if (hint) {
+      hint.innerHTML = r.value === 'links'
+        ? 'Paste the list from Admin → <b>COPY LINK LIST</b>. Each link is opened in a real tab and checked for Shopee\'s "product doesn\'t exist" page — the only way to catch a delisted product, since Shopee blocks server-side checks.'
+        : 'Paste the list from Admin → <b>COPY MISSING LIST</b>, then START.';
+    }
+  });
+});
+
 async function startBatch(resume) {
   if (resume !== true) {
     var raw = document.getElementById('input').value.trim();
     var parsed;
     try { parsed = JSON.parse(raw); } catch (e) { alert('Invalid JSON — paste the array copied from Admin.'); return; }
     if (!Array.isArray(parsed) || !parsed.length) { alert('Paste a non-empty JSON array first.'); return; }
+    var modeEl = document.querySelector('input[name="runMode"]:checked');
+    state.mode = modeEl ? modeEl.value : 'images';
+    applyModeLabels();
     state.items = parsed;
     state.idx = 0;
     state.results = [];
@@ -308,6 +391,20 @@ async function startBatch(resume) {
     try {
       await chrome.tabs.update(state.tabId, { url: item.link });
       await waitForTabComplete(state.tabId, 8000);
+
+      if (state.mode === 'links') {
+        var lr = await pollLinkStatus(state.tabId, delay);
+        state.results.push({ id: item.id, itemId: item.itemId, name: item.name, status: lr.status, evidence: lr.evidence });
+        if (lr.status === 'dead') { failCount++; logLine(label + ' — DEAD (' + lr.evidence + ')', false); }
+        else if (lr.status === 'live') { okCount++; logLine(label + ' — live', true); }
+        else { failCount++; logLine(label + ' — unsure (' + lr.evidence + ')', false); }
+        state.idx++;
+        saveProgress();
+        updateProgress(state.idx, state.items.length, okCount, failCount, startTime);
+        if (!state.stopRequested && state.idx < state.items.length) await sleep(800 + Math.floor(Math.random() * 1400));
+        continue;
+      }
+
       var res = await pollForImage(state.tabId, delay);
       var tag = res.videoSkipped ? ' [video skipped→photo]' : (res.thumbCount ? ' [' + res.thumbCount + ' thumbs]' : ' [no thumb strip]');
       if (res.image) {

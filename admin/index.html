@@ -154,7 +154,19 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 /* bulk-select bar + per-row checkbox + edit button */
 .bulk-bar{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border-radius:var(--r2);background:linear-gradient(100deg,rgba(168,85,247,.12),rgba(236,72,153,.05));border:1px solid rgba(168,85,247,.3);}
 .bulk-bar.on{display:flex;}
-.bulk-bar .bulk-count{font-family:var(--mono);font-size:.7rem;color:var(--txt);letter-spacing:.5px;}
+/* Unscoped so the dead-link checker's action row can reuse them — they were originally
+   nested under .bulk-bar and silently rendered as plain buttons anywhere else. */
+.bulk-count{font-family:var(--mono);font-size:.7rem;color:var(--txt);letter-spacing:.5px;}
+/* padding here because .btn itself defines none — it was previously supplied by the
+   .bulk-bar .btn rule, so outside that bar the button rendered as bare text. */
+.btn-danger{padding:9px 16px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;font-family:var(--mono);font-size:.66rem;letter-spacing:1.5px;}
+.btn-danger:hover{background:rgba(239,68,68,.28);color:#fff;}
+/* dead-link result rows */
+.lc-row-dead{border-color:rgba(239,68,68,.45)!important;}
+.lc-row-unsure{border-color:rgba(251,146,60,.4)!important;}
+.lc-badge{font-family:var(--mono);font-size:.56rem;letter-spacing:1px;text-transform:uppercase;padding:3px 7px;border-radius:6px;flex:none;}
+.lc-badge.dead{color:#fca5a5;background:rgba(239,68,68,.14);}
+.lc-badge.unsure{color:var(--gold);background:rgba(251,146,60,.12);}
 .bulk-bar .btn{padding:8px 14px;font-size:.7rem;}
 .bulk-bar .btn-danger{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;}
 .bulk-bar .btn-danger:hover{background:rgba(239,68,68,.28);}
@@ -274,6 +286,38 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
           <button type="button" class="btn btn-p" id="autofillBtn" style="max-width:240px;" onclick="autofillBlankImages()">AUTO-FILL WITH REAL PHOTOS</button>
         </div>
         <div class="img-preview-msg" id="autofillMsg" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="img-import-card">
+        <h3>Dead Link Checker</h3>
+        <div class="img-import-steps">Follows every affiliate link and flags the ones Shopee now sends to its error page — expired or broken short links that send visitors nowhere. Only links that <b>positively</b> resolve to Shopee's error page are marked dead; timeouts and anything unrecognised come back as "unsure" and are never auto-selected, so a network blip can't make you delete a good product. Once done you can deactivate (reversible, hides it from the site) or delete the dead ones in one go. Results are saved on this device, so closing the tab mid-scan doesn't lose them.</div>
+        <div class="img-actions">
+          <button type="button" class="btn btn-p" id="lcRunBtn" style="max-width:220px;" onclick="runLinkCheck()">CHECK ALL LINKS</button>
+          <button type="button" class="btn btn-ghost" id="lcStopBtn" style="display:none;" onclick="stopLinkCheck()">STOP</button>
+          <button type="button" class="btn btn-ghost" id="lcResumeBtn" style="display:none;" onclick="runLinkCheck(true)">RESUME</button>
+          <button type="button" class="btn btn-ghost" id="lcClearBtn" style="display:none;" onclick="clearLinkCheck()">CLEAR RESULTS</button>
+        </div>
+        <div class="img-import-steps" style="margin-top:4px;">
+          <b>Deep check (catches delisted products):</b> the scan above only finds broken short links. A link can still redirect to a normal product page that says <i>"The product doesn't exist"</i> — Shopee serves an identical page and blocks every API for live and dead items alike, so that case is <b>impossible to detect from the server</b> and needs a real browser. Use <b>COPY LINK LIST</b> → FragLy Extractor → Batch Runner → <b>Check for dead links</b> → paste the result back here.
+        </div>
+        <div class="img-actions">
+          <button type="button" class="btn btn-ghost" onclick="copyLinkList()">COPY LINK LIST</button>
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('lcImportWrap').style.display='block'">PASTE SCAN RESULT</button>
+        </div>
+        <div id="lcImportWrap" style="display:none;">
+          <textarea class="img-textarea" id="lcImportJson" rows="4" placeholder='[{"id":"...","status":"dead","evidence":"product doesn&apos;t exist"}]'></textarea>
+          <button type="button" class="btn btn-p" style="max-width:200px;" onclick="importLinkCheck()">APPLY SCAN RESULT</button>
+        </div>
+        <div class="img-preview-msg" id="lcMsg" role="status" aria-live="polite"></div>
+        <div id="lcActions" style="display:none;margin-top:12px;">
+          <div class="img-actions">
+            <label class="filter-chip" style="flex:none;"><input type="checkbox" id="lcSelectAll" onchange="lcToggleAll(this.checked)"> Select all dead</label>
+            <span class="bulk-count" id="lcCount">0 selected</span>
+            <button type="button" class="btn btn-ghost" onclick="lcDeactivate()">Deactivate selected</button>
+            <button type="button" class="btn btn-danger" onclick="lcDelete()">Delete selected</button>
+          </div>
+        </div>
+        <div class="pl-list" id="lcResults" data-cols="2" style="display:none;max-height:420px;margin-top:12px;"></div>
       </div>
 
       <form class="add-card" onsubmit="return submitShopItem(event)">
@@ -1336,6 +1380,215 @@ async function autofillBlankImages() {
   btn.disabled = false;
   await loadShop();
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DEAD LINK CHECKER
+   Walks every affiliate link through /api/admin/linkcheck, which follows the redirect
+   and reports where it actually lands. Only a positive hit on Shopee's error page is
+   "dead"; timeouts/unknowns are surfaced separately and never auto-selected, so a
+   flaky network can't lead to deleting a working product.
+═══════════════════════════════════════════════════════════════ */
+var LC_KEY = 'fragly_linkcheck_v1';
+var lcState = { results: {}, checkedIds: [], running: false, stop: false, selected: {} };
+
+function lcLoad(){
+  try {
+    var s = JSON.parse(localStorage.getItem(LC_KEY) || 'null');
+    if (s && s.results) { lcState.results = s.results; lcState.checkedIds = s.checkedIds || []; }
+  } catch (e) {}
+}
+function lcSave(){
+  // Persisted so a multi-minute scan survives a closed tab / accidental refresh.
+  try { localStorage.setItem(LC_KEY, JSON.stringify({ results: lcState.results, checkedIds: lcState.checkedIds, ts: Date.now() })); } catch (e) {}
+}
+
+function lcDeadIds(){ return Object.keys(lcState.results).filter(function(id){ return lcState.results[id].status === 'dead'; }); }
+function lcUnsureIds(){ return Object.keys(lcState.results).filter(function(id){ return lcState.results[id].status === 'unknown'; }); }
+
+async function runLinkCheck(resume){
+  if (lcState.running) return;
+  var all = shopState.items.filter(function(i){ return i.link; });
+  if (!all.length) { $('lcMsg').style.display='block'; $('lcMsg').textContent = 'No products with links yet.'; return; }
+
+  if (!resume) { lcState.results = {}; lcState.checkedIds = []; lcState.selected = {}; }
+  // Resume skips anything already checked, so a stopped/interrupted run continues
+  // instead of re-walking 1,000+ links from the top.
+  var doneSet = {}; lcState.checkedIds.forEach(function(id){ doneSet[id] = true; });
+  var queue = all.filter(function(i){ return !doneSet[i.id]; });
+
+  if (!queue.length) { lcRender(); return; }
+
+  lcState.running = true; lcState.stop = false;
+  $('lcRunBtn').disabled = true;
+  $('lcStopBtn').style.display = 'inline-flex';
+  $('lcResumeBtn').style.display = 'none';
+  var msg = $('lcMsg'); msg.style.display = 'block'; msg.className = 'img-preview-msg';
+
+  // 40 per request: Cloudflare caps subrequests per function invocation (50 on the free
+  // plan) and each link is one subrequest, so this stays safely under it.
+  var CHUNK = 40, done = 0, total = queue.length, failedChunks = 0, firstError = '';
+  for (var i = 0; i < total; i += CHUNK) {
+    if (lcState.stop) break;
+    var chunk = queue.slice(i, i + CHUNK).map(function(x){ return { id: x.id, link: x.link }; });
+    try {
+      var res = await api('/api/admin/linkcheck', { method: 'POST', body: JSON.stringify({ links: chunk }) });
+      (res.results || []).forEach(function(r){
+        lcState.results[r.id] = { status: r.status, finalUrl: r.finalUrl || '', reason: r.reason || '' };
+        lcState.checkedIds.push(r.id);
+      });
+    } catch (e) {
+      failedChunks++; if (!firstError) firstError = e.message;
+    }
+    done += chunk.length;
+    lcSave();
+    msg.textContent = 'Checked ' + Math.min(done, total) + ' / ' + total + ' — ' + lcDeadIds().length + ' dead, ' + lcUnsureIds().length + ' unsure so far…';
+  }
+
+  lcState.running = false;
+  $('lcRunBtn').disabled = false;
+  $('lcStopBtn').style.display = 'none';
+  var remaining = all.length - lcState.checkedIds.length;
+  $('lcResumeBtn').style.display = remaining > 0 ? 'inline-flex' : 'none';
+  if (failedChunks) { msg.textContent += ' (' + failedChunks + ' request(s) failed: ' + firstError + ')'; }
+  lcRender();
+}
+
+function stopLinkCheck(){ lcState.stop = true; $('lcStopBtn').disabled = true; setTimeout(function(){ $('lcStopBtn').disabled = false; }, 500); }
+
+function clearLinkCheck(){
+  if (!confirm('Clear the dead-link scan results? The products themselves are not touched.')) return;
+  lcState.results = {}; lcState.checkedIds = []; lcState.selected = {};
+  try { localStorage.removeItem(LC_KEY); } catch (e) {}
+  lcRender();
+}
+
+function lcRender(){
+  var dead = lcDeadIds(), unsure = lcUnsureIds();
+  var msg = $('lcMsg'), list = $('lcResults'), actions = $('lcActions');
+  var checked = lcState.checkedIds.length;
+
+  if (!checked) {
+    msg.style.display = 'none'; list.style.display = 'none'; actions.style.display = 'none';
+    $('lcClearBtn').style.display = 'none';
+    return;
+  }
+  $('lcClearBtn').style.display = 'inline-flex';
+  msg.style.display = 'block';
+  msg.className = 'img-preview-msg ' + (dead.length ? 'warn' : 'ready');
+  msg.textContent = checked + ' checked — ' + dead.length + ' dead'
+    + (unsure.length ? ', ' + unsure.length + ' unsure (timed out or unrecognised — re-run to retry)' : '')
+    + (dead.length ? '. Review below, then deactivate or delete.' : '. Nothing broken.');
+
+  var show = dead.concat(unsure);
+  if (!show.length) { list.style.display = 'none'; actions.style.display = 'none'; return; }
+
+  var byId = {}; shopState.items.forEach(function(i){ byId[i.id] = i; });
+  list.style.display = 'grid';
+  actions.style.display = 'block';
+  list.innerHTML = show.map(function(id){
+    var it = byId[id]; if (!it) return '';
+    var r = lcState.results[id];
+    var isDead = r.status === 'dead';
+    var sel = !!lcState.selected[id];
+    return '<div class="pl-row ' + (isDead ? 'lc-row-dead' : 'lc-row-unsure') + (sel ? ' sel' : '') + '">'
+      + '<input type="checkbox" class="pl-check" ' + (sel ? 'checked' : '') + ' onchange="lcSelect(\'' + escapeHtml(id) + '\',this)" aria-label="Select ' + escapeHtml(it.name) + '">'
+      + (it.image ? '<div class="pl-thumb"><img src="' + escapeHtml(it.image) + '" alt="" loading="lazy" onerror="this.style.opacity=0"></div>' : '<div class="pl-thumb-ph">' + escapeHtml((it.category || '?').charAt(0)) + '</div>')
+      + '<div class="pl-info"><div class="pl-name">' + escapeHtml(it.name) + '</div>'
+      + '<span class="pl-meta">' + escapeHtml(it.category || '') + ' · ' + escapeHtml(r.reason || '') + '</span></div>'
+      + '<span class="lc-badge ' + (isDead ? 'dead' : 'unsure') + '">' + (isDead ? 'Dead' : 'Unsure') + '</span>'
+      + '</div>';
+  }).join('');
+  lcUpdateCount();
+}
+
+function lcSelect(id, el){
+  if (el.checked) lcState.selected[id] = true; else delete lcState.selected[id];
+  var row = el.closest('.pl-row'); if (row) row.classList.toggle('sel', el.checked);
+  lcUpdateCount();
+}
+function lcToggleAll(on){
+  // Deliberately selects ONLY confirmed-dead links, never "unsure" ones.
+  lcState.selected = {};
+  if (on) lcDeadIds().forEach(function(id){ lcState.selected[id] = true; });
+  lcRender();
+}
+function lcSelectedIds(){ return Object.keys(lcState.selected); }
+function lcUpdateCount(){ $('lcCount').textContent = lcSelectedIds().length + ' selected'; }
+
+async function lcDeactivate(){
+  var ids = lcSelectedIds();
+  if (!ids.length) { toast('Nothing selected.', true); return; }
+  if (!confirm('Hide ' + ids.length + ' product' + (ids.length===1?'':'s') + ' from the site? This is reversible — they stay in the catalog as inactive.')) return;
+  var msg = $('lcMsg');
+  var done = 0, failed = 0;
+  for (var i = 0; i < ids.length; i++) {
+    try { await api('/api/shop?id=' + encodeURIComponent(ids[i]), { method: 'PUT', body: JSON.stringify({ active: false }) }); done++; }
+    catch (e) { failed++; if (e.conflict) break; }
+    msg.textContent = 'Deactivating ' + (done + failed) + ' / ' + ids.length + '…';
+    if (i < ids.length - 1) await new Promise(function(r){ setTimeout(r, 1100); }); // one KV write each
+  }
+  toast('Deactivated ' + done + (failed ? ', ' + failed + ' failed' : '') + '.', !!failed);
+  ids.slice(0, done).forEach(function(id){ delete lcState.results[id]; delete lcState.selected[id]; });
+  lcSave();
+  await loadShop();
+  lcRender();
+}
+
+async function lcDelete(){
+  var ids = lcSelectedIds();
+  if (!ids.length) { toast('Nothing selected.', true); return; }
+  if (!confirm('Permanently delete ' + ids.length + ' product' + (ids.length===1?'':'s') + '? This cannot be undone. (Deactivate instead if you want it reversible.)')) return;
+  $('lcMsg').textContent = 'Deleting ' + ids.length + '…';
+  try {
+    var res = await api('/api/shop/delete', { method: 'POST', body: JSON.stringify({ ids: ids }) });
+    toast('Deleted ' + (res.deleted || 0) + (res.notFound ? ', ' + res.notFound + ' already gone' : '') + '.');
+    ids.forEach(function(id){ delete lcState.results[id]; delete lcState.selected[id]; });
+    lcState.checkedIds = lcState.checkedIds.filter(function(id){ return ids.indexOf(id) === -1; });
+    lcSave();
+  } catch (e) {
+    toast(e.message, true);
+  }
+  await loadShop();
+  lcRender();
+}
+
+// Every link + id, for the extension's dead-link mode (same shape the image runner takes).
+function copyLinkList(){
+  var list = shopState.items.filter(function(i){ return i.link; })
+    .map(function(i){ return { id: i.id, itemId: i.itemId || '', link: i.link, name: i.name }; });
+  if (!list.length) { toast('No products with links.', true); return; }
+  navigator.clipboard.writeText(JSON.stringify(list)).then(function(){
+    toast(list.length + ' links copied — paste into the extension\'s Batch Runner.');
+  }, function(){ toast('Clipboard write failed.', true); });
+}
+
+// Merges the extension's browser-verified verdicts into the same results view the
+// server-side scan writes to, so both sources feed one review/delete flow.
+function importLinkCheck(){
+  var raw = $('lcImportJson').value.trim();
+  if (!raw) { toast('Paste the scan result JSON first.', true); return; }
+  var parsed;
+  try { parsed = JSON.parse(raw); } catch (e) { toast('Invalid JSON — copy it again from the Batch Runner.', true); return; }
+  if (!Array.isArray(parsed)) { toast('Expected a JSON array.', true); return; }
+
+  var byId = {}; shopState.items.forEach(function(i){ byId[i.id] = true; });
+  var applied = 0, unmatched = 0;
+  parsed.forEach(function(r){
+    var id = String(r && r.id || '');
+    var status = String(r && r.status || '');
+    if (!id || ['dead','live','unknown'].indexOf(status) === -1) return;
+    if (!byId[id]) { unmatched++; return; }
+    lcState.results[id] = { status: status, finalUrl: '', reason: (r.evidence || 'browser check') };
+    if (lcState.checkedIds.indexOf(id) === -1) lcState.checkedIds.push(id);
+    applied++;
+  });
+  lcSave();
+  lcRender();
+  $('lcImportJson').value = '';
+  toast('Applied ' + applied + ' result' + (applied===1?'':'s') + (unmatched ? ', ' + unmatched + ' unmatched' : '') + '.', !applied);
+}
+
+lcLoad();
 
 checkSession();
 </script>
