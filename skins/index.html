@@ -183,14 +183,18 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .mode{display:none;}
 .mode.on{display:block;}
 
-/* ── COLLECTION flex board — grouped by category, then weapon ── */
-.col-cat{margin-bottom:30px;}
-.col-cat-title{font-family:var(--dp);font-weight:900;font-size:1.15rem;letter-spacing:2px;text-transform:uppercase;
+/* ── COLLECTION flex board — same left-to-right column grouping as the Loadout board
+   (Sidearms | SMGs+Shotguns | Rifles+Melee | Snipers+Machine Guns), each column
+   stacking its weapons' skin grids, instead of one long stacked list. ── */
+.col-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;align-items:start;}
+.col-board-col{display:flex;flex-direction:column;min-width:0;}
+.col-cat{margin-bottom:24px;}
+.col-cat-title{font-family:var(--dp);font-weight:900;font-size:.95rem;letter-spacing:2px;text-transform:uppercase;text-align:center;
   color:var(--txt);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--bdr);}
-.col-wpn{margin-bottom:20px;}
-.col-wpn-title{display:flex;align-items:center;gap:8px;font-family:var(--dp);font-weight:700;font-size:.88rem;letter-spacing:1px;color:var(--muted2);margin-bottom:8px;}
-.col-wpn-title img{width:26px;height:18px;object-fit:contain;filter:invert(1) brightness(1.1);}
-.col-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+.col-wpn{margin-bottom:16px;}
+.col-wpn-title{display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--dp);font-weight:700;font-size:.78rem;letter-spacing:.5px;color:var(--muted2);margin-bottom:8px;}
+.col-wpn-title img{width:22px;height:15px;object-fit:contain;filter:invert(1) brightness(1.1);}
+.col-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;}
 .col-card{position:relative;border-radius:var(--r2);border:1px solid var(--bdr);background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
   padding:8px;cursor:default;transition:.2s var(--ease);}
 .col-card:hover{border-color:rgba(168,85,247,.4);}
@@ -218,11 +222,14 @@ footer a:hover{color:var(--red);}
 @media(max-width:1080px){
   .lo-board{grid-template-columns:repeat(2,minmax(0,1fr));}
   .lo-card-panel{grid-column:1/-1;max-width:220px;margin:0 auto;}
+  .col-board{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 @media(max-width:640px){
   .lo-board{grid-template-columns:1fr 1fr;gap:10px;}
   .lo-slot{min-height:84px;}
   .lo-group-title{font-size:.82rem;letter-spacing:1.2px;}
+  .col-board{grid-template-columns:1fr;gap:10px;}
+  .col-cat-title{font-size:.86rem;}
   .view-tab{padding:9px 16px;font-size:.8rem;}
   .sk-grid{grid-template-columns:1fr 1fr;gap:10px;}
   .wpn-btn{width:72px;}
@@ -398,7 +405,6 @@ var loadout = readLoadout();
    category then weapon, for showing off a whole collection at once.
 ═══════════════════════════════════════════════════════════════ */
 var COLLECTION_KEY = 'fragly_collection_v1';
-var CAT_ORDER = ['Sidearms','SMGs','Shotguns','Rifles','Snipers','Heavy','Melee'];
 function readCollection(){ try{ return JSON.parse(localStorage.getItem(COLLECTION_KEY)||'{}'); }catch(e){ return {}; } }
 function writeCollection(o){ try{ localStorage.setItem(COLLECTION_KEY, JSON.stringify(o)); }catch(e){} }
 var collection = readCollection(); // { weaponId: [ {skinId,chromaIdx,name,chromaName,tier,render}, ... ] }
@@ -454,25 +460,30 @@ function renderCollection(){
   var total = weaponIds.reduce(function(sum,id){ return sum + collection[id].length; }, 0);
   document.getElementById('colStatus').textContent = total + ' skin' + (total===1?'':'s') + ' across ' + weaponIds.length + ' weapon' + (weaponIds.length===1?'':'s') + ' · saved on this device';
 
-  var order = CAT_ORDER.filter(function(c){ return byCat[c]; });
-  Object.keys(byCat).forEach(function(c){ if(order.indexOf(c)===-1) order.push(c); });
-
-  board.innerHTML = order.map(function(cat){
-    var weapons = byCat[cat].map(function(id){
-      var w = byWeapon[id];
-      var skins = collection[id];
-      var cards = skins.map(function(s, i){
-        return '<div class="col-card">'
-          + '<img src="'+esc(s.render)+'" alt="" loading="lazy" onerror="this.style.opacity=.15">'
-          + '<div class="col-card-name">'+esc(s.name)+(s.chromaName && !/^standard$/i.test(s.chromaName) ? ' · '+esc(s.chromaName) : '')+'</div>'
-          + '<button class="col-card-rm" title="Remove" onclick="removeFromCollection(\''+esc(id)+'\','+i+')">✕</button>'
-        + '</div>';
-      }).join('');
-      return '<div class="col-wpn"><div class="col-wpn-title">'+(w&&w.icon?'<img src="'+esc(w.icon)+'" alt="">':'')+'<span>'+esc(w?w.name:'Unknown')+'</span></div>'
-        + '<div class="col-grid">'+cards+'</div></div>';
+  function weaponBlock(id){
+    var w = byWeapon[id];
+    var skins = collection[id];
+    var cards = skins.map(function(s, i){
+      return '<div class="col-card">'
+        + '<img src="'+esc(s.render)+'" alt="" onerror="this.style.opacity=.15">'
+        + '<div class="col-card-name">'+esc(s.name)+(s.chromaName && !/^standard$/i.test(s.chromaName) ? ' · '+esc(s.chromaName) : '')+'</div>'
+        + '<button class="col-card-rm" title="Remove" onclick="removeFromCollection(\''+esc(id)+'\','+i+')">✕</button>'
+      + '</div>';
     }).join('');
-    return '<div class="col-cat"><div class="col-cat-title">'+esc(GROUP_TITLE[cat]||cat)+'</div>'+weapons+'</div>';
-  }).join('');
+    return '<div class="col-wpn"><div class="col-wpn-title">'+(w&&w.icon?'<img src="'+esc(w.icon)+'" alt="">':'')+'<span>'+esc(w?w.name:'Unknown')+'</span></div>'
+      + '<div class="col-grid">'+cards+'</div></div>';
+  }
+
+  // Same left-to-right column grouping as the Loadout board (Sidearms | SMGs+Shotguns |
+  // Rifles+Melee | Snipers+Machine Guns) instead of one long stacked list — much easier
+  // to scan when there are several categories at once.
+  board.innerHTML = '<div class="col-board">' + COL_GROUPS.map(function(groups){
+    var body = groups.filter(function(cat){ return byCat[cat]; }).map(function(cat){
+      return '<div class="col-cat"><div class="col-cat-title">'+esc(GROUP_TITLE[cat]||cat)+'</div>'
+        + byCat[cat].map(weaponBlock).join('') + '</div>';
+    }).join('');
+    return '<div class="col-board-col">'+body+'</div>';
+  }).join('') + '</div>';
 }
 function removeFromCollection(weaponId, idx){
   var list = collection[weaponId];
@@ -663,14 +674,36 @@ document.getElementById('loRandom').addEventListener('click', async function(){
   }
 });
 
+// Every board image uses loading="lazy" (correct for normal browsing) — but that means
+// anything below the fold hasn't actually been fetched/decoded when the user clicks
+// Save as PNG, and html2canvas snapshots whatever's currently in the DOM, so those
+// cards came out blank. Force every image in the target node to eager-load and wait for
+// each to finish (or fail) before handing the node to html2canvas.
+function waitImagesReady(node){
+  var imgs = Array.prototype.slice.call(node.querySelectorAll('img'));
+  return Promise.all(imgs.map(function(img){
+    img.loading = 'eager';
+    if(img.complete) return Promise.resolve();
+    return new Promise(function(resolve){
+      var done = function(){ img.removeEventListener('load', done); img.removeEventListener('error', done); resolve(); };
+      img.addEventListener('load', done);
+      img.addEventListener('error', done);
+      setTimeout(done, 6000); // per-image safety net so one stuck image can't hang the export
+    });
+  }));
+}
+
 // Shared by both Loadout's and Collection's "Save as PNG" — same html2canvas export,
 // different source node + filename.
 function exportBoardPng(nodeId, filename, btn){
   var node = document.getElementById(nodeId);
   if(typeof html2canvas !== 'function'){ alert('Image export unavailable.'); return; }
   var old = btn.textContent;
-  btn.textContent = 'Rendering…'; btn.disabled = true;
-  html2canvas(node, {backgroundColor:'#0B0C10', scale:2, useCORS:true, logging:false}).then(function(canvas){
+  btn.textContent = 'Loading images…'; btn.disabled = true;
+  waitImagesReady(node).then(function(){
+    btn.textContent = 'Rendering…';
+    return html2canvas(node, {backgroundColor:'#0B0C10', scale:2, useCORS:true, logging:false});
+  }).then(function(canvas){
     canvas.toBlob(function(blob){
       if(!blob){ btn.textContent = old; btn.disabled = false; return; }
       var file = new File([blob],filename,{type:'image/png'});
