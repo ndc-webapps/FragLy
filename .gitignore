@@ -5,3 +5,7 @@
 !.env.example
 .Codex/progress/
 .wrangler/
+
+# stray curl output from local testing
+body.tmp
+*.tmp
