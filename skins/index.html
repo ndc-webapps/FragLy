@@ -196,7 +196,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
    box stays full page width even when only 1-2 columns have content, and html2canvas
    captures that FULL width as blank margin around the small packed cards on export. */
 .col-board{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;width:fit-content;max-width:100%;}
-.col-board-col{flex:0 0 260px;width:260px;min-width:0;}
+.col-board-col{flex:0 0 268px;width:268px;min-width:0;}
 .col-cat{margin-bottom:24px;}
 .col-cat-title{font-family:var(--dp);font-weight:900;font-size:.95rem;letter-spacing:2px;text-transform:uppercase;text-align:center;
   color:var(--txt);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--bdr);}
@@ -204,12 +204,20 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .col-wpn-title{display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--dp);font-weight:700;font-size:.78rem;letter-spacing:.5px;color:var(--muted2);margin-bottom:8px;}
 .col-wpn-title img{width:22px;height:15px;object-fit:contain;filter:invert(1) brightness(1.1);}
 /* Fixed-width cards in a wrapping flex row — same reasoning as .col-board: a card must
-   never grow past its natural size just because there's leftover row width. */
-.col-grid{display:flex;flex-wrap:wrap;gap:8px;}
-.col-card{position:relative;width:120px;flex:0 0 120px;border-radius:var(--r2);border:1px solid var(--bdr);background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+   never grow past its natural size just because there's leftover row width.
+   align-items:flex-start stops flex from stretching every card to the tallest in its
+   row, which would re-introduce the dead space the height:auto image avoids. */
+.col-grid{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;}
+.col-card{position:relative;width:126px;flex:0 0 126px;border-radius:var(--r2);border:1px solid var(--bdr);background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
   padding:8px;cursor:default;transition:.2s var(--ease);}
 .col-card:hover{border-color:rgba(168,85,247,.4);}
-.col-card img{width:100%;height:75px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));}
+/* height:auto, NOT a fixed height + object-fit:contain. Riot's renders range from ~1.7:1
+   (pistols) to ~5.1:1 (Operator), so any single fixed box height leaves the wide guns
+   floating in dead space — a rifle only filled ~31px of a 75px box, which is what made
+   cards look chunky with tiny weapons in them. Sizing naturally means the weapon is
+   always as large as the card width allows, and since cards are grouped per weapon,
+   every card within a group still shares the same height. */
+.col-card img{width:100%;height:auto;display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));}
 .col-card-name{font-family:var(--dp);font-weight:700;font-size:.62rem;line-height:1.25;color:var(--txt);margin-top:4px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .col-card-rm{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.6);
@@ -721,7 +729,10 @@ function exportBoardPng(nodeId, filename, btn){
   btn.textContent = 'Loading images…'; btn.disabled = true;
   waitImagesReady(node).then(function(){
     btn.textContent = 'Rendering…';
-    return html2canvas(node, {backgroundColor:'#0B0C10', scale:2, useCORS:true, logging:false});
+    // scale 3 (not 2): these boards are ~270px per column, so a 2x export is only ~500px
+    // wide for a small collection — too soft once someone posts it. 3x keeps the weapon
+    // art crisp at the size people actually share it at.
+    return html2canvas(node, {backgroundColor:'#0B0C10', scale:3, useCORS:true, logging:false});
   }).then(function(canvas){
     canvas.toBlob(function(blob){
       if(!blob){ btn.textContent = old; btn.disabled = false; return; }
