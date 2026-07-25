@@ -39,7 +39,7 @@ export async function onRequestPost(context) {
     password = body.password;
   } catch (e) { /* falls through to the mismatch response below */ }
 
-  if (!passwordMatches(env, password)) {
+  if (!(await passwordMatches(env, password))) {
     await recordFailure(env, ip);
     return json({ error: 'Incorrect password.' }, 401);
   }

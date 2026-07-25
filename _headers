@@ -1,0 +1,16 @@
+# Cloudflare Pages response headers.
+# CSP is intentionally NOT set yet: the site relies on large inline <style>/<script>
+# blocks plus AdSense, GSAP and html2canvas CDNs, so a strict policy needs nonces
+# (per-request injection) — enforcing a loose one with 'unsafe-inline' would add little.
+# Track that separately; these four are safe, useful and regression-free today.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# Admin is already noindex via <meta>, but that only helps if a crawler renders the
+# page — this blocks it at the header level too, and keeps the panel out of caches.
+/admin/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-store

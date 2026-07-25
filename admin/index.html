@@ -95,7 +95,10 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .icon-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--bdr);background:rgba(255,255,255,.03);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:.15s;}
 .icon-btn:hover{color:var(--txt);border-color:rgba(255,255,255,.25);}
 .icon-btn.danger:hover{color:#fca5a5;border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08);}
-.tog{position:relative;width:38px;height:22px;border-radius:20px;background:#1a1a2e;border:1px solid var(--bdr);cursor:pointer;transition:.2s;flex:none;}
+/* padding:0 + appearance:none because this is a <button role="switch"> now (was a div) —
+   without them the UA button styling changes its size and the knob's offsets drift. */
+.tog{position:relative;width:38px;height:22px;border-radius:20px;background:#1a1a2e;border:1px solid var(--bdr);cursor:pointer;transition:.2s;flex:none;padding:0;appearance:none;-webkit-appearance:none;}
+.tog:focus-visible{outline:2px solid var(--red);outline-offset:2px;}
 .tog.on{background:rgba(168,85,247,.35);border-color:var(--red);}
 .tog::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#ECE8F5;transition:.2s;}
 .tog.on::after{left:18px;background:#fff;}
@@ -230,7 +233,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
         <div id="csvPreviewWrap" style="display:none;">
           <div class="pl-list" id="csvPreview" data-cols="3" style="max-height:320px;margin-top:12px;"></div>
           <button class="btn btn-p" id="csvImportBtn" style="margin-top:14px;max-width:220px;" onclick="runCsvImport()">IMPORT ALL</button>
-          <div id="csvProgress" class="hint" style="margin-top:8px;"></div>
+          <div id="csvProgress" class="hint" style="margin-top:8px;" role="status" aria-live="polite"></div>
         </div>
       </div>
 
@@ -249,7 +252,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
         </div>
         <div class="hint" style="margin:0 0 4px;">Copy Missing List → paste once into the extension's "Missing List" box. It'll then only surface products FragLy actually needs while you browse Shopee — no eyeballing which ones already have photos.</div>
         <textarea class="img-textarea" id="imgJsonInput" placeholder='[{"itemId":"50255794912","title":"Onikuma DM02","image":"https://down-ph.img.susercontent.com/..."}]' rows="5"></textarea>
-        <div class="img-preview-msg" id="imgPreviewMsg"></div>
+        <div class="img-preview-msg" id="imgPreviewMsg" role="status" aria-live="polite"></div>
       </div>
 
       <div class="img-import-card">
@@ -259,7 +262,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
           <button type="button" class="btn btn-ghost" id="scanBtn" onclick="scanBlankImages()">SCAN ALL IMAGES</button>
           <button type="button" class="btn btn-p" id="clearBlankBtn" style="max-width:220px;display:none;" onclick="clearSelectedBlanks()">CLEAR SELECTED → MARK MISSING</button>
         </div>
-        <div class="img-preview-msg" id="scanMsg"></div>
+        <div class="img-preview-msg" id="scanMsg" role="status" aria-live="polite"></div>
         <div class="pl-list" id="scanResults" data-cols="3" style="display:none;max-height:360px;margin-top:12px;"></div>
       </div>
 
@@ -270,7 +273,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
           <label class="filter-chip" style="flex:none;"><input type="checkbox" id="autofillIncludeShopee"> Also replace Shopee-hosted images (susercontent — the unreliable/blank ones)</label>
           <button type="button" class="btn btn-p" id="autofillBtn" style="max-width:240px;" onclick="autofillBlankImages()">AUTO-FILL WITH REAL PHOTOS</button>
         </div>
-        <div class="img-preview-msg" id="autofillMsg"></div>
+        <div class="img-preview-msg" id="autofillMsg" role="status" aria-live="polite"></div>
       </div>
 
       <form class="add-card" onsubmit="return submitShopItem(event)">
@@ -356,7 +359,9 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- role=status + aria-live: every admin confirmation ("Item deleted", import counts,
+     scan results) was silent to screen readers — WCAG 2.2 AA 4.1.3. -->
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 function toast(msg, isErr){
@@ -373,7 +378,13 @@ async function api(path, opts){
   var r = await fetch(path, Object.assign({ credentials: 'same-origin' }, opts));
   var data = null;
   try { data = await r.json(); } catch (e) {}
-  if (!r.ok) throw new Error((data && data.error) || ('Request failed (' + r.status + ')'));
+  if (!r.ok) {
+    var err = new Error((data && data.error) || ('Request failed (' + r.status + ')'));
+    // 409 = another writer changed the catalog since we read it (see shop.js version
+    // check). Flagged so chunked loops can ABORT instead of pushing more stale writes.
+    if (r.status === 409 || (data && data.conflict)) err.conflict = true;
+    throw err;
+  }
   return data;
 }
 
@@ -541,7 +552,11 @@ function renderShop(){
         + '</div>'
         + '<div class="pl-actions">'
         + '  <button class="icon-btn edit" title="Edit" onclick="openEdit(\'' + i.id + '\')">✎</button>'
-        + '  <div class="tog' + (i.active ? ' on' : '') + '" title="Active on site" onclick="toggleShopActive(\'' + i.id + '\',' + !i.active + ')"></div>'
+        // <button role="switch">, not a <div>: this is the publish/unpublish control, and
+        // as a div it was unreachable by keyboard and unannounced to screen readers.
+        + '  <button type="button" class="tog' + (i.active ? ' on' : '') + '" role="switch" aria-checked="' + (i.active ? 'true' : 'false') + '"'
+        + ' aria-label="Active on site: ' + escapeHtml(i.name) + '" title="Active on site"'
+        + ' onclick="toggleShopActive(\'' + i.id + '\',' + !i.active + ')"></button>'
         + '  <button class="icon-btn danger" title="Delete" onclick="deleteShopItem(\'' + i.id + '\')">✕</button>'
         + '</div>'
       + '</div>';
@@ -639,18 +654,20 @@ async function bulkDelete(){
   if (!confirm('Delete ' + ids.length + ' selected item' + (ids.length===1?'':'s') + '? This cannot be undone.')) return;
   var bar = $('bulkBar');
   bar.querySelectorAll('button,input').forEach(function(b){ b.disabled = true; });
-  var done = 0, errors = 0;
-  // DELETE has no bulk endpoint — go one at a time, but pace them so KV's ~1 write/sec
-  // per-key limit (every delete rewrites the whole shop_items array) doesn't reject them.
-  for (var k = 0; k < ids.length; k++){
-    try { await api('/api/shop?id=' + encodeURIComponent(ids[k]), { method: 'DELETE' }); done++; }
-    catch (e){ errors++; }
-    $('bulkCount').textContent = 'Deleting ' + (done+errors) + ' / ' + ids.length + '…';
-    if (k < ids.length - 1) await new Promise(function(r){ setTimeout(r, 1100); });
+  $('bulkCount').textContent = 'Deleting ' + ids.length + '…';
+  // One request, one KV write. Was a per-item DELETE loop paced 1.1s apart — ~18 minutes
+  // for 1000 items, during which any other edit was clobbered and a closed tab left the
+  // catalog half-deleted with no resume. See functions/api/shop/delete.js.
+  try {
+    var res = await api('/api/shop/delete', { method: 'POST', body: JSON.stringify({ ids: ids }) });
+    var msg = 'Deleted ' + (res.deleted || 0);
+    if (res.notFound) msg += ', ' + res.notFound + ' already gone';
+    toast(msg + '.');
+    shopState.selected = {};
+    $('bulkSelectAll').checked = false;
+  } catch (e) {
+    toast(e.message, true);
   }
-  toast('Deleted ' + done + (errors ? ', ' + errors + ' failed' : '') + '.', !!errors);
-  shopState.selected = {};
-  $('bulkSelectAll').checked = false;
   bar.querySelectorAll('button,input').forEach(function(b){ b.disabled = false; });
   await loadShop();
 }
@@ -665,7 +682,10 @@ async function bulkClearImages(){
   for (var j = 0; j < updates.length; j += CHUNK){
     var chunk = updates.slice(j, j + CHUNK);
     try { var res = await api('/api/shop/images', { method: 'POST', body: JSON.stringify({ updates: chunk }) }); cleared += res.updated || 0; }
-    catch (e){ failedChunks++; if (!firstErr) firstErr = e.message; }
+    catch (e){
+      failedChunks++; if (!firstErr) firstErr = e.message;
+      if (e.conflict) break; // catalog changed under us — stop, don't push more stale chunks
+    }
     sent += chunk.length;
     $('bulkCount').textContent = 'Clearing ' + sent + ' / ' + updates.length + '…';
     if (j + CHUNK < updates.length) await new Promise(function(r){ setTimeout(r, 2000); });
@@ -1038,6 +1058,7 @@ async function runImageImport() {
     } catch (e) {
       failedChunks++;
       if (!firstError) firstError = e.message; // keep the real reason instead of a blind count
+      if (e.conflict) break; // catalog changed under us — stop, don't push more stale chunks
     }
     sent += chunk.length;
     msg.textContent = 'Updating ' + sent + ' / ' + total + '…';
@@ -1191,7 +1212,10 @@ async function clearSelectedBlanks() {
     try {
       var res = await api('/api/shop/images', { method: 'POST', body: JSON.stringify({ updates: chunk }) });
       cleared += res.updated || 0;
-    } catch (e) { failedChunks++; if (!firstError) firstError = e.message; }
+    } catch (e) {
+      failedChunks++; if (!firstError) firstError = e.message;
+      if (e.conflict) break; // catalog changed under us — stop, don't push more stale chunks
+    }
     sent += chunk.length;
     msg.textContent = 'Clearing ' + sent + ' / ' + total + '…';
     if (j + CHUNK < total) await new Promise(function (r) { setTimeout(r, 2000); });
@@ -1283,12 +1307,18 @@ async function autofillBlankImages() {
 
   // 2) one bulk write per chunk
   var CHUNK = 150, filled = 0, failedChunks = 0, sent = 0, utotal = updates.length, firstError = '';
+  var notFoundTotal = 0, invalidTotal = 0; // surfaced below — silent partial success was hiding stale/bad IDs
   for (var j = 0; j < utotal; j += CHUNK) {
     var chunk = updates.slice(j, j + CHUNK);
     try {
       var res = await api('/api/shop/images', { method: 'POST', body: JSON.stringify({ updates: chunk }) });
       filled += res.updated || 0;
-    } catch (e) { failedChunks++; if (!firstError) firstError = e.message; }
+      notFoundTotal += res.notFound || 0;
+      invalidTotal += res.invalid || 0;
+    } catch (e) {
+      failedChunks++; if (!firstError) firstError = e.message;
+      if (e.conflict) break; // catalog changed under us — stop, don't push more stale chunks
+    }
     sent += chunk.length;
     msg.textContent = 'Applying ' + sent + ' / ' + utotal + '…';
     if (j + CHUNK < utotal) await new Promise(function (r) { setTimeout(r, 2000); });
@@ -1297,6 +1327,8 @@ async function autofillBlankImages() {
   var matchedFilled = filled - cleared;
   msg.textContent = 'Done — ' + (matchedFilled < 0 ? filled : matchedFilled) + ' real product photos, ' + cleared + ' junk cleared to placeholder'
     + (noMatch ? ', ' + noMatch + ' already blank' : '')
+    + (notFoundTotal ? ', ' + notFoundTotal + ' skipped (item no longer in catalog)' : '')
+    + (invalidTotal ? ', ' + invalidTotal + ' skipped (bad image URL)' : '')
     + (failedChunks ? ', ' + failedChunks + ' request(s) failed' : '') + '.'
     + (firstError ? ' Error: ' + firstError : '');
   msg.className = 'img-preview-msg ' + (filled ? 'ready' : 'warn');

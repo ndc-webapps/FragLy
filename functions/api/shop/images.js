@@ -7,7 +7,7 @@
 // single "shop_items" key made almost all of them fail (0 updated, 186 errors). This does
 // ONE read + ONE write for the whole batch instead — atomic, fast, no rate-limit wall.
 import { isAuthed, json } from '../../_lib/auth.js';
-import { loadAll, saveAll } from '../shop.js';
+import { loadRaw, saveAll, ConflictError, conflictResponse } from '../shop.js';
 
 function isHttpUrl(s) {
   try {
@@ -28,9 +28,9 @@ export async function onRequestPost(context) {
   const updates = Array.isArray(body.updates) ? body.updates : [];
   if (!updates.length) return json({ error: 'No updates provided' }, 400);
 
-  let items;
+  let items, version;
   try {
-    items = await loadAll(env);
+    ({ items, version } = await loadRaw(env));
   } catch (e) {
     return json({ error: 'KV read failed: ' + e.message }, 500);
   }
@@ -54,14 +54,20 @@ export async function onRequestPost(context) {
   // Previously an uncaught throw here surfaced to the client as a bare, non-JSON
   // "Request failed (500)" with no real reason. KV write conflicts/rate-limit hiccups
   // are often transient, so one retry after a short backoff before giving up for real.
+  // A ConflictError must NOT be retried: it means another writer changed the catalog
+  // since we read it, so re-issuing this write would clobber their change — exactly the
+  // lost-update bug the version check exists to prevent. Only genuinely transient KV
+  // errors get the one retry.
   if (updated > 0) {
     try {
-      await saveAll(env, items);
+      await saveAll(env, items, version);
     } catch (e1) {
+      if (e1 instanceof ConflictError) return conflictResponse();
       try {
         await new Promise((r) => setTimeout(r, 1500));
-        await saveAll(env, items);
+        await saveAll(env, items, version);
       } catch (e2) {
+        if (e2 instanceof ConflictError) return conflictResponse();
         return json({ error: 'KV write failed after retry: ' + e2.message }, 500);
       }
     }

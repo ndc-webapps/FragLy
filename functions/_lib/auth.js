@@ -32,6 +32,9 @@ async function hmac(secret, message) {
   return toBase64Url(new Uint8Array(sig));
 }
 
+// Safe for comparing two values that are ALREADY the same length by construction
+// (HMAC digests). The early length return leaks length, which is fine for a digest but
+// not for a secret — see passwordMatches() below, which hashes first for that reason.
 function timingSafeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
   let diff = 0;
@@ -84,8 +87,15 @@ export async function isAuthed(context) {
   return verifySessionToken(env, token);
 }
 
-export function passwordMatches(env, candidate) {
-  return timingSafeEqual(String(candidate || ''), String(env.ADMIN_PASSWORD || ''));
+// HMACs both sides before comparing so the inputs are always the same length. Comparing
+// the raw strings returned early on a length mismatch, which leaked the real password's
+// length through response timing. Now async — callers must await.
+export async function passwordMatches(env, candidate) {
+  const [a, b] = await Promise.all([
+    hmac(env.SESSION_SECRET, String(candidate || '')),
+    hmac(env.SESSION_SECRET, String(env.ADMIN_PASSWORD || ''))
+  ]);
+  return timingSafeEqual(a, b);
 }
 
 export function json(data, status = 200, extraHeaders = {}) {

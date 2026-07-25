@@ -14,18 +14,68 @@ import { isAuthed, json } from '../_lib/auth.js';
 const KV_KEY = 'shop_items';
 const CAP = 5000; // sane ceiling on catalog size — KV values allow up to 25MB, plenty of headroom at this size
 
-export async function loadAll(env) {
+// ── Optimistic concurrency ────────────────────────────────────────────────────
+// Every mutation here is a read-modify-write of ONE KV key, and KV has no
+// compare-and-swap. Without a guard, two overlapping admin actions silently clobber
+// each other — the realistic case being a bulk operation that runs for minutes while
+// someone edits an item in another tab, with the bulk op's stale snapshot winning.
+//
+// So the stored value carries a version counter: readers get {version, items}, writers
+// pass the version they read back to saveAll(), and saveAll() refuses the write if
+// anything else bumped it in between (409 Conflict -> the admin UI reloads and retries).
+//
+// Honest limitation: this narrows the window to the milliseconds between the re-read
+// and the put, it does not eliminate it — KV genuinely cannot do atomic CAS. It fixes
+// the multi-second/multi-minute overlaps that actually occur here. A Durable Object or
+// D1 is the correct fix if this ever needs to be airtight.
+//
+// Backward compatible on purpose: production currently stores a BARE ARRAY (pre-
+// versioning). A bare array is read as version 0 and upgraded to the wrapped shape on
+// the next write, so no migration step and no risk to the live catalog.
+export async function loadRaw(env) {
   const raw = await env.FRAGLY_ADS.get(KV_KEY);
-  if (!raw) return [];
+  if (!raw) return { version: 0, items: [] };
   try {
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr : [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return { version: 0, items: parsed }; // legacy bare array
+    return {
+      version: Number(parsed.version) || 0,
+      items: Array.isArray(parsed.items) ? parsed.items : []
+    };
   } catch (e) {
-    return [];
+    return { version: 0, items: [] };
   }
 }
-export async function saveAll(env, items) {
-  await env.FRAGLY_ADS.put(KV_KEY, JSON.stringify(items));
+
+export async function loadAll(env) {
+  return (await loadRaw(env)).items;
+}
+
+export class ConflictError extends Error {
+  constructor() {
+    super('Catalog changed since it was read');
+    this.name = 'ConflictError';
+  }
+}
+
+// expectedVersion omitted = unconditional write (kept so any caller that hasn't opted
+// into the version check still works). Pass it to get conflict detection.
+export async function saveAll(env, items, expectedVersion) {
+  let base = expectedVersion;
+  if (base === undefined) {
+    base = (await loadRaw(env)).version;
+  } else {
+    const current = await loadRaw(env);
+    if (current.version !== base) throw new ConflictError();
+  }
+  await env.FRAGLY_ADS.put(KV_KEY, JSON.stringify({ version: base + 1, items }));
+  return base + 1;
+}
+
+// Shared by every mutating handler: same conflict -> 409 mapping, so the admin UI can
+// treat it uniformly instead of each endpoint inventing its own error shape.
+export function conflictResponse() {
+  return json({ error: 'Someone else changed the catalog while you were editing. Reload and try again.', conflict: true }, 409);
 }
 function isHttpUrl(s) {
   try {
@@ -75,7 +125,7 @@ export async function onRequestPost(context) {
   if (!isHttpUrl(image)) return json({ error: 'image must be a valid http(s) URL' }, 400);
   if (!isHttpUrl(link)) return json({ error: 'link must be a valid http(s) URL' }, 400);
 
-  const items = await loadAll(env);
+  const { version, items } = await loadRaw(env);
   if (items.length >= CAP) return json({ error: `Catalog cap reached (${CAP} items) — delete something first.` }, 400);
 
   const item = {
@@ -85,7 +135,12 @@ export async function onRequestPost(context) {
     createdAt: Date.now()
   };
   items.push(item);
-  await saveAll(env, items);
+  try {
+    await saveAll(env, items, version);
+  } catch (e) {
+    if (e instanceof ConflictError) return conflictResponse();
+    throw e;
+  }
   return json({ item }, 201);
 }
 
@@ -101,7 +156,7 @@ export async function onRequestPut(context) {
   let body;
   try { body = await request.json(); } catch (e) { return json({ error: 'Invalid JSON body' }, 400); }
 
-  const items = await loadAll(env);
+  const { version, items } = await loadRaw(env);
   const idx = items.findIndex((i) => i.id === id);
   if (idx === -1) return json({ error: 'Item not found' }, 404);
 
@@ -127,7 +182,12 @@ export async function onRequestPut(context) {
   if (body.active !== undefined) next.active = !!body.active;
 
   items[idx] = next;
-  await saveAll(env, items);
+  try {
+    await saveAll(env, items, version);
+  } catch (e) {
+    if (e instanceof ConflictError) return conflictResponse();
+    throw e;
+  }
   return json({ item: next });
 }
 
@@ -140,11 +200,16 @@ export async function onRequestDelete(context) {
   const id = url.searchParams.get('id') || '';
   if (!id) return json({ error: 'id query param required' }, 400);
 
-  const items = await loadAll(env);
+  const { version, items } = await loadRaw(env);
   const next = items.filter((i) => i.id !== id);
   if (next.length === items.length) return json({ error: 'Item not found' }, 404);
 
-  await saveAll(env, next);
+  try {
+    await saveAll(env, next, version);
+  } catch (e) {
+    if (e instanceof ConflictError) return conflictResponse();
+    throw e;
+  }
   return json({ ok: true });
 }
 

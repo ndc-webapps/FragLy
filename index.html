@@ -2468,12 +2468,14 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
 
     <article class="legal-doc" id="legal-privacy">
       <h2 id="legalTitle-privacy">Privacy Policy</h2>
-      <p class="legal-upd">Last updated: June 2026</p>
+      <p class="legal-upd">Last updated: July 2026</p>
       <p>FragLy ("we", "us") operates the website fragly.pages.dev. This page explains what information we handle and how. By using FragLy you agree to this policy.</p>
       <h3>Information We Use</h3>
-      <p>FragLy does not require an account, login, or password. The only input we process is the public Riot ID (name and tag) you type, which is sent to the official Valorant data API to retrieve publicly available match statistics. We do not collect, store, or sell personal information.</p>
+      <p>FragLy does not require an account, login, or password. The main input we process is the public Riot ID (name and tag) you type, which is sent to the Valorant data API to retrieve publicly available match statistics. We do not collect, store, or sell personal information.</p>
+      <h3>AI Coach</h3>
+      <p>The AI Coach is optional and only runs when you open it. When you do, your Riot ID and the match statistics shown on your dashboard (such as win rate, headshot rate, K/D, ACS, ADR, best map and most-played agent) are sent to <a href="https://pollinations.ai" target="_blank" rel="noopener">Pollinations.ai</a>, a third-party AI provider, so it can generate coaching advice. Your questions to the coach are sent along with it. Requests are normally routed through our server; if that route is unavailable, your browser may contact Pollinations.ai directly, which would expose your IP address to them. We do not send this data anywhere else, and we do not store your conversations. If you would rather not share this data, simply do not open the AI Coach.</p>
       <h3>Local Storage</h3>
-      <p>FragLy stores some preferences (such as Aim Trainer settings and your last search) in your browser's local storage. This data never leaves your device and can be cleared at any time from your browser settings.</p>
+      <p>FragLy stores some preferences (such as Aim Trainer settings, your recent searches, and any weapon loadout or collection you build) in your browser's local storage. This data stays on your device, is not transmitted to us, and can be cleared at any time from your browser settings.</p>
       <h3>Cookies & Third-Party Advertising</h3>
       <p>FragLy uses Google AdSense to display ads. Third-party vendors, including Google, use cookies to serve ads based on a user's prior visits to this and other websites. Google's use of advertising cookies enables it and its partners to serve ads to you based on your visit to FragLy and/or other sites on the Internet.</p>
       <p>You may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google Ads Settings</a>. You can also opt out of some third-party vendors' use of cookies for personalized advertising at <a href="https://www.aboutads.info" target="_blank" rel="noopener">aboutads.info</a>. For more information on how Google uses data, see <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google's Privacy & Terms</a>.</p>
@@ -4245,7 +4247,7 @@ function getWishlist(){try{return JSON.parse(localStorage.getItem(WLS_KEY)||'[]'
 function setWishlist(arr){localStorage.setItem(WLS_KEY,JSON.stringify(arr));updateWishCount();}
 function addToWishlist(item){const w=getWishlist();if(w.find(x=>x.name===item.name))return;w.unshift(item);setWishlist(w);renderWishlist();showToast('Added to wishlist');}
 function removeFromWishlist(name){const w=getWishlist().filter(x=>x.name!==name);setWishlist(w);renderWishlist();}
-function renderWishlist(){const el=document.getElementById('wishListContent');const w=getWishlist();if(!w.length){el.innerHTML='<div class="no-data">Your wishlist is empty.</div>';return;}el.innerHTML=w.map(it=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr)"><img src="${it.image||''}" style="width:64px;height:40px;object-fit:cover;border-radius:6px;" onerror="this.style.display='none'"><div style="flex:1"><div style="font-family:var(--mono);font-size:.78rem">${it.name}</div><div style="font-family:var(--dp);font-size:.9rem;color:var(--gold)">${it.price?it.price+' VP':''}</div></div><button onclick='removeFromWishlist("${escapeHtml(it.name)}")' class="im-close">✕</button></div>`).join('');}
+function renderWishlist(){const el=document.getElementById('wishListContent');const w=getWishlist();if(!w.length){el.innerHTML='<div class="no-data">Your wishlist is empty.</div>';return;}el.innerHTML=w.map(it=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr)"><img src="${escapeHtml(it.image||'')}" style="width:64px;height:40px;object-fit:cover;border-radius:6px;" onerror="this.style.display='none'"><div style="flex:1"><div style="font-family:var(--mono);font-size:.78rem">${escapeHtml(it.name)}</div><div style="font-family:var(--dp);font-size:.9rem;color:var(--gold)">${it.price?it.price+' VP':''}</div></div><button onclick='removeFromWishlist("${escapeHtml(it.name)}")' class="im-close">✕</button></div>`).join('');}
 function toggleWishlist(){const d=document.getElementById('wishlistDrawer');d.style.display=d.style.display==='block'?'none':'block';renderWishlist();}
 function updateWishCount(){const c=getWishlist().length;const el=document.getElementById('wishCount');if(el)el.textContent=c;const m=document.getElementById('wishCountMob');if(m)m.textContent=c;}
 
@@ -6501,7 +6503,7 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#lineups'&&!root.c
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const root=$('compare');
 
 const METRICS=[
@@ -6624,7 +6626,7 @@ const HIST_KEY='fragl_search_history_v1';
 function readHist(){try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch(e){return[];}}
 function writeHist(a){try{localStorage.setItem(HIST_KEY,JSON.stringify(a));}catch(e){}}
 function timeAgo(ts){var s=Math.floor((Date.now()-ts)/1000);if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
-function escA(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function escA(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function renderHist(which,filter){
   const el=$('cmpHist'+which);
   let h=readHist();

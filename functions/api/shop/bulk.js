@@ -2,7 +2,7 @@
 // Body: { items: [{ name, link, image?, category?, price?, itemId?, productUrl?, sales?, commission?, shopName? }] }
 // Skips dup by itemId or link. Image optional (Shopee CSV has none).
 import { isAuthed, json } from '../../_lib/auth.js';
-import { loadAll, saveAll } from '../shop.js';
+import { loadRaw, saveAll, ConflictError, conflictResponse } from '../shop.js';
 
 const CAP = 5000; // must match functions/api/shop.js
 
@@ -25,7 +25,7 @@ export async function onRequestPost(context) {
   const rows = Array.isArray(body.items) ? body.items : [];
   if (!rows.length) return json({ error: 'No items provided' }, 400);
 
-  const items = await loadAll(env);
+  const { version, items } = await loadRaw(env);
   const seenLinks = new Set(items.map((i) => i.link));
   const seenItemIds = new Set(items.map((i) => i.itemId).filter(Boolean));
 
@@ -61,7 +61,12 @@ export async function onRequestPost(context) {
     created++;
   }
 
-  await saveAll(env, items);
+  try {
+    await saveAll(env, items, version);
+  } catch (e) {
+    if (e instanceof ConflictError) return conflictResponse();
+    throw e;
+  }
   return json({ created, skipped, errors });
 }
 
