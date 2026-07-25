@@ -109,6 +109,64 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .sk-chroma-swatch.on{border-color:var(--txt);box-shadow:0 0 0 3px rgba(168,85,247,.35);}
 .sk-credit{font-family:var(--mono);font-size:.58rem;color:var(--muted);letter-spacing:.3px;padding-top:16px;margin-top:16px;border-top:1px solid var(--bdr);}
 
+/* ── view toggle ── */
+.view-tabs{display:flex;gap:8px;justify-content:center;margin:26px 0 6px;opacity:0;animation:fadeUpIn .7s .58s var(--ease) forwards;}
+.view-tab{padding:10px 22px;border-radius:999px;border:1px solid var(--bdr);background:rgba(255,255,255,.03);color:var(--muted2);font-family:var(--dp);font-weight:800;font-size:.9rem;letter-spacing:1.5px;cursor:pointer;transition:.2s var(--ease);text-transform:uppercase;}
+.view-tab:hover{border-color:rgba(168,85,247,.4);color:var(--txt);}
+.view-tab.on{background:linear-gradient(135deg,var(--red),var(--pink));border-color:transparent;color:#fff;box-shadow:0 8px 22px rgba(168,85,247,.3);}
+.view{display:none;}
+.view.on{display:block;}
+
+/* ── LOADOUT (in-game collection style) ── */
+.lo-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 0 18px;}
+.lo-bar-l{font-family:var(--mono);font-size:.62rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.lo-bar-r{display:flex;gap:8px;flex-wrap:wrap;}
+.lo-btn{padding:9px 16px;border-radius:var(--r2);border:1px solid var(--bdr);background:rgba(255,255,255,.04);color:var(--muted2);font-family:var(--mono);font-size:.64rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:.2s var(--ease);}
+.lo-btn:hover{color:var(--txt);border-color:rgba(168,85,247,.45);background:rgba(168,85,247,.08);}
+.lo-btn.primary{background:linear-gradient(135deg,var(--red),var(--pink));border-color:transparent;color:#fff;}
+.lo-btn.primary:hover{box-shadow:0 8px 22px rgba(168,85,247,.3);}
+.lo-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+.lo-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) 240px;gap:14px;align-items:start;}
+.lo-col{display:flex;flex-direction:column;gap:14px;min-width:0;}
+.lo-group-title{font-family:var(--dp);font-weight:900;font-size:.95rem;letter-spacing:2px;text-transform:uppercase;text-align:center;color:var(--txt);margin-bottom:8px;}
+.lo-slots{display:flex;flex-direction:column;gap:8px;}
+
+.lo-slot{position:relative;display:flex;flex-direction:column;justify-content:flex-end;min-height:96px;padding:10px;border-radius:var(--r2);border:1px solid var(--bdr);
+  background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015));cursor:pointer;overflow:hidden;transition:.22s var(--ease);}
+.lo-slot:hover{border-color:rgba(168,85,247,.5);background:linear-gradient(160deg,rgba(168,85,247,.14),rgba(236,72,153,.05));transform:translateY(-2px);box-shadow:0 12px 26px rgba(0,0,0,.4);}
+.lo-slot.equipped{border-color:rgba(168,85,247,.4);}
+.lo-slot-img{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px 10px 22px;pointer-events:none;}
+.lo-slot-img img{max-width:96%;max-height:100%;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6));transition:.3s var(--ease);}
+.lo-slot:hover .lo-slot-img img{transform:scale(1.07);}
+.lo-slot-img img.plain{filter:invert(1) brightness(1.1) drop-shadow(0 4px 10px rgba(0,0,0,.5));opacity:.5;}
+.lo-slot-foot{position:relative;z-index:2;}
+.lo-wpn-lbl{font-family:var(--mono);font-size:.54rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.lo-skin-lbl{font-family:var(--dp);font-weight:700;font-size:.74rem;line-height:1.2;color:var(--txt);margin-top:2px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.lo-slot-bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--slot-tier,transparent);}
+
+.lo-card-panel{display:flex;flex-direction:column;gap:10px;}
+.lo-pc{position:relative;border-radius:var(--r2);border:1px solid var(--bdr);overflow:hidden;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));}
+.lo-pc-img{width:100%;aspect-ratio:268/640;object-fit:cover;display:block;}
+.lo-pc-ph{width:100%;aspect-ratio:268/640;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;
+  font-family:var(--mono);font-size:.62rem;line-height:1.8;color:var(--muted);letter-spacing:1px;}
+.lo-pc-name{position:absolute;left:0;right:0;bottom:0;padding:22px 10px 10px;background:linear-gradient(0deg,rgba(0,0,0,.9),transparent);
+  font-family:var(--dp);font-weight:800;font-size:.9rem;letter-spacing:.5px;text-align:center;}
+.lo-pc-name span{display:block;font-family:var(--mono);font-size:.56rem;color:var(--muted2);letter-spacing:1.5px;margin-top:2px;}
+.lo-pc-load{width:100%;padding:10px;border-radius:var(--r2);border:1px dashed var(--bdr);background:none;color:var(--muted2);
+  font-family:var(--mono);font-size:.6rem;letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;transition:.2s;}
+.lo-pc-load:hover{color:var(--txt);border-color:rgba(168,85,247,.5);}
+
+/* equip button inside skin modal */
+.sk-equip-row{display:flex;gap:10px;margin-top:16px;}
+.sk-equip-btn{flex:1;padding:13px;border-radius:var(--r2);border:none;cursor:pointer;font-family:var(--dp);font-weight:800;font-size:.95rem;letter-spacing:1.5px;
+  background:linear-gradient(135deg,var(--red),var(--pink));color:#fff;transition:.2s var(--ease);}
+.sk-equip-btn:hover{box-shadow:0 10px 26px rgba(168,85,247,.35);transform:translateY(-1px);}
+.sk-unequip-btn{padding:13px 18px;border-radius:var(--r2);border:1px solid var(--bdr);background:rgba(255,255,255,.04);color:var(--muted2);
+  font-family:var(--mono);font-size:.64rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:.2s;}
+.sk-unequip-btn:hover{color:var(--txt);border-color:rgba(236,72,153,.5);}
+
 .sk-content{max-width:820px;margin:56px auto 0;padding-top:36px;border-top:1px solid var(--bdr);}
 .sk-content h2{font-family:var(--dp);font-size:1.4rem;font-weight:800;margin-bottom:12px;letter-spacing:.5px;}
 .sk-content p{color:var(--muted2);font-size:.88rem;line-height:1.8;margin-bottom:16px;}
@@ -119,7 +177,15 @@ footer{text-align:center;padding:32px;font-family:var(--mono);font-size:.6rem;co
 footer a{color:var(--muted2);text-decoration:none;}
 footer a:hover{color:var(--red);}
 
+@media(max-width:1080px){
+  .lo-board{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .lo-card-panel{grid-column:1/-1;max-width:220px;margin:0 auto;}
+}
 @media(max-width:640px){
+  .lo-board{grid-template-columns:1fr 1fr;gap:10px;}
+  .lo-slot{min-height:84px;}
+  .lo-group-title{font-size:.82rem;letter-spacing:1.2px;}
+  .view-tab{padding:9px 16px;font-size:.8rem;}
   .sk-grid{grid-template-columns:1fr 1fr;gap:10px;}
   .wpn-btn{width:72px;}
   .wpn-btn img{width:40px;height:28px;}
@@ -131,6 +197,7 @@ footer a:hover{color:var(--red);}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <div class="topbar">
@@ -145,10 +212,31 @@ footer a:hover{color:var(--red);}
     <p class="sk-sub">Every skin for every weapon, straight from Riot's own game data. Filter by tier, then click a skin for the full showcase — real animated previews where Riot has one, and every color variant.</p>
   </div>
 
-  <div class="wpn-cats" id="wpnCats"></div>
-  <div class="tier-tabs" id="tierTabs"></div>
-  <div class="sk-meta" id="skMeta">Loading…</div>
-  <div class="sk-grid" id="skGrid"></div>
+  <div class="view-tabs">
+    <button class="view-tab on" data-view="loadout">My Loadout</button>
+    <button class="view-tab" data-view="browse">Browse All Skins</button>
+  </div>
+
+  <!-- LOADOUT VIEW -->
+  <div class="view on" id="viewLoadout">
+    <div class="lo-bar">
+      <div class="lo-bar-l" id="loStatus">Click any weapon to pick its skin — saved on this device.</div>
+      <div class="lo-bar-r">
+        <button class="lo-btn" id="loRandom">Randomize</button>
+        <button class="lo-btn" id="loReset">Clear all</button>
+        <button class="lo-btn primary" id="loShare">Save as PNG</button>
+      </div>
+    </div>
+    <div class="lo-board" id="loBoard"></div>
+  </div>
+
+  <!-- BROWSE VIEW (original gallery) -->
+  <div class="view" id="viewBrowse">
+    <div class="wpn-cats" id="wpnCats"></div>
+    <div class="tier-tabs" id="tierTabs"></div>
+    <div class="sk-meta" id="skMeta">Loading…</div>
+    <div class="sk-grid" id="skGrid"></div>
+  </div>
 
   <div class="sk-content">
     <h2>About the FragLy Skins Gallery</h2>
@@ -174,6 +262,10 @@ footer a:hover{color:var(--red);}
     <div class="sk-modal-title" id="skTitle"></div>
     <div class="sk-modal-wpn" id="skWpnName"></div>
     <div class="sk-chroma-row" id="skChromaRow"></div>
+    <div class="sk-equip-row" id="skEquipRow" style="display:none">
+      <button class="sk-equip-btn" id="skEquipBtn">EQUIP TO LOADOUT</button>
+      <button class="sk-unequip-btn" id="skUnequipBtn" style="display:none">Unequip</button>
+    </div>
     <div class="sk-credit">Source: Riot Games — official weapon skin data via valorant-api.com</div>
   </div>
 </div>
@@ -216,17 +308,236 @@ async function loadWeaponList(){
     if(!r.ok || d.error || !d.weapons || !d.weapons.length){
       meta.textContent = '';
       document.getElementById('skGrid').innerHTML = '<div class="sk-empty">Skins catalog temporarily unavailable. Try again in a moment.</div>';
+      document.getElementById('loBoard').innerHTML = '<div class="sk-empty">Skins catalog temporarily unavailable. Try again in a moment.</div>';
       return;
     }
     weaponList = d.weapons;
     buildWeaponPicker();
+    buildLoadoutBoard();
     var vandal = weaponList.find(function(w){ return w.name === 'Vandal'; });
     selectWeapon((vandal || weaponList[0]).id);
   }catch(e){
     meta.textContent = '';
     document.getElementById('skGrid').innerHTML = '<div class="sk-empty">Couldn\'t load the skins catalog — check your connection and try again.</div>';
+    document.getElementById('loBoard').innerHTML = '<div class="sk-empty">Couldn\'t load the skins catalog — check your connection and try again.</div>';
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   LOADOUT — in-game collection style board, saved on this device
+═══════════════════════════════════════════════════════════════ */
+var LOADOUT_KEY = 'fragly_loadout_v1';
+var HIST_KEY = 'fragl_search_history_v1';
+// Column layout mirrors Valorant's own collection screen grouping.
+var COL_GROUPS = [ ['Sidearms'], ['SMGs','Shotguns'], ['Rifles','Melee'], ['Snipers','Heavy'] ];
+var GROUP_TITLE = { Sidearms:'Sidearms', SMGs:'SMGs', Shotguns:'Shotguns', Rifles:'Rifles', Snipers:'Sniper Rifles', Heavy:'Machine Guns', Melee:'Melee' };
+var TIER_COLOR = { Ultra:'#FFC862', Exclusive:'#EC4899', Premium:'#4BBDFF', Deluxe:'#3DFFA0', Select:'#C7CBD6' };
+
+function readLoadout(){ try{ return JSON.parse(localStorage.getItem(LOADOUT_KEY)||'{}'); }catch(e){ return {}; } }
+function writeLoadout(o){ try{ localStorage.setItem(LOADOUT_KEY, JSON.stringify(o)); }catch(e){} }
+var loadout = readLoadout();
+
+function buildLoadoutBoard(){
+  var byCat = {};
+  weaponList.forEach(function(w){ (byCat[w.category] = byCat[w.category] || []).push(w); });
+
+  var cols = COL_GROUPS.map(function(groups){
+    var blocks = groups.map(function(cat){
+      var list = byCat[cat] || [];
+      if(!list.length) return '';
+      return '<div><div class="lo-group-title">'+esc(GROUP_TITLE[cat]||cat)+'</div><div class="lo-slots">'
+        + list.map(slotHTML).join('')
+      + '</div></div>';
+    }).join('');
+    return '<div class="lo-col">'+blocks+'</div>';
+  }).join('');
+
+  document.getElementById('loBoard').innerHTML = cols
+    + '<div class="lo-col lo-card-panel">'
+      + '<div class="lo-group-title">Player Card</div>'
+      + '<div class="lo-pc" id="loPc"><div class="lo-pc-ph">Search your Riot ID on FragLy<br>to show your card here</div></div>'
+      + '<button class="lo-pc-load" id="loPcBtn">Load my card</button>'
+    + '</div>';
+
+  document.getElementById('loBoard').querySelectorAll('.lo-slot').forEach(function(s){
+    s.addEventListener('click', function(){ pickSkinFor(s.dataset.id); });
+  });
+  document.getElementById('loPcBtn').addEventListener('click', function(){ loadPlayerCard(true); });
+  updateLoStatus();
+  loadPlayerCard(false);
+}
+
+function slotHTML(w){
+  var eq = loadout[w.id];
+  var img = eq ? (eq.render || eq.icon) : (w.icon || '');
+  var bar = eq && TIER_COLOR[eq.tier] ? TIER_COLOR[eq.tier] : 'transparent';
+  return '<div class="lo-slot'+(eq?' equipped':'')+'" data-id="'+esc(w.id)+'" style="--slot-tier:'+bar+'" title="'+esc(w.name)+' — click to change skin">'
+    + '<div class="lo-slot-img">'+(img?'<img src="'+esc(img)+'" alt="" loading="lazy"'+(eq?'':' class="plain"')+' onerror="this.style.display=\'none\'">':'')+'</div>'
+    + '<div class="lo-slot-foot">'
+      + '<div class="lo-wpn-lbl">'+esc(w.name)+'</div>'
+      + (eq ? '<div class="lo-skin-lbl">'+esc(eq.name)+'</div>' : '')
+    + '</div>'
+    + '<div class="lo-slot-bar"></div>'
+  + '</div>';
+}
+
+function refreshSlot(weaponId){
+  var w = weaponList.find(function(x){ return x.id === weaponId; });
+  if(!w) return;
+  var old = document.querySelector('.lo-slot[data-id="'+weaponId+'"]');
+  if(!old) return;
+  var tmp = document.createElement('div');
+  tmp.innerHTML = slotHTML(w);
+  var fresh = tmp.firstElementChild;
+  fresh.addEventListener('click', function(){ pickSkinFor(weaponId); });
+  old.replaceWith(fresh);
+  updateLoStatus();
+}
+
+function updateLoStatus(){
+  var n = Object.keys(loadout).length;
+  var total = weaponList.length;
+  document.getElementById('loStatus').textContent = n
+    ? n + ' of ' + total + ' weapons customised · saved on this device'
+    : 'Click any weapon to pick its skin — saved on this device.';
+}
+
+/* Clicking a slot jumps to the browse gallery pre-filtered to that weapon, so the user
+   still gets the full skin list + real animated previews before committing to one. */
+async function pickSkinFor(weaponId){
+  setView('browse');
+  var w = weaponList.find(function(x){ return x.id === weaponId; });
+  if(weaponId === currentWeaponId){
+    // already the selected weapon — selectWeapon() early-returns, so scroll ourselves
+    document.getElementById('tierTabs').scrollIntoView({behavior:'smooth', block:'start'});
+  }else{
+    await selectWeapon(weaponId, true); // sets skMeta via applyTierFilter, so wait for it
+  }
+  if(w) document.getElementById('skMeta').textContent = 'Choosing a skin for ' + w.name + ' — click one to preview, then Equip.';
+}
+
+function equipCurrent(){
+  if(!activeSkin || !currentWeapon) return;
+  loadout[currentWeapon.id] = {
+    skinId: activeSkin.id,
+    name: activeSkin.name,
+    tier: activeSkin.tier,
+    render: activeSkin.render || activeSkin.icon || '',
+    icon: activeSkin.icon || ''
+  };
+  writeLoadout(loadout);
+  refreshSlot(currentWeapon.id);
+  closeSkin();
+  setView('loadout');
+}
+function unequipCurrent(){
+  if(!currentWeapon) return;
+  delete loadout[currentWeapon.id];
+  writeLoadout(loadout);
+  refreshSlot(currentWeapon.id);
+  closeSkin();
+  setView('loadout');
+}
+
+/* Player card — pulled from the real account behind the last Riot ID searched on
+   FragLy (shared localStorage history), not a stand-in image. */
+async function loadPlayerCard(force){
+  var pc = document.getElementById('loPc');
+  var btn = document.getElementById('loPcBtn');
+  if(!pc) return;
+  var hist = [];
+  try{ hist = JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); }catch(e){}
+  if(!hist.length){
+    if(force) pc.innerHTML = '<div class="lo-pc-ph">No search yet — <a href="/" style="color:var(--red)">search your Riot ID</a> first, then come back.</div>';
+    return;
+  }
+  var h = hist[0];
+  if(btn){ btn.textContent = 'Loading…'; btn.disabled = true; }
+  try{
+    var r = await fetch('/api/henrik?path=' + encodeURIComponent('v1/account/'+encodeURIComponent(h.name)+'/'+encodeURIComponent(h.tag)));
+    var d = await r.json();
+    var card = d && d.data && d.data.card;
+    var art = card && (card.large || card.wide || card.small);
+    if(!art) throw new Error('no card');
+    pc.innerHTML = '<img class="lo-pc-img" src="'+esc(art)+'" alt="" onerror="this.style.display=\'none\'">'
+      + '<div class="lo-pc-name">'+esc(d.data.name||h.name)+'<span>#'+esc(d.data.tag||h.tag)+'</span></div>';
+    if(btn){ btn.textContent = 'Refresh card'; btn.disabled = false; }
+  }catch(e){
+    if(force) pc.innerHTML = '<div class="lo-pc-ph">Couldn\'t load that card right now.<br>Try again in a moment.</div>';
+    if(btn){ btn.textContent = 'Load my card'; btn.disabled = false; }
+  }
+}
+
+/* view switching */
+function setView(v){
+  document.querySelectorAll('.view-tab').forEach(function(t){ t.classList.toggle('on', t.dataset.view === v); });
+  document.getElementById('viewLoadout').classList.toggle('on', v === 'loadout');
+  document.getElementById('viewBrowse').classList.toggle('on', v === 'browse');
+}
+document.querySelectorAll('.view-tab').forEach(function(t){
+  t.addEventListener('click', function(){ setView(t.dataset.view); });
+});
+
+document.getElementById('loReset').addEventListener('click', function(){
+  if(!Object.keys(loadout).length) return;
+  if(!confirm('Clear every equipped skin from your loadout?')) return;
+  loadout = {};
+  writeLoadout(loadout);
+  buildLoadoutBoard();
+});
+
+/* Randomize picks a real skin per weapon — needs each weapon's skin list, so it fetches
+   them in small batches rather than hammering 20 requests at once. */
+document.getElementById('loRandom').addEventListener('click', async function(){
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Rolling…';
+  try{
+    for(var i=0;i<weaponList.length;i+=4){
+      var batch = weaponList.slice(i,i+4);
+      await Promise.all(batch.map(async function(w){
+        try{
+          var r = await fetch('/api/skins?weapon='+encodeURIComponent(w.id));
+          var d = await r.json();
+          var skins = d && d.weapon && d.weapon.skins || [];
+          if(!skins.length) return;
+          var s = skins[Math.floor(Math.random()*skins.length)];
+          loadout[w.id] = { skinId:s.id, name:s.name, tier:s.tier, render:s.render||s.icon||'', icon:s.icon||'' };
+        }catch(e){}
+      }));
+      writeLoadout(loadout);
+    }
+    buildLoadoutBoard();
+  }finally{
+    btn.disabled = false; btn.textContent = 'Randomize';
+  }
+});
+
+document.getElementById('loShare').addEventListener('click', function(){
+  var node = document.getElementById('loBoard');
+  var btn = this;
+  if(typeof html2canvas !== 'function'){ alert('Image export unavailable.'); return; }
+  var old = btn.textContent;
+  btn.textContent = 'Rendering…'; btn.disabled = true;
+  html2canvas(node, {backgroundColor:'#0B0C10', scale:2, useCORS:true, logging:false}).then(function(canvas){
+    canvas.toBlob(function(blob){
+      if(!blob){ btn.textContent = old; btn.disabled = false; return; }
+      var file = new File([blob],'fragly-loadout.png',{type:'image/png'});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({files:[file], title:'My FragLy Loadout'}).catch(function(){}).finally(function(){
+          btn.textContent = '✓ Saved'; setTimeout(function(){ btn.textContent = old; btn.disabled = false; },1600);
+        });
+      }else{
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = 'fragly-loadout.png'; a.click();
+        setTimeout(function(){ URL.revokeObjectURL(url); },1500);
+        btn.textContent = '✓ Saved'; setTimeout(function(){ btn.textContent = old; btn.disabled = false; },1600);
+      }
+    },'image/png');
+  }).catch(function(){ btn.textContent = old; btn.disabled = false; alert('Could not render image.'); });
+});
+
+document.getElementById('skEquipBtn').addEventListener('click', equipCurrent);
+document.getElementById('skUnequipBtn').addEventListener('click', unequipCurrent);
 
 function buildWeaponPicker(){
   var byCat = {};
@@ -357,6 +668,14 @@ function openSkin(i){
   }else{
     row.innerHTML = '';
   }
+
+  // Equip controls — always available, since a weapon is always selected in the gallery.
+  var eq = currentWeapon && loadout[currentWeapon.id];
+  var isThis = eq && eq.skinId === s.id;
+  document.getElementById('skEquipRow').style.display = '';
+  document.getElementById('skEquipBtn').textContent = isThis ? '✓ EQUIPPED' : 'EQUIP TO LOADOUT';
+  document.getElementById('skEquipBtn').disabled = !!isThis;
+  document.getElementById('skUnequipBtn').style.display = isThis ? '' : 'none';
 
   document.getElementById('skScrim').classList.add('on');
   document.getElementById('skModal').classList.add('on');
