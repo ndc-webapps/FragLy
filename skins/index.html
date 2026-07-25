@@ -110,12 +110,13 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .sk-credit{font-family:var(--mono);font-size:.58rem;color:var(--muted);letter-spacing:.3px;padding-top:16px;margin-top:16px;border-top:1px solid var(--bdr);}
 
 /* ── view toggle ── */
-.view-tabs{display:flex;gap:8px;justify-content:center;margin:26px 0 6px;opacity:0;animation:fadeUpIn .7s .58s var(--ease) forwards;}
-.view-tab{padding:10px 22px;border-radius:999px;border:1px solid var(--bdr);background:rgba(255,255,255,.03);color:var(--muted2);font-family:var(--dp);font-weight:800;font-size:.9rem;letter-spacing:1.5px;cursor:pointer;transition:.2s var(--ease);text-transform:uppercase;}
-.view-tab:hover{border-color:rgba(168,85,247,.4);color:var(--txt);}
-.view-tab.on{background:linear-gradient(135deg,var(--red),var(--pink));border-color:transparent;color:#fff;box-shadow:0 8px 22px rgba(168,85,247,.3);}
-.view{display:none;}
-.view.on{display:block;}
+/* inline skin picker — appears below the loadout board for whichever weapon was last
+   clicked, instead of a separate page/tab (so equipping a skin never navigates away). */
+.sk-picker{display:none;margin-top:28px;padding-top:22px;border-top:1px solid var(--bdr);}
+.sk-picker.on{display:block;animation:fadeUpIn .4s var(--ease);}
+.sk-picker-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-family:var(--body);font-size:.92rem;color:var(--muted2);}
+.sk-picker-head img{width:38px;height:26px;object-fit:contain;filter:invert(1) brightness(1.15) drop-shadow(0 2px 5px rgba(0,0,0,.5));}
+.sk-picker-head b{color:var(--txt);}
 
 /* ── LOADOUT (in-game collection style) ── */
 .lo-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 0 18px;}
@@ -212,29 +213,22 @@ footer a:hover{color:var(--red);}
     <p class="sk-sub">Every skin for every weapon, straight from Riot's own game data. Filter by tier, then click a skin for the full showcase — real animated previews where Riot has one, and every color variant.</p>
   </div>
 
-  <div class="view-tabs">
-    <button class="view-tab on" data-view="loadout">My Loadout</button>
-    <button class="view-tab" data-view="browse">Browse All Skins</button>
-  </div>
-
-  <!-- LOADOUT VIEW -->
-  <div class="view on" id="viewLoadout">
-    <div class="lo-bar">
-      <div class="lo-bar-l" id="loStatus">Click any weapon to pick its skin — saved on this device.</div>
-      <div class="lo-bar-r">
-        <button class="lo-btn" id="loRandom">Randomize</button>
-        <button class="lo-btn" id="loReset">Clear all</button>
-        <button class="lo-btn primary" id="loShare">Save as PNG</button>
-      </div>
+  <div class="lo-bar">
+    <div class="lo-bar-l" id="loStatus">Click any weapon below to pick its skin — saved on this device.</div>
+    <div class="lo-bar-r">
+      <button class="lo-btn" id="loRandom">Randomize</button>
+      <button class="lo-btn" id="loReset">Clear all</button>
+      <button class="lo-btn primary" id="loShare">Save as PNG</button>
     </div>
-    <div class="lo-board" id="loBoard"></div>
   </div>
+  <div class="lo-board" id="loBoard"></div>
 
-  <!-- BROWSE VIEW (original gallery) -->
-  <div class="view" id="viewBrowse">
-    <div class="wpn-cats" id="wpnCats"></div>
+  <!-- Inline skin picker for whichever weapon was last clicked in the board above —
+       no separate page/tab, so choosing a skin and equipping it never navigates away. -->
+  <div class="sk-picker" id="skPicker">
+    <div class="sk-picker-head" id="skPickerHead"></div>
     <div class="tier-tabs" id="tierTabs"></div>
-    <div class="sk-meta" id="skMeta">Loading…</div>
+    <div class="sk-meta" id="skMeta"></div>
     <div class="sk-grid" id="skGrid"></div>
   </div>
 
@@ -313,10 +307,9 @@ async function loadWeaponList(){
       return;
     }
     weaponList = d.weapons;
-    buildWeaponPicker();
     buildLoadoutBoard();
-    var vandal = weaponList.find(function(w){ return w.name === 'Vandal'; });
-    selectWeapon((vandal || weaponList[0]).id);
+    // no weapon picked yet — the board's own slots ARE the weapon picker now, so the
+    // skin panel starts hidden until the user clicks one (see pickSkinFor).
   }catch(e){
     meta.textContent = '';
     document.getElementById('skGrid').innerHTML = '<div class="sk-empty">Couldn\'t load the skins catalog — check your connection and try again.</div>';
@@ -403,18 +396,20 @@ function updateLoStatus(){
     : 'Click any weapon to pick its skin — saved on this device.';
 }
 
-/* Clicking a slot jumps to the browse gallery pre-filtered to that weapon, so the user
-   still gets the full skin list + real animated previews before committing to one. */
+/* Clicking a weapon slot in the board opens the inline skin panel right below the board
+   for that weapon — no separate page/tab, no losing your place. */
 async function pickSkinFor(weaponId){
-  setView('browse');
   var w = weaponList.find(function(x){ return x.id === weaponId; });
+  document.getElementById('skPicker').classList.add('on');
+  document.getElementById('skPickerHead').innerHTML = w
+    ? '<img src="'+esc(w.icon||'')+'" alt="" onerror="this.style.display=\'none\'"><span>Choosing a skin for <b>'+esc(w.name)+'</b></span>'
+    : '';
   if(weaponId === currentWeaponId){
-    // already the selected weapon — selectWeapon() early-returns, so scroll ourselves
-    document.getElementById('tierTabs').scrollIntoView({behavior:'smooth', block:'start'});
+    // already the selected weapon — selectWeapon() early-returns, so nothing to reload
   }else{
-    await selectWeapon(weaponId, true); // sets skMeta via applyTierFilter, so wait for it
+    await selectWeapon(weaponId, true);
   }
-  if(w) document.getElementById('skMeta').textContent = 'Choosing a skin for ' + w.name + ' — click one to preview, then Equip.';
+  document.getElementById('skPicker').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function equipCurrent(){
@@ -435,7 +430,7 @@ function equipCurrent(){
   writeLoadout(loadout);
   refreshSlot(currentWeapon.id);
   closeSkin();
-  setView('loadout');
+  renderGrid(); // repaint the still-open inline grid so the equipped card shows its state
 }
 function unequipCurrent(){
   if(!currentWeapon) return;
@@ -443,7 +438,7 @@ function unequipCurrent(){
   writeLoadout(loadout);
   refreshSlot(currentWeapon.id);
   closeSkin();
-  setView('loadout');
+  renderGrid();
 }
 
 /* Player card — pulled from the real account behind the last Riot ID searched on
@@ -474,16 +469,6 @@ async function loadPlayerCard(force){
     if(btn){ btn.textContent = 'Load my card'; btn.disabled = false; }
   }
 }
-
-/* view switching */
-function setView(v){
-  document.querySelectorAll('.view-tab').forEach(function(t){ t.classList.toggle('on', t.dataset.view === v); });
-  document.getElementById('viewLoadout').classList.toggle('on', v === 'loadout');
-  document.getElementById('viewBrowse').classList.toggle('on', v === 'browse');
-}
-document.querySelectorAll('.view-tab').forEach(function(t){
-  t.addEventListener('click', function(){ setView(t.dataset.view); });
-});
 
 document.getElementById('loReset').addEventListener('click', function(){
   if(!Object.keys(loadout).length) return;
@@ -546,42 +531,13 @@ document.getElementById('loShare').addEventListener('click', function(){
 document.getElementById('skEquipBtn').addEventListener('click', equipCurrent);
 document.getElementById('skUnequipBtn').addEventListener('click', unequipCurrent);
 
-function buildWeaponPicker(){
-  var byCat = {};
-  var order = [];
-  weaponList.forEach(function(w){
-    if(!byCat[w.category]){ byCat[w.category] = []; order.push(w.category); }
-    byCat[w.category].push(w);
-  });
-  var html = order.map(function(cat){
-    var rows = byCat[cat].map(function(w){
-      return '<button class="wpn-btn" data-id="'+esc(w.id)+'" title="'+esc(w.name)+'">'
-        + (w.icon ? '<img src="'+esc(w.icon)+'" alt="" loading="lazy">' : '<div style="width:48px;height:32px;"></div>')
-        + '<span>'+esc(w.name)+'</span>'
-      + '</button>';
-    }).join('');
-    return '<div class="wpn-cat"><div class="wpn-cat-lbl">'+esc(cat)+'</div><div class="wpn-row">'+rows+'</div></div>';
-  }).join('');
-  var el = document.getElementById('wpnCats');
-  el.innerHTML = html;
-  el.querySelectorAll('.wpn-btn').forEach(function(b){
-    b.addEventListener('click', function(){ selectWeapon(b.dataset.id, true); });
-  });
-}
-
 async function selectWeapon(id, userClicked){
   if(id === currentWeaponId) return;
   currentWeaponId = id;
-  document.querySelectorAll('.wpn-btn').forEach(function(b){ b.classList.toggle('on', b.dataset.id === id); });
   var meta = document.getElementById('skMeta');
   var grid = document.getElementById('skGrid');
   meta.textContent = 'Loading…';
   grid.innerHTML = Array.from({length:8}).map(function(){ return '<div class="skeleton-card"></div>'; }).join('');
-  // Jump the view down to the skin list right away so a click always has visible,
-  // immediate feedback instead of silently loading below the fold.
-  if(userClicked){
-    document.getElementById('tierTabs').scrollIntoView({behavior:'smooth', block:'start'});
-  }
 
   try{
     var r = await fetch('/api/skins?weapon='+encodeURIComponent(id));
