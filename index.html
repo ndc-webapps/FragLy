@@ -2640,8 +2640,14 @@ async function api(url){
   }
   let r;
   try{
-    r=await fetch(url);
+    // Hard timeout so a hung request can never leave the UI stuck on a loading spinner
+    // forever (e.g. Compare's "Pulling real stats…") — it resolves to a clear error instead.
+    const ctrl=new AbortController();
+    const t=setTimeout(()=>ctrl.abort(),20000);
+    try{ r=await fetch(url,{signal:ctrl.signal}); }
+    finally{ clearTimeout(t); }
   }catch(e){
+    if(e&&e.name==='AbortError')throw new Error('The Valorant data API took too long to respond. Please try again.');
     throw new Error('Unable to connect to the Valorant data API. Please check your connection and try again.');
   }
   if(!r.ok)throw new Error(apiStatusMessage(r.status));
