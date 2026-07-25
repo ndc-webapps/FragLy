@@ -126,6 +126,7 @@ export async function onRequestPost(context) {
     upstreamStatus = upstreamStatus || (e && e.name === 'AbortError' ? 598 : 599);
   }
 
+  console.error('coach: both Pollinations providers failed', { upstreamStatus });
   return new Response(JSON.stringify({ error: 'Upstream AI unavailable', upstreamStatus }), {
     status: 502,
     headers: { 'Content-Type': 'application/json' }

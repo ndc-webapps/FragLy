@@ -169,6 +169,7 @@ export async function onRequestGet(context) {
     }
     return json(payload);
   } catch (e) {
+    console.error('news: fetchArticles failed', { message: e && e.message });
     if (env.FRAGLY_ADS) {
       try {
         const raw = await env.FRAGLY_ADS.get(CACHE_KEY);

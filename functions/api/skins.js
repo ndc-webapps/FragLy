@@ -141,6 +141,7 @@ async function getCatalog(env) {
     }
     return weapons;
   } catch (e) {
+    console.error('skins: fetchCatalog failed', { message: e && e.message });
     if (env.FRAGLY_ADS) {
       try {
         const raw = await env.FRAGLY_ADS.get(CACHE_KEY);
