@@ -185,25 +185,32 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 
 /* ── COLLECTION flex board — same left-to-right column grouping as the Loadout board
    (Sidearms | SMGs+Shotguns | Rifles+Melee | Snipers+Machine Guns), each column
-   stacking its weapons' skin grids, instead of one long stacked list. ── */
-/* --actual-cols is set inline per render (only as many columns as have content, so
-   empty ones don't reserve dead space); --max-cols is the responsive ceiling on top of
-   that, set by the media queries below. min() combines them without a specificity fight
-   between the inline style and the breakpoint rules. */
-.col-board{display:grid;grid-template-columns:repeat(min(var(--actual-cols,4), var(--max-cols,4)), minmax(0,1fr));gap:18px;align-items:start;--max-cols:4;}
-.col-board-col{display:flex;flex-direction:column;min-width:0;}
+   stacking its weapons' skin grids, instead of one long stacked list.
+   Plain flex-wrap, not CSS Grid with a computed track count — a grid track sized 1fr
+   stretches to fill its row even when only 1-2 columns have content (the "giant empty
+   box" / oversized-card bug), and html2canvas doesn't reliably resolve CSS min()/custom
+   properties in grid-template-columns at export time either. Flexbox with a fixed
+   column width just packs left and wraps — no stretching, no dead space, in the live
+   DOM or in the exported PNG. */
+/* width:fit-content (not the block default of filling 100% of the page) — otherwise the
+   box stays full page width even when only 1-2 columns have content, and html2canvas
+   captures that FULL width as blank margin around the small packed cards on export. */
+.col-board{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;width:fit-content;max-width:100%;}
+.col-board-col{flex:0 0 260px;width:260px;min-width:0;}
 .col-cat{margin-bottom:24px;}
 .col-cat-title{font-family:var(--dp);font-weight:900;font-size:.95rem;letter-spacing:2px;text-transform:uppercase;text-align:center;
   color:var(--txt);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--bdr);}
 .col-wpn{margin-bottom:16px;}
 .col-wpn-title{display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--dp);font-weight:700;font-size:.78rem;letter-spacing:.5px;color:var(--muted2);margin-bottom:8px;}
 .col-wpn-title img{width:22px;height:15px;object-fit:contain;filter:invert(1) brightness(1.1);}
-.col-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;}
-.col-card{position:relative;border-radius:var(--r2);border:1px solid var(--bdr);background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+/* Fixed-width cards in a wrapping flex row — same reasoning as .col-board: a card must
+   never grow past its natural size just because there's leftover row width. */
+.col-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.col-card{position:relative;width:120px;flex:0 0 120px;border-radius:var(--r2);border:1px solid var(--bdr);background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
   padding:8px;cursor:default;transition:.2s var(--ease);}
 .col-card:hover{border-color:rgba(168,85,247,.4);}
-.col-card img{width:100%;aspect-ratio:16/10;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));}
-.col-card-name{font-family:var(--dp);font-weight:700;font-size:.66rem;line-height:1.25;color:var(--txt);margin-top:4px;
+.col-card img{width:100%;height:75px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));}
+.col-card-name{font-family:var(--dp);font-weight:700;font-size:.62rem;line-height:1.25;color:var(--txt);margin-top:4px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .col-card-rm{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.6);
   color:#fff;font-size:.62rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s;}
@@ -226,13 +233,13 @@ footer a:hover{color:var(--red);}
 @media(max-width:1080px){
   .lo-board{grid-template-columns:repeat(2,minmax(0,1fr));}
   .lo-card-panel{grid-column:1/-1;max-width:220px;margin:0 auto;}
-  .col-board{--max-cols:2;}
 }
 @media(max-width:640px){
   .lo-board{grid-template-columns:1fr 1fr;gap:10px;}
   .lo-slot{min-height:84px;}
   .lo-group-title{font-size:.82rem;letter-spacing:1.2px;}
-  .col-board{--max-cols:1;gap:10px;}
+  .col-board{gap:10px;}
+  .col-board-col{flex-basis:100%;width:100%;}
   .col-cat-title{font-size:.86rem;}
   .view-tab{padding:9px 16px;font-size:.8rem;}
   .sk-grid{grid-template-columns:1fr 1fr;gap:10px;}
@@ -482,8 +489,8 @@ function renderCollection(){
   // Rifles+Melee | Snipers+Machine Guns) instead of one long stacked list — much easier
   // to scan when there are several categories at once. Unlike Loadout (which always
   // shows all 20 weapon slots), a Collection column with nothing in it is skipped
-  // entirely rather than rendered empty — no dead space to scroll past or crop out when
-  // screenshotting, remaining columns pack together instead.
+  // entirely rather than rendered empty. Fixed-width flex columns (see CSS) just pack
+  // left and wrap on their own — no column-count bookkeeping needed here.
   var colsHtml = COL_GROUPS.map(function(groups){
     var body = groups.filter(function(cat){ return byCat[cat]; }).map(function(cat){
       return '<div class="col-cat"><div class="col-cat-title">'+esc(GROUP_TITLE[cat]||cat)+'</div>'
@@ -492,7 +499,9 @@ function renderCollection(){
     return body ? '<div class="col-board-col">'+body+'</div>' : '';
   }).filter(Boolean);
 
-  board.innerHTML = '<div class="col-board" style="--actual-cols:'+colsHtml.length+'">' + colsHtml.join('') + '</div>';
+  // id on the actual fit-content flex row (not the outer wrapper div) so export can
+  // target it directly and get a tight crop, not the wrapper's full-page-width box.
+  board.innerHTML = '<div class="col-board" id="colBoardFlex">' + colsHtml.join('') + '</div>';
 }
 function removeFromCollection(weaponId, idx){
   var list = collection[weaponId];
@@ -706,6 +715,7 @@ function waitImagesReady(node){
 // different source node + filename.
 function exportBoardPng(nodeId, filename, btn){
   var node = document.getElementById(nodeId);
+  if(!node){ alert('Nothing to export yet.'); return; } // e.g. Collection is still empty (no colBoardFlex rendered)
   if(typeof html2canvas !== 'function'){ alert('Image export unavailable.'); return; }
   var old = btn.textContent;
   btn.textContent = 'Loading images…'; btn.disabled = true;
@@ -730,7 +740,7 @@ function exportBoardPng(nodeId, filename, btn){
   }).catch(function(){ btn.textContent = old; btn.disabled = false; alert('Could not render image.'); });
 }
 document.getElementById('loShare').addEventListener('click', function(){ exportBoardPng('loBoard','fragly-loadout.png', this); });
-document.getElementById('colShare').addEventListener('click', function(){ exportBoardPng('colBoard','fragly-collection.png', this); });
+document.getElementById('colShare').addEventListener('click', function(){ exportBoardPng('colBoardFlex','fragly-collection.png', this); });
 
 document.getElementById('skEquipBtn').addEventListener('click', equipCurrent);
 document.getElementById('skUnequipBtn').addEventListener('click', unequipCurrent);
