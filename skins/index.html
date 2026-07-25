@@ -186,7 +186,11 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 /* ── COLLECTION flex board — same left-to-right column grouping as the Loadout board
    (Sidearms | SMGs+Shotguns | Rifles+Melee | Snipers+Machine Guns), each column
    stacking its weapons' skin grids, instead of one long stacked list. ── */
-.col-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;align-items:start;}
+/* --actual-cols is set inline per render (only as many columns as have content, so
+   empty ones don't reserve dead space); --max-cols is the responsive ceiling on top of
+   that, set by the media queries below. min() combines them without a specificity fight
+   between the inline style and the breakpoint rules. */
+.col-board{display:grid;grid-template-columns:repeat(min(var(--actual-cols,4), var(--max-cols,4)), minmax(0,1fr));gap:18px;align-items:start;--max-cols:4;}
 .col-board-col{display:flex;flex-direction:column;min-width:0;}
 .col-cat{margin-bottom:24px;}
 .col-cat-title{font-family:var(--dp);font-weight:900;font-size:.95rem;letter-spacing:2px;text-transform:uppercase;text-align:center;
@@ -222,13 +226,13 @@ footer a:hover{color:var(--red);}
 @media(max-width:1080px){
   .lo-board{grid-template-columns:repeat(2,minmax(0,1fr));}
   .lo-card-panel{grid-column:1/-1;max-width:220px;margin:0 auto;}
-  .col-board{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .col-board{--max-cols:2;}
 }
 @media(max-width:640px){
   .lo-board{grid-template-columns:1fr 1fr;gap:10px;}
   .lo-slot{min-height:84px;}
   .lo-group-title{font-size:.82rem;letter-spacing:1.2px;}
-  .col-board{grid-template-columns:1fr;gap:10px;}
+  .col-board{--max-cols:1;gap:10px;}
   .col-cat-title{font-size:.86rem;}
   .view-tab{padding:9px 16px;font-size:.8rem;}
   .sk-grid{grid-template-columns:1fr 1fr;gap:10px;}
@@ -476,14 +480,19 @@ function renderCollection(){
 
   // Same left-to-right column grouping as the Loadout board (Sidearms | SMGs+Shotguns |
   // Rifles+Melee | Snipers+Machine Guns) instead of one long stacked list — much easier
-  // to scan when there are several categories at once.
-  board.innerHTML = '<div class="col-board">' + COL_GROUPS.map(function(groups){
+  // to scan when there are several categories at once. Unlike Loadout (which always
+  // shows all 20 weapon slots), a Collection column with nothing in it is skipped
+  // entirely rather than rendered empty — no dead space to scroll past or crop out when
+  // screenshotting, remaining columns pack together instead.
+  var colsHtml = COL_GROUPS.map(function(groups){
     var body = groups.filter(function(cat){ return byCat[cat]; }).map(function(cat){
       return '<div class="col-cat"><div class="col-cat-title">'+esc(GROUP_TITLE[cat]||cat)+'</div>'
         + byCat[cat].map(weaponBlock).join('') + '</div>';
     }).join('');
-    return '<div class="col-board-col">'+body+'</div>';
-  }).join('') + '</div>';
+    return body ? '<div class="col-board-col">'+body+'</div>' : '';
+  }).filter(Boolean);
+
+  board.innerHTML = '<div class="col-board" style="--actual-cols:'+colsHtml.length+'">' + colsHtml.join('') + '</div>';
 }
 function removeFromCollection(weaponId, idx){
   var list = collection[weaponId];
