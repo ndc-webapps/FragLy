@@ -351,6 +351,14 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
       <div class="filter-bar">
         <input type="text" id="shop_search" placeholder="Search products by name…" oninput="onShopFilterChange()">
         <select id="shop_catFilter" onchange="onShopFilterChange()"><option value="">All categories</option></select>
+        <select id="shop_issueFilter" onchange="onShopFilterChange()" title="Narrow the list to a problem, then use Select all shown + the bulk actions">
+          <option value="">Any condition</option>
+          <option value="noimage">No image</option>
+          <option value="dead">Dead link (scanned)</option>
+          <option value="unsure">Unsure link (scanned)</option>
+          <option value="deadnoimg">Dead link AND no image</option>
+          <option value="inactive">Inactive</option>
+        </select>
         <label class="filter-chip"><input type="checkbox" id="shop_activeOnly" onchange="onShopFilterChange()"> Active only</label>
         <div class="seg pl-density" id="plDensity">
           <button type="button" data-cols="3" class="on" onclick="setDensity(3)">Compact</button>
@@ -540,13 +548,33 @@ function escapeHtml(s){
 }
 
 /* ── Products (one catalog — feeds shop grid + banner/square ad rotation) ── */
-var shopState = { items: [], search: '', category: '', activeOnly: false, selected: {} };
+var shopState = { items: [], search: '', category: '', activeOnly: false, issue: '', selected: {} };
+
+// "No image" and "dead link" are deliberately SEPARATE conditions, not one signal.
+// Tested on the live catalog: all 46 blank-image products had working links — Shopee's
+// CSV export ships no images at all, so a blank thumbnail means our image scraper came
+// up empty (bot-block, throttling, niche brand), NOT that the product is gone. Treating
+// them as the same thing would delete working products, so link status comes only from
+// an actual scan (lcState) and the two can be combined explicitly via "deadnoimg".
+function matchesIssue(i, issue){
+  if (!issue) return true;
+  var lc = (typeof lcState !== 'undefined' && lcState.results[i.id]) || null;
+  switch (issue) {
+    case 'noimage':    return !i.image;
+    case 'dead':       return !!lc && lc.status === 'dead';
+    case 'unsure':     return !!lc && lc.status === 'unknown';
+    case 'deadnoimg':  return !i.image && !!lc && lc.status === 'dead';
+    case 'inactive':   return !i.active;
+    default:           return true;
+  }
+}
 
 function getFilteredItems(){
   return shopState.items.filter(function(i){
     if (shopState.activeOnly && !i.active) return false;
     if (shopState.category && i.category !== shopState.category) return false;
     if (shopState.search && i.name.toLowerCase().indexOf(shopState.search) === -1) return false;
+    if (!matchesIssue(i, shopState.issue)) return false;
     return true;
   });
 }
@@ -555,6 +583,11 @@ function onShopFilterChange(){
   shopState.search = $('shop_search').value.trim().toLowerCase();
   shopState.category = $('shop_catFilter').value;
   shopState.activeOnly = $('shop_activeOnly').checked;
+  shopState.issue = $('shop_issueFilter') ? $('shop_issueFilter').value : '';
+  // Selections are per-view; keeping them across a filter change would let a later
+  // "Delete selected" hit rows the operator can no longer see.
+  shopState.selected = {};
+  var sa = $('bulkSelectAll'); if (sa) sa.checked = false;
   renderShop();
 }
 
@@ -573,7 +606,12 @@ async function loadShop(){
 
 function renderShop(){
   var items = shopState.items;
-  $('shopCount').textContent = items.length + ' item' + (items.length===1?'':'s') + ' (' + items.filter(function(i){return i.active;}).length + ' active)';
+  var noImg = items.filter(function(i){ return !i.image; }).length;
+  var deadCount = items.filter(function(i){ var r = (typeof lcState !== 'undefined') && lcState.results[i.id]; return r && r.status === 'dead'; }).length;
+  $('shopCount').textContent = items.length + ' item' + (items.length===1?'':'s')
+    + ' (' + items.filter(function(i){return i.active;}).length + ' active'
+    + (noImg ? ', ' + noImg + ' no image' : '')
+    + (deadCount ? ', ' + deadCount + ' dead link' : '') + ')';
 
   var filtered = getFilteredItems();
 
@@ -581,7 +619,13 @@ function renderShop(){
   if (!items.length){
     list.innerHTML = '<div class="empty-note">No products yet — add one above.</div>';
   } else if (!filtered.length){
-    list.innerHTML = '<div class="empty-note">No products match this filter.</div>';
+    // The link-status filters read from the scan, so "0 results" usually just means the
+    // scan hasn't been run — say that instead of implying there's nothing wrong.
+    var needsScan = (shopState.issue === 'dead' || shopState.issue === 'unsure' || shopState.issue === 'deadnoimg')
+      && (typeof lcState === 'undefined' || !lcState.checkedIds.length);
+    list.innerHTML = '<div class="empty-note">' + (needsScan
+      ? 'No link scan yet — run <b>Dead Link Checker</b> above first, then this filter will populate.'
+      : 'No products match this filter.') + '</div>';
   } else {
     list.innerHTML = filtered.map(function(i){
       var sel = !!shopState.selected[i.id];
