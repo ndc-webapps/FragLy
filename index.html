@@ -3972,42 +3972,6 @@ function renderMatchDetails(match,cached,warning=''){
   if(unknown.length){html.push(`<div class="score-team"><span>PLAYERS</span><span>${players.length}</span></div>`,header,unknown.map(p=>scoreRow(p,rounds,roundMetrics)).join(''));}
   html.push('</div>');
   body.innerHTML=html.join('');
-  hydrateScoreboardRanks([...blue,...red,...unknown],body);
-}
-/* Match-time "RANK" (pRank) is per-game-mode and often blank for Unrated/Skirmish —
-   real, not fake, but not what players want to see. This looks up each scoreboard
-   player's actual CURRENT competitive rank via the same v2/mmr endpoint the main
-   search uses, and swaps it in once it arrives. Sequential with a small delay (not
-   parallel) to stay under the API's rate limit for a 10-player scoreboard. On any
-   fetch failure (private profile, unranked, throttled) the cell simply keeps the
-   real match-time value already shown — never a guess. */
-const rankHydrateCache={};
-let rankHydrateToken=0;
-async function hydrateScoreboardRanks(players,container){
-  const myToken=++rankHydrateToken; // reopening the modal for another match must not let a stale fetch overwrite the new scoreboard
-  const region=S.region||'ap';
-  const cells=container.querySelectorAll('.score-rank');
-  for(let i=0;i<players.length;i++){
-    if(myToken!==rankHydrateToken)return;
-    const p=players[i],cell=cells[i];
-    const name=pName(p),tag=pTag(p);
-    if(!cell||!name||!tag)continue;
-    const key=(name+'#'+tag).toLowerCase();
-    if(rankHydrateCache[key]){
-      cell.textContent=rankHydrateCache[key];
-      cell.title='Current rank (live lookup)';
-      continue;
-    }
-    try{
-      const mmr=await api(`${BASE}/v2/mmr/${region}/${enc(name)}/${enc(tag)}`);
-      if(myToken!==rankHydrateToken)return;
-      const real=mmr?.data?.current_data?.currenttierpatched||'Unrated';
-      rankHydrateCache[key]=real;
-      cell.textContent=real;
-      cell.title='Current rank (live lookup)';
-    }catch(e){/* leave the real match-time value already shown */}
-    if(i<players.length-1)await new Promise(r=>setTimeout(r,220));
-  }
 }
 function scoreRow(p,rounds,roundMetrics){
   const [k,d,a]=getKDA(p);
@@ -4021,7 +3985,7 @@ function scoreRow(p,rounds,roundMetrics){
       ${agentImg?`<img class="score-agent" src="${agentImg}" alt="${escapeHtml(agent)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'score-agent-fallback',textContent:'${escapeHtml(agent).slice(0,1)||'?' }'}))">`:`<div class="score-agent-fallback">${escapeHtml(agent).slice(0,1)||'?'}</div>`}
       <div style="min-width:0"><button type="button" class="score-name-btn" data-name="${escapeHtml(name)}" data-tag="${escapeHtml(tag)}" onclick="event.stopPropagation();showPlayerQuickMenu(this)" title="Open player options">${escapeHtml(name)}${tag?`<span style="color:var(--muted2);font-weight:500">#${escapeHtml(tag)}</span>`:''}</button><div class="score-sub">${escapeHtml(agent)}${isMe?' · YOU':''}</div></div>
     </div>
-    <div class="score-rank" data-name="${escapeHtml(name)}" data-tag="${escapeHtml(tag)}">${fmtVal(pRank(p))}</div>
+    <div class="score-rank">${fmtVal(pRank(p))}</div>
     <div class="score-acs">${getACS(p,rounds)}</div>
     <div class="score-num">${k}/${d}/${a}</div>
     <div class="score-num">${fmtVal(getEcon(p,rounds))}</div>
