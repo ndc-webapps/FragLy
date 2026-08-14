@@ -8,7 +8,7 @@
 // GET /api/ads -> public: { banner: [...5 for this rotation], square: [...] }
 import { json } from '../_lib/auth.js';
 import { pickRotation } from '../_lib/rotation.js';
-import { getRotationHours } from '../_lib/settings.js';
+import { getRotationHours, getAdsEnabled } from '../_lib/settings.js';
 import { loadAll } from './shop.js';
 
 const SLOTS = ['banner', 'square'];
@@ -22,6 +22,9 @@ export async function onRequestGet(context) {
   const { env } = context;
   if (!env.FRAGLY_ADS) {
     return json({ error: 'Product storage is not configured yet (missing FRAGLY_ADS KV binding).' }, 500);
+  }
+  if (!(await getAdsEnabled(env))) {
+    return json({ banner: [], square: [] }, 200, { 'Cache-Control': 'public, max-age=60' });
   }
   const items = await loadAll(env);
   const pool = items.filter((i) => i.active);

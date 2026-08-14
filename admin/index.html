@@ -55,6 +55,14 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
 .seg button{padding:8px 14px;border:none;border-radius:7px;background:none;color:var(--muted2);font-family:var(--dp);font-weight:700;font-size:.85rem;cursor:pointer;transition:.2s var(--ease);}
 .seg button.on{background:linear-gradient(135deg,var(--red),var(--pink));color:#fff;}
 .seg button:disabled{opacity:.5;cursor:wait;}
+.ads-switch{position:relative;display:inline-block;width:46px;height:26px;flex:none;}
+.ads-switch input{opacity:0;width:0;height:0;}
+.ads-switch-track{position:absolute;inset:0;background:rgba(0,0,0,.35);border:1px solid var(--bdr);border-radius:999px;cursor:pointer;transition:.2s var(--ease);}
+.ads-switch-track::before{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--muted2);transition:.2s var(--ease);}
+.ads-switch input:checked + .ads-switch-track{background:linear-gradient(135deg,var(--red),var(--pink));border-color:transparent;}
+.ads-switch input:checked + .ads-switch-track::before{transform:translateX(20px);background:#fff;}
+.ads-switch input:disabled + .ads-switch-track{opacity:.5;cursor:wait;}
+.ads-toggle-row{display:flex;align-items:center;gap:12px;}
 .slot-block{margin-bottom:44px;}
 .slot-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px;flex-wrap:wrap;}
 .slot-title{font-family:var(--dp);font-size:1.3rem;font-weight:800;letter-spacing:1px;}
@@ -206,6 +214,20 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
     <div class="topbar">
       <div class="slot-count" id="statusLine">Loaded</div>
       <button class="btn btn-ghost" onclick="doLogout()">LOG OUT</button>
+    </div>
+
+    <div class="rotation-card">
+      <div>
+        <h3>Affiliate ads</h3>
+        <p>Master switch for the banner + square ad slots on the main site. Off means nothing shows in either slot, site-wide, immediately — the products themselves and the /shop/ page are unaffected.</p>
+      </div>
+      <div class="ads-toggle-row">
+        <label class="ads-switch">
+          <input type="checkbox" id="adsEnabledInput" onchange="setAdsEnabled(this.checked)">
+          <span class="ads-switch-track"></span>
+        </label>
+        <span class="slot-count" id="adsEnabledLabel">Loading…</span>
+      </div>
     </div>
 
     <div class="rotation-card">
@@ -419,7 +441,8 @@ async function loadRotationSetting(){
   try {
     var data = await api('/api/admin/settings');
     paintRotationSeg(data.rotationHours);
-  } catch (e) { /* non-fatal — the segmented control just won't show a selection yet */ }
+    paintAdsEnabled(data.adsEnabled);
+  } catch (e) { /* non-fatal — the controls just won't show a selection yet */ }
 }
 function paintRotationSeg(hours){
   document.querySelectorAll('#rotationSeg button').forEach(function(b, i){
@@ -437,6 +460,24 @@ async function setRotation(hours){
     toast(e.message, true);
   } finally {
     seg.querySelectorAll('button').forEach(function(b){ b.disabled = false; });
+  }
+}
+
+function paintAdsEnabled(enabled){
+  $('adsEnabledInput').checked = !!enabled;
+  $('adsEnabledLabel').textContent = enabled ? 'Ads are ON' : 'Ads are OFF';
+}
+async function setAdsEnabled(enabled){
+  $('adsEnabledInput').disabled = true;
+  try {
+    var data = await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({ adsEnabled: enabled }) });
+    paintAdsEnabled(data.adsEnabled);
+    toast(data.adsEnabled ? 'Affiliate ads turned on.' : 'Affiliate ads turned off.');
+  } catch (e) {
+    paintAdsEnabled(!enabled); // request failed — snap the switch back
+    toast(e.message, true);
+  } finally {
+    $('adsEnabledInput').disabled = false;
   }
 }
 
