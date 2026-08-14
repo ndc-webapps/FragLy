@@ -4696,10 +4696,12 @@ async function askKeylessAI(messages){
       }
       DBG('[AI] proxy ok but empty text');
     } else {
-      // surface upstream detail when present
-      let detail='';try{detail=(await r.json())?.upstreamStatus||'';}catch(e){}
+      // The proxy reports why it gave up (credits/busy/timeout) — show that plain-English
+      // reason rather than a raw status code the player can't act on.
+      let reason='',detail='';
+      try{const j=await r.json();reason=j?.reason||'';detail=j?.upstreamStatus||'';}catch(e){}
       DBG('[AI] proxy failed, status:',r.status,'upstream:',detail);
-      if(r.status!==404)throw new Error(`AI proxy failed (HTTP ${r.status}${detail?`/upstream ${detail}`:''})`);
+      if(r.status!==404)throw new Error(reason||`AI proxy failed (HTTP ${r.status}${detail?`/upstream ${detail}`:''})`);
       // 404 => function not deployed (e.g. raw file / non-Vercel host): fall through to direct call
       DBG('[AI] /api/coach 404 — falling back to direct Pollinations');
     }
