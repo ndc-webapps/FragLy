@@ -923,21 +923,28 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .share-card *{outline:none!important;caret-color:transparent;-webkit-tap-highlight-color:transparent;}
 .share-card.capturing .sc2-score-card,.share-card.capturing .sc2-rank-card,.share-card.capturing .sc2-pt-card,.share-card.capturing .sc,.share-card.capturing .share-section-card{box-shadow:none!important;transform:none!important;}
 .share-card::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(168,85,247,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,.035) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(circle at center,rgba(255,255,255,.8),transparent 88%);pointer-events:none;}
-.share-card.feed{width:1200px;min-height:1500px;}
-.share-card.story{width:1080px;height:1920px;min-height:0;padding:46px;display:flex;flex-direction:column;gap:18px;overflow:hidden;}
+/* Both formats run the SAME section stack — only the canvas size and a few sizing
+   overrides differ. Feed is 1:1 (fills a Facebook/IG feed post without becoming a long
+   scroll strip); story is 9:16. Children are flex:none so a taller canvas never
+   stretches a card past its natural height — extra room goes to the footer instead. */
+.share-card{display:flex;flex-direction:column;gap:14px;}
+.share-card > *{flex:0 0 auto;}
+.share-card.feed{width:1200px;height:1200px;padding:32px;gap:9px;}
+.share-card.story{width:1080px;height:1920px;padding:46px;gap:16px;}
 
 .sc2-artwrap{position:absolute;top:0;right:0;width:60%;height:540px;pointer-events:none;z-index:0;}
 .sc2-artwrap img{width:100%;height:100%;object-fit:cover;object-position:top;-webkit-mask-image:linear-gradient(120deg,transparent 0%,transparent 18%,rgba(0,0,0,.55) 42%,rgba(0,0,0,.92) 64%,#000 100%);mask-image:linear-gradient(120deg,transparent 0%,transparent 18%,rgba(0,0,0,.55) 42%,rgba(0,0,0,.92) 64%,#000 100%);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;opacity:.88;}
-.share-card.story .sc2-artwrap{width:80%;height:420px;}
+.share-card.feed .sc2-artwrap{height:470px;}
+.share-card.story .sc2-artwrap{width:78%;height:560px;}
 
-.share-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:26px;position:relative;z-index:1;}
+.share-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;position:relative;z-index:1;}
 .share-brand{display:flex;flex-direction:column;gap:6px;}
 .share-logo{font-family:var(--dp);font-size:2.6rem;font-weight:900;letter-spacing:4px;line-height:.95;}
 .share-logo .a{color:var(--txt);} .share-logo .b{background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .share-sub{font-family:var(--mono);font-size:.7rem;letter-spacing:2.8px;color:var(--muted2);text-transform:uppercase;}
 .share-kicker{font-family:var(--mono);font-size:.6rem;letter-spacing:2.2px;color:var(--green);text-transform:uppercase;padding:8px 14px;border:1px solid rgba(61,255,160,.25);background:rgba(61,255,160,.07);border-radius:999px;align-self:flex-start;white-space:nowrap;}
 
-.sc2-hero{position:relative;z-index:1;display:flex;align-items:center;gap:22px;margin-bottom:22px;}
+.sc2-hero{position:relative;z-index:1;display:flex;align-items:center;gap:22px;}
 .sc2-avatar-wrap{position:relative;flex-shrink:0;}
 .sc2-avatar,.sc2-avatar-fb{width:112px;height:112px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.14);box-shadow:0 0 0 6px rgba(168,85,247,.08),0 20px 40px rgba(0,0,0,.4);display:block;}
 .sc2-avatar-fb{display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,rgba(168,85,247,.28),rgba(236,72,153,.14));font-family:var(--dp);font-size:2.4rem;font-weight:900;color:#fff;}
@@ -949,7 +956,7 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .sc2-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.62rem;letter-spacing:1.5px;color:var(--txt);padding:6px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);border-radius:999px;text-transform:uppercase;}
 .sc2-pill b{color:var(--gold2);font-weight:700;}
 
-.sc2-score-row{position:relative;z-index:1;display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:14px;margin-bottom:16px;}
+.sc2-score-row{position:relative;z-index:1;display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:14px;}
 .sc2-score-card,.sc2-rank-card{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.09);border-radius:var(--r);background:linear-gradient(150deg,rgba(255,255,255,.06),rgba(255,255,255,.02));padding:18px 20px;}
 .sc2-score-card::before,.sc2-rank-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),var(--gold));opacity:.7;}
 .sc2-score-lbl,.sc2-rank-lbl{font-family:var(--mono);font-size:.54rem;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;}
@@ -964,7 +971,7 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .sc2-rank-nm{font-family:var(--dp);font-size:1.05rem;font-weight:800;letter-spacing:.5px;}
 .sc2-rank-sub{font-family:var(--mono);font-size:.6rem;color:var(--muted2);letter-spacing:1px;}
 
-.sc2-pt-row{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.sc2-pt-row{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .sc2-pt-card{display:flex;align-items:center;gap:12px;border:1px solid rgba(255,255,255,.08);border-radius:var(--r2);background:rgba(255,255,255,.035);padding:14px 16px;}
 .sc2-pt-ico{width:34px;height:34px;border-radius:10px;background:rgba(75,189,255,.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--blue);}
 .sc2-pt-ico svg{width:17px;height:17px;}
@@ -972,12 +979,6 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .sc2-pt-val{font-family:var(--dp);font-size:1.15rem;font-weight:800;color:var(--txt);margin-top:2px;}
 .sc2-pt-note{font-family:var(--mono);font-size:.48rem;color:var(--muted2);margin-top:1px;}
 
-
-.story-metrics{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.story-metric{border:1px solid rgba(255,255,255,.08);border-radius:var(--r2);padding:18px;background:rgba(255,255,255,.04);min-width:0;}
-.story-metric .k{font-family:var(--mono);font-size:.56rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.story-metric .v{font-family:var(--dp);font-size:2.8rem;line-height:.95;font-weight:900;margin-top:8px;color:var(--txt);}
-.story-metric.hot .v{color:var(--red);}.story-metric.gold .v{color:var(--gold);}.story-metric.green .v{color:var(--green);}.story-metric.blue .v{color:var(--blue);}
 
 .share-card .sgrid{position:relative;z-index:1;gap:14px;margin-bottom:0;grid-auto-rows:minmax(0,auto);grid-template-columns:repeat(4,1fr)!important;}
 .share-card .sc{padding:18px 18px 16px;min-height:0;box-shadow:none;border-color:rgba(255,255,255,.09);background:linear-gradient(150deg,rgba(255,255,255,.045),rgba(255,255,255,.015));}
@@ -995,7 +996,7 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .share-card .form-chart-wrap svg{width:100%;height:auto;display:block;}
 .share-card .form-lbl{margin-top:10px;}
 
-.share-foot{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:26px;padding-top:18px;border-top:1px solid rgba(255,255,255,.07);}
+.share-foot{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:auto;padding-top:18px;border-top:1px solid rgba(255,255,255,.07);}
 .share-foot-col{display:flex;flex-direction:column;gap:8px;}
 .share-foot-col.center{align-items:center;}
 .share-foot-col.right{align-items:flex-end;text-align:right;}
@@ -1006,27 +1007,47 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .share-foot-brandmark{font-family:var(--dp);font-size:1.15rem;font-weight:900;letter-spacing:2px;}
 .share-foot-brandmark .a{color:var(--txt);} .share-foot-brandmark .b{color:var(--gold);}
 
-.share-card.story .share-topbar{margin-bottom:0;}
+/* Feed is the tightest canvas (1:1 with the full section stack), so it gets the
+   compact scale: smaller tiles, tighter section padding, capped chart heights. */
+.share-card.feed .share-section-card{padding:14px 16px;}
+.share-card.feed .share-sec-head{margin-bottom:9px;}
+.share-card.feed .share-sec-title{font-size:1.05rem;letter-spacing:3px;}
+.share-card.feed .sgrid{gap:9px;}
+.share-card.feed .sc{padding:10px 12px 9px;}
+.share-card.feed .sc-val{font-size:1.6rem;}
+.share-card.feed .sc-ico{font-size:.75rem;}
+.share-card.feed .sc-lbl{font-size:.48rem;}
+.share-card.feed .sc-sub{font-size:.46rem;line-height:1.35;}
+.share-card.feed .sc-footer{margin-top:6px;}
+.share-card.feed .sc-bm{font-size:.42rem;}
+.share-card.feed .sc2-avatar,.share-card.feed .sc2-avatar-fb{width:86px;height:86px;}
+.share-card.feed .sc2-name{font-size:1.95rem;}
+.share-card.feed .sc2-score-card,.share-card.feed .sc2-rank-card{padding:13px 15px;}
+.share-card.feed .sc2-score-val{font-size:2.2rem;}
+.share-card.feed .sc2-rank-img{width:40px;height:40px;}
+.share-card.feed .sc2-pt-card{padding:10px 12px;}
+.share-card.feed .radar-wrap svg{max-height:155px;}
+.share-card.feed .form-chart-wrap svg{max-height:95px;}
+.share-card.feed .share-two-col{gap:12px;}
+
+/* Story: same sections, just breathing room for the taller 9:16 canvas. The score row
+   deliberately stays 3-up — collapsing it to one column left each rank card a full
+   1080px wide around a small centered icon, which is what read as "stretched". */
 .share-card.story .share-logo{font-size:3.1rem;}
 .share-card.story .share-sub{font-size:.72rem;}
 .share-card.story .share-kicker{font-size:.62rem;}
-.share-card.story .sc2-hero{margin-bottom:16px;}
-.share-card.story .sc2-avatar,.share-card.story .sc2-avatar-fb{width:100px;height:100px;}
-.share-card.story .sc2-name{font-size:2.15rem;max-width:520px;}
-.share-card.story .sc2-score-row{grid-template-columns:1fr;gap:10px;margin-bottom:12px;}
-.share-card.story .sc2-pt-row{margin-bottom:12px;}
-.share-card.story .share-two-col{grid-template-columns:1fr;gap:14px;min-height:0;}
-.share-card.story .share-section-card{padding:20px;}
-.share-card.story .share-sec-head{margin-bottom:10px;}
-.share-card.story .share-sec-title{font-size:1.18rem;}
-.share-card.story .form-stats{grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
-.share-card.story .form-stat{padding:8px 9px;}
-.share-card.story .form-stat .k{font-size:.42rem;letter-spacing:1.2px;}
-.share-card.story .form-stat .v{font-size:1.25rem;}
-.share-card.story .form-chart-wrap svg{max-height:330px;}
-.share-card.story .form-insight{font-size:.55rem;line-height:1.45;margin-top:9px;padding:9px 10px;}
-.share-card.story .form-lbl{font-size:.48rem;margin-top:6px;}
-.share-card.story .share-foot{margin-top:auto;}
+.share-card.story .sc2-avatar,.share-card.story .sc2-avatar-fb{width:118px;height:118px;}
+.share-card.story .sc2-name{font-size:2.3rem;max-width:520px;}
+.share-card.story .sc2-score-card,.share-card.story .sc2-rank-card{padding:20px;}
+.share-card.story .sc2-score-val{font-size:3.4rem;}
+.share-card.story .sc2-pt-card{padding:16px 18px;}
+.share-card.story .share-two-col{grid-template-columns:1fr;gap:20px;min-height:0;}
+.share-card.story .share-sec-title{font-size:1.3rem;}
+.share-card.story .form-stats{grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+.share-card.story .form-chart-wrap svg{max-height:165px;}
+.share-card.story .radar-wrap svg{max-height:200px;}
+.share-card.story .sc{padding:14px 15px 12px;}
+.share-card.story .sc-val{font-size:2.1rem;}
 @media(max-width:720px){
   .share-actions{flex-direction:column;align-items:stretch;}
   .share-btn,.share-btn.alt{width:100%;}
@@ -1324,7 +1345,7 @@ footer span{color:var(--red);}
     <div class="share-mode-label">Match mode</div>
     <div class="mode-tabs share-mode-pills" id="shareModePills"></div>
     <div class="share-size-pills">
-      <button class="share-size-pill active" id="shareFmtFeed" onclick="setShareFormat('feed')">FEED · 4:5</button>
+      <button class="share-size-pill active" id="shareFmtFeed" onclick="setShareFormat('feed')">FEED · 1:1</button>
       <button class="share-size-pill" id="shareFmtStory" onclick="setShareFormat('story')">STORY · 9:16</button>
     </div>
     <div class="share-preview-wrap" id="sharePreviewWrap">
@@ -4110,9 +4131,6 @@ const SC2_ICO_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 const SC2_ICO_PULSE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 7 4-14 2 7h6"/></svg>';
 const SC2_ICO_TARGET='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>';
 
-function storyMetricHTML(label,value,tone=''){
-  return `<div class="story-metric ${tone}"><div class="k">${escapeHtml(label)}</div><div class="v">${escapeHtml(value)}</div></div>`;
-}
 function sc2AvatarHTML(){
   const img=document.getElementById('pAvatar');
   const fb=document.getElementById('pAvatarFallback');
@@ -4226,30 +4244,6 @@ function buildShareCard(fmt){
     </div>
     ${sc2PtRowHTML()}
   `;
-  if(fmt==='story'){
-    const metrics=document.createElement('div');
-    metrics.className='story-metrics';
-    metrics.innerHTML=[
-      storyMetricHTML('Grade',String(st.grade||'--'),'gold'),
-      storyMetricHTML('Score',String(st.ts||0),'blue'),
-      storyMetricHTML('Win Rate',`${st.winPct||0}%`,'green'),
-      storyMetricHTML('ACS',String(st.acs||0),'gold'),
-      storyMetricHTML('K/D',String(st.kd||0),'hot'),
-      storyMetricHTML('HS%',`${st.hsPct||0}%`,'blue')
-    ].join('');
-    card.appendChild(metrics);
-    const form=document.createElement('div');
-    form.className='share-section-card';
-    form.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Recent Form</div><div class="share-sec-line"></div><span class="share-sec-tag">LAST 10 · ACS</span></div>`;
-    const formChart=cloneForShare(document.getElementById('formChart'));
-    formChart.classList.add('form-chart-wrap');
-    form.appendChild(formChart);
-    form.appendChild(cloneForShare(document.getElementById('formLbl')));
-    card.appendChild(form);
-    card.appendChild(sc2FootEl());
-    stage.appendChild(card);
-    return card;
-  }
   const overviewWrap=document.createElement('div');
   overviewWrap.className='share-section-card';
   overviewWrap.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Performance Overview</div><div class="share-sec-line"></div><span class="share-sec-tag">${escapeHtml(String(S.stats?.total||0))} ${escapeHtml(statFilterLabel()==='ALL'?'GAMES ANALYZED':statFilterLabel()+' GAMES')}</span></div>`;
