@@ -919,48 +919,74 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .share-preview{display:block;max-width:100%;height:auto;max-height:none;border-radius:18px;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 60px rgba(0,0,0,.45);scroll-margin-top:8px;}
 .share-modal-btns{margin-top:16px;flex-wrap:wrap;}
 #shareStage{position:fixed;left:-99999px;top:0;pointer-events:none;opacity:0;z-index:-10;}
-.share-card{position:relative;overflow:hidden;background:radial-gradient(circle at top right,rgba(168,85,247,.12),transparent 28%),radial-gradient(circle at top left,rgba(75,189,255,.12),transparent 24%),linear-gradient(180deg,#070913 0%,#050509 100%);border:1px solid rgba(255,255,255,.08);color:var(--txt);padding:36px;-webkit-tap-highlight-color:transparent;}
+.share-card{position:relative;overflow:hidden;background:linear-gradient(180deg,#0a0b12 0%,#050509 100%);border:1px solid rgba(255,255,255,.08);color:var(--txt);padding:40px;-webkit-tap-highlight-color:transparent;}
 .share-card *{outline:none!important;caret-color:transparent;-webkit-tap-highlight-color:transparent;}
-.share-card.capturing .pstat-card,.share-card.capturing .sc,.share-card.capturing .share-section-card{box-shadow:none!important;transform:none!important;}
-.share-card.capturing .pstat-card:hover,.share-card.capturing .sc:hover{background:rgba(255,255,255,.03)!important;border-color:var(--bdr)!important;}
-.share-card::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(168,85,247,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,.03) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(circle at center,rgba(255,255,255,.8),transparent 88%);pointer-events:none;}
+.share-card.capturing .sc2-score-card,.share-card.capturing .sc2-rank-card,.share-card.capturing .sc2-pt-card,.share-card.capturing .sc,.share-card.capturing .share-section-card{box-shadow:none!important;transform:none!important;}
+.share-card::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(168,85,247,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(168,85,247,.035) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(circle at center,rgba(255,255,255,.8),transparent 88%);pointer-events:none;}
 .share-card.feed{width:1200px;min-height:1500px;}
-.share-card.story{width:1080px;height:1920px;min-height:0;padding:42px;display:flex;flex-direction:column;gap:18px;overflow:hidden;}
-.share-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px;position:relative;z-index:1;}
+.share-card.story{width:1080px;height:1920px;min-height:0;padding:46px;display:flex;flex-direction:column;gap:18px;overflow:hidden;}
+
+.sc2-artwrap{position:absolute;top:0;right:0;width:60%;height:540px;pointer-events:none;z-index:0;}
+.sc2-artwrap img{width:100%;height:100%;object-fit:cover;object-position:top;-webkit-mask-image:linear-gradient(120deg,transparent 0%,transparent 18%,rgba(0,0,0,.55) 42%,rgba(0,0,0,.92) 64%,#000 100%);mask-image:linear-gradient(120deg,transparent 0%,transparent 18%,rgba(0,0,0,.55) 42%,rgba(0,0,0,.92) 64%,#000 100%);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;opacity:.88;}
+.share-card.story .sc2-artwrap{width:80%;height:420px;}
+
+.share-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:26px;position:relative;z-index:1;}
 .share-brand{display:flex;flex-direction:column;gap:6px;}
 .share-logo{font-family:var(--dp);font-size:2.6rem;font-weight:900;letter-spacing:4px;line-height:.95;}
 .share-logo .a{color:var(--txt);} .share-logo .b{background:linear-gradient(135deg,var(--red),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .share-sub{font-family:var(--mono);font-size:.7rem;letter-spacing:2.8px;color:var(--muted2);text-transform:uppercase;}
-.share-kicker{font-family:var(--mono);font-size:.6rem;letter-spacing:2.2px;color:var(--green);text-transform:uppercase;padding:7px 10px;border:1px solid rgba(61,255,160,.18);background:rgba(61,255,160,.06);border-radius:999px;align-self:flex-start;}
-.share-insights{position:relative;z-index:1;display:grid;grid-template-columns:1.1fr .95fr .95fr;gap:14px;margin-bottom:18px;}
-.share-insight{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.09);border-radius:var(--r);padding:18px 18px 16px;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025));box-shadow:0 20px 60px rgba(0,0,0,.22);}
-.share-insight::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 100% 0,rgba(168,85,247,.16),transparent 48%);pointer-events:none;}
-.share-insight.good::before{background:radial-gradient(circle at 100% 0,rgba(61,255,160,.16),transparent 48%);}
-.share-insight.warn::before{background:radial-gradient(circle at 100% 0,rgba(251,146,60,.16),transparent 48%);}
-.share-insight-k{position:relative;font-family:var(--mono);font-size:.55rem;letter-spacing:2.2px;color:var(--muted);text-transform:uppercase;margin-bottom:9px;}
-.share-insight-v{position:relative;font-family:var(--dp);font-size:1.65rem;line-height:1.02;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt);}
-.share-insight-p{position:relative;margin-top:8px;font-family:var(--mono);font-size:.62rem;line-height:1.55;letter-spacing:1px;color:rgba(236,232,245,.7);}
+.share-kicker{font-family:var(--mono);font-size:.6rem;letter-spacing:2.2px;color:var(--green);text-transform:uppercase;padding:8px 14px;border:1px solid rgba(61,255,160,.25);background:rgba(61,255,160,.07);border-radius:999px;align-self:flex-start;white-space:nowrap;}
+
+.sc2-hero{position:relative;z-index:1;display:flex;align-items:center;gap:22px;margin-bottom:22px;}
+.sc2-avatar-wrap{position:relative;flex-shrink:0;}
+.sc2-avatar,.sc2-avatar-fb{width:112px;height:112px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.14);box-shadow:0 0 0 6px rgba(168,85,247,.08),0 20px 40px rgba(0,0,0,.4);display:block;}
+.sc2-avatar-fb{display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,rgba(168,85,247,.28),rgba(236,72,153,.14));font-family:var(--dp);font-size:2.4rem;font-weight:900;color:#fff;}
+.sc2-lvl-badge{position:absolute;left:-6px;bottom:-6px;min-width:38px;height:26px;padding:0 8px;border-radius:999px;background:linear-gradient(135deg,var(--red),var(--gold));display:flex;align-items:center;justify-content:center;font-family:var(--dp);font-size:.72rem;font-weight:900;color:#fff;border:2px solid #0a0b12;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+.sc2-hero-info{min-width:0;}
+.sc2-name{font-family:var(--dp);font-size:2.6rem;font-weight:900;line-height:1.03;color:#fff;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:660px;}
+.sc2-tag{font-family:var(--mono);font-size:.85rem;letter-spacing:1.5px;color:var(--muted2);margin-top:5px;}
+.sc2-pills{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.sc2-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.62rem;letter-spacing:1.5px;color:var(--txt);padding:6px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);border-radius:999px;text-transform:uppercase;}
+.sc2-pill b{color:var(--gold2);font-weight:700;}
+
+.sc2-score-row{position:relative;z-index:1;display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:14px;margin-bottom:16px;}
+.sc2-score-card,.sc2-rank-card{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.09);border-radius:var(--r);background:linear-gradient(150deg,rgba(255,255,255,.06),rgba(255,255,255,.02));padding:18px 20px;}
+.sc2-score-card::before,.sc2-rank-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),var(--gold));opacity:.7;}
+.sc2-score-lbl,.sc2-rank-lbl{font-family:var(--mono);font-size:.54rem;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;}
+.sc2-score-top{display:flex;align-items:flex-end;gap:12px;margin-top:8px;}
+.sc2-score-val{font-family:var(--dp);font-size:3rem;font-weight:900;line-height:.9;color:#fff;}
+.sc2-grade-badge{margin-left:auto;width:42px;height:42px;border-radius:12px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-family:var(--dp);font-size:1.2rem;font-weight:900;color:#fff;flex-shrink:0;}
+.sc2-score-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden;}
+.sc2-score-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--red),var(--gold));}
+.sc2-score-cap{font-family:var(--mono);font-size:.62rem;color:var(--muted2);letter-spacing:.5px;margin-top:10px;line-height:1.5;}
+.sc2-rank-card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;justify-content:center;}
+.sc2-rank-img{width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 0 14px rgba(255,255,255,.15));margin-top:4px;}
+.sc2-rank-nm{font-family:var(--dp);font-size:1.05rem;font-weight:800;letter-spacing:.5px;}
+.sc2-rank-sub{font-family:var(--mono);font-size:.6rem;color:var(--muted2);letter-spacing:1px;}
+
+.sc2-pt-row{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.sc2-pt-card{display:flex;align-items:center;gap:12px;border:1px solid rgba(255,255,255,.08);border-radius:var(--r2);background:rgba(255,255,255,.035);padding:14px 16px;}
+.sc2-pt-ico{width:34px;height:34px;border-radius:10px;background:rgba(75,189,255,.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--blue);}
+.sc2-pt-ico svg{width:17px;height:17px;}
+.sc2-pt-lbl{font-family:var(--mono);font-size:.5rem;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.sc2-pt-val{font-family:var(--dp);font-size:1.15rem;font-weight:800;color:var(--txt);margin-top:2px;}
+.sc2-pt-note{font-family:var(--mono);font-size:.48rem;color:var(--muted2);margin-top:1px;}
+
+
 .story-metrics{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .story-metric{border:1px solid rgba(255,255,255,.08);border-radius:var(--r2);padding:18px;background:rgba(255,255,255,.04);min-width:0;}
 .story-metric .k{font-family:var(--mono);font-size:.56rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .story-metric .v{font-family:var(--dp);font-size:2.8rem;line-height:.95;font-weight:900;margin-top:8px;color:var(--txt);}
 .story-metric.hot .v{color:var(--red);}.story-metric.gold .v{color:var(--gold);}.story-metric.green .v{color:var(--green);}.story-metric.blue .v{color:var(--blue);}
-.share-card .prof{margin-bottom:22px;padding:24px 26px;position:relative;z-index:1;}
-.share-card .avatar,.share-card .avatar-fallback{width:96px;height:96px;}
-.share-card .pname{font-size:2.5rem;}
-.share-card .pstat-card{padding:18px 14px;}
-.share-card .pstat-val{font-size:2rem;}
-.share-card .playtime-strip{gap:8px;padding-top:14px;}
-.share-card .pt-item{padding:10px 12px;min-width:90px;}
-.share-card .pt-val{font-size:1.25rem;}
-.share-card .pt-note{font-size:.44rem;}
+
 .share-card .sgrid{position:relative;z-index:1;gap:14px;margin-bottom:0;grid-auto-rows:minmax(0,auto);grid-template-columns:repeat(4,1fr)!important;}
-.share-card .sc{padding:18px 18px 16px;min-height:0;box-shadow:none;}
-.share-card .sc-val{font-size:2.6rem;}
+.share-card .sc{padding:18px 18px 16px;min-height:0;box-shadow:none;border-color:rgba(255,255,255,.09);background:linear-gradient(150deg,rgba(255,255,255,.045),rgba(255,255,255,.015));}
+.share-card .sc-val{font-size:2.5rem;}
 .share-card .sc-sub{min-height:auto;}
+
 .share-two-col{display:grid;grid-template-columns:1fr 1.25fr;gap:18px;position:relative;z-index:1;}
 .share-card.story .share-two-col{grid-template-columns:1fr;}
-.share-section-card{background:rgba(12,12,28,.88);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:24px;backdrop-filter:blur(20px);position:relative;overflow:hidden;}
+.share-section-card{background:rgba(12,12,28,.92);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:24px;position:relative;overflow:hidden;}
 .share-section-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 10%,var(--red) 45%,var(--gold) 90%,transparent);opacity:.75;}
 .share-sec-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
 .share-sec-title{font-family:var(--dp);font-size:1.35rem;font-weight:800;letter-spacing:4px;text-transform:uppercase;white-space:nowrap;}
@@ -968,24 +994,27 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .share-sec-tag{font-family:var(--mono);font-size:.56rem;color:var(--muted);letter-spacing:2px;white-space:nowrap;}
 .share-card .form-chart-wrap svg{width:100%;height:auto;display:block;}
 .share-card .form-lbl{margin-top:10px;}
-.share-foot{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);font-family:var(--mono);font-size:.64rem;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;}
-.share-foot strong{color:var(--txt);font-weight:500;}
+
+.share-foot{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:26px;padding-top:18px;border-top:1px solid rgba(255,255,255,.07);}
+.share-foot-col{display:flex;flex-direction:column;gap:8px;}
+.share-foot-col.center{align-items:center;}
+.share-foot-col.right{align-items:flex-end;text-align:right;}
+.share-foot-lbl{font-family:var(--mono);font-size:.52rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.share-foot-social{display:flex;align-items:center;gap:8px;}
+.sc2-soc{width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.5rem;letter-spacing:.5px;color:var(--muted2);}
+.share-foot-date{font-family:var(--dp);font-size:.95rem;font-weight:700;color:var(--txt);}
+.share-foot-brandmark{font-family:var(--dp);font-size:1.15rem;font-weight:900;letter-spacing:2px;}
+.share-foot-brandmark .a{color:var(--txt);} .share-foot-brandmark .b{color:var(--gold);}
+
 .share-card.story .share-topbar{margin-bottom:0;}
 .share-card.story .share-logo{font-size:3.1rem;}
 .share-card.story .share-sub{font-size:.72rem;}
 .share-card.story .share-kicker{font-size:.62rem;}
-.share-card.story .prof{padding:24px 24px;margin-bottom:0;}
-.share-card.story .avatar,.share-card.story .avatar-fallback{width:104px;height:104px;}
-.share-card.story .pname{font-size:2.35rem;}
-.share-card.story .pmeta{font-size:.72rem;}
-.share-card.story .prof-stats{gap:10px;}
-.share-card.story .pstat-card{padding:14px 10px;}
-.share-card.story .pstat-val{font-size:1.8rem;}
-.share-card.story .pstat-lbl{font-size:.45rem;}
-.share-card.story .share-insights{grid-template-columns:1fr;margin-bottom:0;gap:12px;}
-.share-card.story .share-insight{padding:18px 20px;}
-.share-card.story .share-insight-v{font-size:1.75rem;}
-.share-card.story .share-insight-p{font-size:.64rem;}
+.share-card.story .sc2-hero{margin-bottom:16px;}
+.share-card.story .sc2-avatar,.share-card.story .sc2-avatar-fb{width:100px;height:100px;}
+.share-card.story .sc2-name{font-size:2.15rem;max-width:520px;}
+.share-card.story .sc2-score-row{grid-template-columns:1fr;gap:10px;margin-bottom:12px;}
+.share-card.story .sc2-pt-row{margin-bottom:12px;}
 .share-card.story .share-two-col{grid-template-columns:1fr;gap:14px;min-height:0;}
 .share-card.story .share-section-card{padding:20px;}
 .share-card.story .share-sec-head{margin-bottom:10px;}
@@ -997,7 +1026,7 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .share-card.story .form-chart-wrap svg{max-height:330px;}
 .share-card.story .form-insight{font-size:.55rem;line-height:1.45;margin-top:9px;padding:9px 10px;}
 .share-card.story .form-lbl{font-size:.48rem;margin-top:6px;}
-.share-card.story .share-foot{margin-top:auto;flex-direction:row;align-items:center;font-size:.58rem;}
+.share-card.story .share-foot{margin-top:auto;}
 @media(max-width:720px){
   .share-actions{flex-direction:column;align-items:stretch;}
   .share-btn,.share-btn.alt{width:100%;}
@@ -2755,7 +2784,10 @@ function computeStats(matches,name,tag){
     if(!maps[map])maps[map]={k:0,d:0,w:0,g:0,sc:0,rnd:0};
     maps[map].k+=k;maps[map].d+=d;maps[map].g++;maps[map].sc+=sc;maps[map].rnd+=rnd;if(won)maps[map].w++;
     const ag=me.character||'Unknown';const agIco=me.assets?.agent?.small||'';
-    if(!agents[ag])agents[ag]={k:0,d:0,h:0,b:0,l:0,w:0,g:0,ico:agIco};
+    // Real large character art straight from the same match payload (assets.agent.bust /
+    // .full) — used only for the share-card background bleed, never fabricated.
+    const agSplash=me.assets?.agent?.bust||me.assets?.agent?.full||'';
+    if(!agents[ag])agents[ag]={k:0,d:0,h:0,b:0,l:0,w:0,g:0,ico:agIco,splash:agSplash};
     agents[ag].k+=k;agents[ag].d+=d;agents[ag].h+=h;agents[ag].b+=b;agents[ag].l+=l;agents[ag].g++;if(won)agents[ag].w++;
   }
   const tot=hs+body+legs;
@@ -2821,6 +2853,20 @@ function rankTierNumber(name){
 function getRankBench(rank){
   const map={'iron':{acs:75,hs:12},'bronze':{acs:100,hs:14},'silver':{acs:130,hs:17},'gold':{acs:160,hs:20},'platinum':{acs:190,hs:23},'diamond':{acs:220,hs:27},'ascendant':{acs:240,hs:29},'immortal':{acs:260,hs:31},'radiant':{acs:280,hs:33}};
   for(const k of Object.keys(map))if(rank.includes(k))return map[k];return null;
+}
+// Real Riot tier-family color, used to color the rank badges on the share card.
+function tierColor(name){
+  const n=String(name||'').toLowerCase();
+  if(n.includes('radiant'))return '#FFF3B0';
+  if(n.includes('immortal'))return '#E0426E';
+  if(n.includes('ascendant'))return '#3DFFA0';
+  if(n.includes('diamond'))return '#C77DFF';
+  if(n.includes('platinum'))return '#4BD0C0';
+  if(n.includes('gold'))return '#F0C550';
+  if(n.includes('silver'))return '#C7CBD6';
+  if(n.includes('bronze'))return '#C48A5A';
+  if(n.includes('iron'))return '#9AA0A6';
+  return '#9a93b8';
 }
 
 function render(acc,mmr,matches,name,tag,region,mmrHistory){
@@ -4052,65 +4098,136 @@ function cloneForShare(el){
   clone.querySelectorAll('.share-actions, .prof-share-btn').forEach(n=>n.remove());
   clone.querySelectorAll('[onclick]').forEach(n=>n.removeAttribute('onclick'));
   clone.querySelectorAll('img').forEach(img=>{img.crossOrigin='anonymous';});
+  // .reveal sections fade in on scroll — the share card is built off-screen and may
+  // clone them before the live page ever scrolled them into view. Force the finished
+  // state so the capture is never missing content the user just hasn't scrolled to yet.
+  const finishReveal=n=>{n.style.cssText+=';opacity:1!important;transform:none!important;filter:none!important;';};
+  if(clone.classList.contains('reveal'))finishReveal(clone);
+  clone.querySelectorAll('.reveal').forEach(finishReveal);
   return clone;
 }
-function getShareInsights(){
-  const st=S.stats||{};
-  const trend=(st.formACS&&st.formACS.length>1)?Math.round(st.formACS[st.formACS.length-1]-st.formACS[0]):0;
-  const topMap=st.mapArr?.[0]?.[0]||'No clear map yet';
-  const topAgent=st.agentArr?.[0]?.[0]||'No clear agent yet';
-  const verdict=st.ts>=820?'Elite form':st.ts>=680?'Rank-up ready':st.ts>=520?'Solid climb base':st.ts>=360?'Needs cleaner rounds':'Rebuild fundamentals';
-  const verdictNote=`${st.grade||'--'} grade · ${st.ts||0}/1000 tracker score across ${st.total||0} games.`;
-  let strength='Best edge',strengthNote=`${topAgent} on ${topMap} is the current profile identity.`;
-  const strengths=[
-    {ok:st.acs>=220,t:'High impact',n:`${st.acs} ACS creates real round pressure.`},
-    {ok:st.winPct>=55,t:'Win condition',n:`${st.winPct}% win rate means the playstyle is converting.`},
-    {ok:st.hsPct>=30,t:'Clean aim',n:`${st.hsPct}% headshot rate can punish wide swings.`},
-    {ok:st.kd>=1.2,t:'Duel control',n:`${st.kd} K/D shows reliable fight value.`},
-    {ok:st.adr>=150,t:'Damage engine',n:`${st.adr} ADR keeps rounds winnable.`},
-    {ok:trend>35,t:'Heating up',n:`Recent ACS is up ${trend} from the oldest match shown.`}
-  ];
-  const hit=strengths.find(x=>x.ok);if(hit){strength=hit.t;strengthNote=hit.n;}
-  let weakness='Next upgrade',weaknessNote='Keep the agent pool focused and review deaths after lost rounds.';
-  const weaknesses=[
-    {ok:st.winPct<45,t:'Close rounds',n:`${st.winPct}% win rate: prioritize trade spacing and post-plant discipline.`},
-    {ok:st.acs<160,t:'Round impact',n:`${st.acs} ACS: look for earlier utility value and cleaner first contact.`},
-    {ok:st.kd<1,t:'Survival value',n:`${st.kd} K/D: reduce dry peeks and isolate fights.`},
-    {ok:st.hsPct<20,t:'Crosshair level',n:`${st.hsPct}% HS: pre-aim common head height before clearing.`},
-    {ok:trend<-35,t:'Momentum dip',n:`Recent ACS is down ${Math.abs(trend)}: reset routines before queueing.`}
-  ];
-  const leak=weaknesses.find(x=>x.ok);if(leak){weakness=leak.t;weaknessNote=leak.n;}
-  return {verdict,verdictNote,strength,strengthNote,weakness,weaknessNote};
-}
-function shareInsightsHTML(){
-  const i=getShareInsights();
-  return `<div class="share-insights">
-    <div class="share-insight"><div class="share-insight-k">Verdict</div><div class="share-insight-v">${escapeHtml(i.verdict)}</div><div class="share-insight-p">${escapeHtml(i.verdictNote)}</div></div>
-    <div class="share-insight good"><div class="share-insight-k">Top Strength</div><div class="share-insight-v">${escapeHtml(i.strength)}</div><div class="share-insight-p">${escapeHtml(i.strengthNote)}</div></div>
-    <div class="share-insight warn"><div class="share-insight-k">Next Upgrade</div><div class="share-insight-v">${escapeHtml(i.weakness)}</div><div class="share-insight-p">${escapeHtml(i.weaknessNote)}</div></div>
-  </div>`;
-}
+const SC2_ICO_CLOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
+const SC2_ICO_PULSE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 7 4-14 2 7h6"/></svg>';
+const SC2_ICO_TARGET='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>';
+
 function storyMetricHTML(label,value,tone=''){
   return `<div class="story-metric ${tone}"><div class="k">${escapeHtml(label)}</div><div class="v">${escapeHtml(value)}</div></div>`;
+}
+function sc2AvatarHTML(){
+  const img=document.getElementById('pAvatar');
+  const fb=document.getElementById('pAvatarFallback');
+  if(img&&img.style.display!=='none'&&img.src)return `<img class="sc2-avatar" src="${escapeHtml(img.src)}" crossorigin="anonymous" alt="">`;
+  return `<div class="sc2-avatar-fb">${escapeHtml(fb?.textContent||'?')}</div>`;
+}
+function sc2ArtHTML(){
+  const splash=S.stats?.agentArr?.[0]?.[1]?.splash||'';
+  if(!splash)return '';
+  return `<div class="sc2-artwrap"><img src="${escapeHtml(splash)}" crossorigin="anonymous" alt="" onerror="this.closest('.sc2-artwrap').remove()"></div>`;
+}
+function sc2PtRowHTML(){
+  const strip=document.getElementById('playtimeStrip');
+  if(!strip||strip.style.display==='none')return '';
+  const today=document.getElementById('ptToday').textContent;
+  const todayNote=document.getElementById('ptTodayNote').textContent;
+  const recent=document.getElementById('ptRecent').textContent;
+  const avg=document.getElementById('ptAvg').textContent;
+  return `<div class="sc2-pt-row">
+    <div class="sc2-pt-card"><div class="sc2-pt-ico">${SC2_ICO_CLOCK}</div><div><div class="sc2-pt-lbl">Today's Playtime</div><div class="sc2-pt-val">${escapeHtml(today)}</div><div class="sc2-pt-note">${escapeHtml(todayNote)}</div></div></div>
+    <div class="sc2-pt-card"><div class="sc2-pt-ico">${SC2_ICO_PULSE}</div><div><div class="sc2-pt-lbl">Last 10 Games</div><div class="sc2-pt-val">${escapeHtml(recent)}</div><div class="sc2-pt-note">Real match durations</div></div></div>
+    <div class="sc2-pt-card"><div class="sc2-pt-ico">${SC2_ICO_TARGET}</div><div><div class="sc2-pt-lbl">Avg / Match</div><div class="sc2-pt-val">${escapeHtml(avg)}</div><div class="sc2-pt-note">Across timed games</div></div></div>
+  </div>`;
+}
+function sc2FootEl(){
+  const foot=document.createElement('div');
+  const now=new Date();
+  const who=`${S.player?.name||''}#${S.player?.tag||''}`;
+  foot.className='share-foot';
+  foot.innerHTML=`
+    <div class="share-foot-col">
+      <div class="share-foot-lbl">Share Your Stats</div>
+      <div class="share-foot-social"><span class="sc2-soc">X</span><span class="sc2-soc">IG</span><span class="sc2-soc">TT</span><span class="sc2-soc">DC</span></div>
+    </div>
+    <div class="share-foot-col center">
+      <div class="share-foot-lbl">Generated On</div>
+      <div class="share-foot-date">${now.toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'})}</div>
+    </div>
+    <div class="share-foot-col right">
+      <div class="share-foot-brandmark"><span class="a">Frag</span><span class="b">Ly</span></div>
+      <div class="share-foot-lbl">Live Tracker · ${escapeHtml(who)}</div>
+    </div>`;
+  return foot;
 }
 function buildShareCard(fmt){
   const stage=document.getElementById('shareStage');
   stage.innerHTML='';
   const card=document.createElement('div');
   card.className=`share-card ${fmt}`;
+  const st=S.stats||{};
+  const name=document.getElementById('pName').textContent;
+  const tagRegion=document.getElementById('pTag').textContent;
+  const lvl=document.getElementById('pLvl').textContent;
+  const region=document.getElementById('pReg').textContent;
+  const games=document.getElementById('pGames').textContent;
+  const rankImgEl=document.getElementById('rankImg');
+  const rankNm=document.getElementById('rankNm').textContent;
+  const rankRR=document.getElementById('rankRR').textContent;
+  const peakImgEl=document.getElementById('peakRankImg');
+  const peakNm=document.getElementById('peakRankNm').textContent;
+  const peakSeason=document.getElementById('peakSeason').textContent;
+  const hasPeakImg=peakImgEl&&peakImgEl.style.display!=='none'&&peakImgEl.src;
+  const scorePct=st.total?Math.max(0,Math.min(st.ts/1000,1))*100:0;
+
   card.innerHTML=`
+    ${sc2ArtHTML()}
     <div class="share-topbar">
       <div class="share-brand">
         <div class="share-logo"><span class="a">Frag</span><span class="b">Ly</span></div>
         <div class="share-sub">Valorant Performance Snapshot</div>
       </div>
       <div class="share-kicker">Real data · Mode: ${escapeHtml(statFilterLabel())} · ${fmt==='story'?'Story':'Feed'} size</div>
-    </div>`;
-  card.appendChild(cloneForShare(document.getElementById('profBanner')));
-  card.insertAdjacentHTML('beforeend',shareInsightsHTML());
+    </div>
+    <div class="sc2-hero">
+      <div class="sc2-avatar-wrap">
+        ${sc2AvatarHTML()}
+        <div class="sc2-lvl-badge">${escapeHtml(lvl)}</div>
+      </div>
+      <div class="sc2-hero-info">
+        <div class="sc2-name">${escapeHtml(name)}</div>
+        <div class="sc2-tag">${escapeHtml(tagRegion)}</div>
+        <div class="sc2-pills">
+          <span class="sc2-pill">◆ <b>${escapeHtml(lvl)}</b> LVL</span>
+          <span class="sc2-pill">◆ ${escapeHtml(region)}</span>
+          <span class="sc2-pill">◆ <b>${escapeHtml(games)}</b> GAMES</span>
+        </div>
+      </div>
+    </div>
+    <div class="sc2-score-row">
+      <div class="sc2-score-card">
+        <div class="sc2-score-lbl">Tracker Score</div>
+        <div class="sc2-score-top">
+          <div class="sc2-score-val">${st.total?st.ts:'—'}</div>
+          <div class="sc2-grade-badge">${st.total?escapeHtml(st.grade):'—'}</div>
+        </div>
+        <div class="sc2-score-bar"><div class="sc2-score-fill" style="width:${scorePct}%"></div></div>
+        <div class="sc2-score-cap">Grade ${st.total?escapeHtml(st.grade):'—'} · ${st.total||0} games analyzed</div>
+      </div>
+      <div class="sc2-rank-card">
+        <div class="sc2-rank-lbl">Current Rank</div>
+        ${rankImgEl&&rankImgEl.src?`<img class="sc2-rank-img" src="${escapeHtml(rankImgEl.src)}" crossorigin="anonymous" alt="">`:''}
+        <div class="sc2-rank-nm" style="color:${tierColor(rankNm)}">${escapeHtml(rankNm)}</div>
+        <div class="sc2-rank-sub">${escapeHtml(rankRR)}</div>
+      </div>
+      <div class="sc2-rank-card">
+        <div class="sc2-rank-lbl">Peak Rank</div>
+        ${hasPeakImg?`<img class="sc2-rank-img" src="${escapeHtml(peakImgEl.src)}" crossorigin="anonymous" alt="">`:''}
+        <div class="sc2-rank-nm" style="color:${tierColor(peakNm)}">${escapeHtml(peakNm)}</div>
+        <div class="sc2-rank-sub">${peakSeason?escapeHtml(peakSeason):'Peak rank'}</div>
+      </div>
+    </div>
+    ${sc2PtRowHTML()}
+  `;
   if(fmt==='story'){
     const metrics=document.createElement('div');
-    const st=S.stats||{};
     metrics.className='story-metrics';
     metrics.innerHTML=[
       storyMetricHTML('Grade',String(st.grade||'--'),'gold'),
@@ -4123,18 +4240,13 @@ function buildShareCard(fmt){
     card.appendChild(metrics);
     const form=document.createElement('div');
     form.className='share-section-card';
-    form.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Recent Form</div><div class="share-sec-line"></div><span class="share-sec-tag">LAST 10 Â· ACS</span></div>`;
+    form.innerHTML=`<div class="share-sec-head"><div class="share-sec-title">Recent Form</div><div class="share-sec-line"></div><span class="share-sec-tag">LAST 10 · ACS</span></div>`;
     const formChart=cloneForShare(document.getElementById('formChart'));
     formChart.classList.add('form-chart-wrap');
     form.appendChild(formChart);
     form.appendChild(cloneForShare(document.getElementById('formLbl')));
     card.appendChild(form);
-    const foot=document.createElement('div');
-    const now=new Date();
-    const who=`${S.player?.name||''}#${S.player?.tag||''}`;
-    foot.className='share-foot';
-    foot.innerHTML=`<span>Player Â· <strong>${escapeHtml(who)}</strong></span><span>${now.toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'})}</span><span>FragLy live tracker</span>`;
-    card.appendChild(foot);
+    card.appendChild(sc2FootEl());
     stage.appendChild(card);
     return card;
   }
@@ -4159,12 +4271,7 @@ function buildShareCard(fmt){
   form.appendChild(cloneForShare(document.getElementById('formLbl')));
   row.appendChild(form);
   card.appendChild(row);
-  const foot=document.createElement('div');
-  const now=new Date();
-  const who=`${S.player?.name||''}#${S.player?.tag||''}`;
-  foot.className='share-foot';
-  foot.innerHTML=`<span>Player · <strong>${escapeHtml(who)}</strong></span><span>Generated · <strong>${now.toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'})}</strong></span><span>FragLy live tracker</span>`;
-  card.appendChild(foot);
+  card.appendChild(sc2FootEl());
   stage.appendChild(card);
   return card;
 }
