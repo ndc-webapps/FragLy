@@ -1,1 +1,4 @@
 google.com, pub-5999814369683510, DIRECT, f08c47fec0942fa0
+
+# Media.net and Venatus each issue their own ads.txt line after account approval —
+# append it here (don't invent one) once you have it.
