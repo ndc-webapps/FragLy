@@ -10,7 +10,7 @@
 // Token: set POLLINATIONS_TOKEN in Cloudflare Pages env (Settings →
 //   Environment variables). No token is shipped to the browser.
 
-const REFERRER = 'fragly.pages.dev';
+const REFERRER = 'topfragly.com';
 // Authenticated generation host (OpenAI-compatible). The token bypasses the
 // per-IP "Queue full" limit here — verified returning 200 from a queue-blocked
 // IP. The legacy text.pollinations.ai ignored the token; gen.* honors it.

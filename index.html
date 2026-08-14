@@ -5,19 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FragLy — Valorant Intelligence</title>
 <meta name="description" content="Free Valorant stats tracker — real match history, rank, K/D, ACS, AI coach, aim trainer, agent lineups, and pro crosshairs. Search any Riot ID, zero config.">
-<link rel="canonical" href="https://fragly.pages.dev/">
+<link rel="canonical" href="https://topfragly.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FragLy">
 <meta property="og:title" content="FragLy — Valorant Intelligence">
 <meta property="og:description" content="Free Valorant stats tracker — real match history, rank, K/D, ACS, AI coach, aim trainer, agent lineups, and pro crosshairs.">
-<meta property="og:url" content="https://fragly.pages.dev/">
-<meta property="og:image" content="https://fragly.pages.dev/logo.png">
+<meta property="og:url" content="https://topfragly.com/">
+<meta property="og:image" content="https://topfragly.com/logo.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FragLy — Valorant Intelligence">
 <meta name="twitter:description" content="Free Valorant stats tracker — real match history, rank, K/D, ACS, AI coach, aim trainer, agent lineups, and pro crosshairs.">
-<meta name="twitter:image" content="https://fragly.pages.dev/logo.png">
+<meta name="twitter:image" content="https://topfragly.com/logo.png">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebApplication","name":"FragLy","url":"https://fragly.pages.dev/","description":"Free Valorant stats tracker — real match history, rank, K/D, ACS, AI coach, aim trainer, agent lineups, and pro crosshairs.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"WebApplication","name":"FragLy","url":"https://topfragly.com/","description":"Free Valorant stats tracker — real match history, rank, K/D, ACS, AI coach, aim trainer, agent lineups, and pro crosshairs.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 <!-- PWA / installable app -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -2469,7 +2469,7 @@ html.ai-backdrop-blur .W>.hero, html.ai-backdrop-blur .W>.dash, html.ai-backdrop
     <article class="legal-doc" id="legal-privacy">
       <h2 id="legalTitle-privacy">Privacy Policy</h2>
       <p class="legal-upd">Last updated: July 2026</p>
-      <p>FragLy ("we", "us") operates the website fragly.pages.dev. This page explains what information we handle and how. By using FragLy you agree to this policy.</p>
+      <p>FragLy ("we", "us") operates the website topfragly.com. This page explains what information we handle and how. By using FragLy you agree to this policy.</p>
       <h3>Information We Use</h3>
       <p>FragLy does not require an account, login, or password. The main input we process is the public Riot ID (name and tag) you type, which is sent to the Valorant data API to retrieve publicly available match statistics. We do not collect, store, or sell personal information.</p>
       <h3>AI Coach</h3>
@@ -4350,7 +4350,7 @@ function handleIdleActivity(){
 ═══════════════════════════════════════════ */
 let aiOpen=false;
 let aiLastProvider='Pollinations Keyless AI';
-const AI_REFERRER='fragly.pages.dev';
+const AI_REFERRER='topfragly.com';
 const AI_TOKEN='';
 function aiTokenQuery(){return AI_TOKEN?`&token=${encodeURIComponent(AI_TOKEN)}`:'';}
 
@@ -5762,7 +5762,7 @@ function buildShareCard(s){
     '<div class="atx-score">'+s.score+'<span>PTS</span></div>'+
     (s.rank?'<div style="text-align:center"><span class="atx-rank" style="color:'+s.rankColor+';border-color:'+s.rankColor+'">'+s.rank+'</span></div>':'')+
     '<div class="atx-grid">'+cells.map(c=>'<div class="atx-cell"><div class="k">'+c[0]+'</div><div class="v">'+c[1]+'</div></div>').join('')+'</div>'+
-    '<div class="atx-foot">fragly.pages.dev · valorant aim range</div>'+
+    '<div class="atx-foot">topfragly.com · valorant aim range</div>'+
   '</div>';
 }
 async function saveAimPng(){
@@ -6488,7 +6488,7 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#lineups'&&!root.c
         </div>
         <div class="cmp-banner" id="cmpBanner"></div>
         <div class="cmp-rows" id="cmpRows"></div>
-        <div class="cmp-foot"><b>FragLy</b> fragly.pages.dev</div>
+        <div class="cmp-foot"><b>FragLy</b> topfragly.com</div>
       </div>
       <div class="cmp-actions">
         <button class="cmp-btn gold" id="cmpShare">⬇ Save / Share PNG</button>

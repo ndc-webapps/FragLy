@@ -107,7 +107,7 @@ export async function onRequestPost(context) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 6000);
     const r = await fetch(parsed.toString(), {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FragLyAdsBot/1.0; +https://fragly.pages.dev)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FragLyAdsBot/1.0; +https://topfragly.com)' },
       signal: controller.signal
     });
     clearTimeout(timer);
