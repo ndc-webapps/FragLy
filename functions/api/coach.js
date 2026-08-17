@@ -1,30 +1,35 @@
 // FragLy AI Coach — server-side proxy (Cloudflare Pages Function).
 //
-// Why this exists:
-//   Calling Pollinations directly from the browser failed in prod (CORS preflight +
-//   per-IP rate limits). Running it server-side fixes both, and keeps the token off
-//   the client. Still keyless for end users.
+// Both providers below are free and reset on a daily cadence. Neither is unlimited —
+// no free LLM API is — so the client always keeps its local stat-based coach as the
+// final fallback, and this file's job is to fail FAST and honestly rather than hang.
 //
-// Token: set POLLINATIONS_TOKEN in Cloudflare Pages env (Settings → Environment
-//   variables). Optional — without it we use the free anonymous tier.
+// 1) Cloudflare Workers AI (primary) — no API key at all, runs on the same edge as
+//    this function. Free grant is 10,000 Neurons/day, reset 00:00 UTC, on Free and
+//    Paid plans alike. At ~$0.011/1000 Neurons that is ~$0.11/day of compute, which
+//    on llama-3.1-8b works out to roughly 200-250 coach replies a day.
+//    SETUP: Pages project → Settings → Bindings → Add → Workers AI → name it `AI`.
+//    Optional: CF_AI_MODEL to override the model.
 //
-// Upstream quirks this file works around (all verified against the live API):
-//   - gen.pollinations.ai bills per request. With an empty balance it returns 402
-//     ("Insufficient balance"), so it can't be the only path.
-//   - text.pollinations.ai is free ANONYMOUSLY, but sending `temperature`, `token`,
-//     or POSTing a JSON body all flip the request onto the (empty) paid key and it
-//     402s — a plain GET with just `model` stays on the free tier and returns 200.
-//   - A billed/hung upstream call can sit for ~30s. Two of those in series blew past
-//     Cloudflare's edge timeout, which is what produced the bare "error code: 502"
-//     users saw instead of a real response. Hence the hard budget below: we always
-//     return our own JSON, fast, so the client can fall back to the local coach.
+// 2) Google Gemini (fallback) — used only once the Workers AI grant is spent. Free
+//    tier, no billing, RPD resets midnight Pacific. Defaults to Flash-Lite because
+//    this tier exists to stretch the free quota, not to win benchmarks.
+//    SETUP: free key from aistudio.google.com → Pages env var GEMINI_API_KEY.
+//    Optional: GEMINI_MODEL to override.
+//
+// Pollinations was removed deliberately: gen.pollinations.ai billed per request and
+// 402'd on an empty balance, the anonymous text endpoint 429'd under any real load,
+// and a hung upstream there was the original cause of the bare 502s users saw.
 
-const GEN = 'https://gen.pollinations.ai/v1/chat/completions';
-const LEGACY = 'https://text.pollinations.ai';
-const ATTEMPT_TIMEOUT_MS = 8000;  // per upstream call
-const TOTAL_BUDGET_MS = 18000;    // whole request — comfortably under the edge timeout
+const GEMINI_HOST = 'https://generativelanguage.googleapis.com/v1beta/models';
+const DEFAULT_CF_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+
+const ATTEMPT_TIMEOUT_MS = 9000;  // per provider
+const TOTAL_BUDGET_MS = 20000;    // whole request — stays under the edge timeout
 const MIN_ATTEMPT_MS = 2500;      // don't start an attempt we can't finish
-const LEGACY_PROMPT_MAX = 1100;   // free-tier cost scales with prompt size
+const MAX_TOKENS = 700;
+const TEMPERATURE = 0.45;
 
 function jsonRes(obj, status = 200) {
   return new Response(JSON.stringify(obj), {
@@ -33,51 +38,48 @@ function jsonRes(obj, status = 200) {
   });
 }
 
-async function fetchWithTimeout(url, opts, ms) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { ...opts, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
+function withTimeout(promise, ms) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(Object.assign(new Error('timeout'), { name: 'TimeoutError' })), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-function extractText(data) {
-  if (data == null) return '';
+// Workers AI returns { response: "..." }; Gemini nests it under candidates/content/parts.
+function extractCfText(data) {
+  if (!data) return '';
   if (typeof data === 'string') return data;
-  if (Array.isArray(data.choices) && data.choices[0]) {
-    const c = data.choices[0];
-    if (c.message && typeof c.message.content === 'string') return c.message.content;
-    if (typeof c.text === 'string') return c.text;
-  }
-  if (typeof data.text === 'string') return data.text;
-  if (typeof data.content === 'string') return data.content;
-  if (data.message && typeof data.message.content === 'string') return data.message.content;
+  if (typeof data.response === 'string') return data.response;
+  if (Array.isArray(data.choices) && data.choices[0]?.message?.content) return data.choices[0].message.content;
   return '';
 }
 
-// The legacy endpoint takes the whole conversation as one URL path segment, so keep it
-// compact: system context first (that's the real stats the answer must be based on),
-// then the most recent turns, trimmed to what the free tier will accept.
-function buildLegacyPrompt(messages) {
-  const system = messages.filter((m) => m.role === 'system').map((m) => m.content || '').join('\n');
-  const turns = messages.filter((m) => m.role !== 'system').slice(-4);
-  let out = system ? system.trim() + '\n\n' : '';
-  out += turns.map((m) => `${String(m.role || 'user').toUpperCase()}: ${m.content || ''}`).join('\n\n');
-  out += '\n\nASSISTANT:';
-  return out.length > LEGACY_PROMPT_MAX ? out.slice(0, LEGACY_PROMPT_MAX) + '\n\nASSISTANT:' : out;
+function extractGeminiText(data) {
+  const parts = data?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return '';
+  return parts.map((p) => (typeof p?.text === 'string' ? p.text : '')).join('').trim();
 }
 
-// A 402/401 means the key is out of balance or invalid — retrying burns budget for
-// nothing. Only a 429 or a 5xx is worth a second go.
-function worthRetry(status) {
-  return status === 429 || status >= 500;
+// Gemini keeps the system prompt out of the turn list and calls the assistant "model".
+function toGeminiBody(messages) {
+  const system = messages.filter((m) => m.role === 'system').map((m) => m.content || '').join('\n').trim();
+  const contents = messages
+    .filter((m) => m.role !== 'system' && (m.content || '').trim())
+    .map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: String(m.content) }]
+    }));
+  const body = {
+    contents,
+    generationConfig: { temperature: TEMPERATURE, maxOutputTokens: MAX_TOKENS }
+  };
+  if (system) body.systemInstruction = { parts: [{ text: system }] };
+  return body;
 }
 
 export async function onRequestPost(context) {
   const { request, env } = context;
-  const token = env.POLLINATIONS_TOKEN || '';
   const startedAt = Date.now();
   const msLeft = () => TOTAL_BUDGET_MS - (Date.now() - startedAt);
 
@@ -91,66 +93,73 @@ export async function onRequestPost(context) {
   if (!messages || !messages.length) {
     return jsonRes({ error: 'messages array required' }, 400);
   }
-  messages = messages.slice(-10);
-
-  let upstreamStatus = 0;
-
-  // 1) Authenticated endpoint. Best quality and the officially supported path, but it
-  //    is billed — skip entirely when no token is configured.
-  if (token && msLeft() > MIN_ATTEMPT_MS) {
-    try {
-      const r = await fetchWithTimeout(GEN, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({
-          model: 'openai',
-          messages,
-          temperature: 0.45,
-          max_tokens: 700,
-          stream: false
-        })
-      }, Math.min(ATTEMPT_TIMEOUT_MS, msLeft()));
-      upstreamStatus = r.status;
-      if (r.ok) {
-        const text = extractText(await r.json());
-        if (text && text.trim()) {
-          return jsonRes({ text: text.trim(), provider: 'pollinations-gen' });
-        }
-      }
-    } catch (e) {
-      upstreamStatus = e && e.name === 'AbortError' ? 598 : 599;
-    }
+  messages = messages
+    .slice(-10)
+    .filter((m) => m && typeof m.content === 'string' && m.content.trim())
+    .map((m) => ({ role: m.role === 'assistant' ? 'assistant' : m.role === 'system' ? 'system' : 'user', content: m.content }));
+  if (!messages.length) {
+    return jsonRes({ error: 'messages array required' }, 400);
   }
 
-  // 2) Free anonymous tier. Deliberately a bare GET: no temperature, no token, no
-  //    referrer — any of those bills it to the paid key and it 402s (see header note).
-  const legacyUrl = `${LEGACY}/${encodeURIComponent(buildLegacyPrompt(messages))}?model=openai`;
-  for (let attempt = 0; attempt < 2 && msLeft() > MIN_ATTEMPT_MS; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 500));
+  const failures = [];
+
+  // 1) Workers AI — no key, same edge, daily free grant.
+  if (env.AI && msLeft() > MIN_ATTEMPT_MS) {
+    const model = env.CF_AI_MODEL || DEFAULT_CF_MODEL;
     try {
-      const r = await fetchWithTimeout(legacyUrl, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FraglyBot/1.0)' }
-      }, Math.min(ATTEMPT_TIMEOUT_MS, msLeft()));
-      upstreamStatus = r.status;
-      if (r.ok) {
-        const text = (await r.text()).trim();
-        // The free tier hands back a JSON error body with a 200 in some cases.
-        if (text && !text.startsWith('{"error"')) {
-          return jsonRes({ text, provider: 'pollinations-free' });
-        }
-      }
-      if (!worthRetry(r.status)) break;
+      const data = await withTimeout(
+        env.AI.run(model, { messages, max_tokens: MAX_TOKENS, temperature: TEMPERATURE }),
+        Math.min(ATTEMPT_TIMEOUT_MS, msLeft())
+      );
+      const text = extractCfText(data).trim();
+      if (text) return jsonRes({ text, provider: 'cloudflare-workers-ai' });
+      failures.push({ provider: 'workers-ai', error: 'empty response' });
     } catch (e) {
-      upstreamStatus = e && e.name === 'AbortError' ? 598 : 599;
+      // Out of Neurons for the day surfaces here as a thrown error, not a status code.
+      const msg = String((e && e.message) || e);
+      failures.push({ provider: 'workers-ai', error: msg.slice(0, 200) });
     }
+  } else if (!env.AI) {
+    failures.push({ provider: 'workers-ai', error: 'AI binding not configured' });
   }
 
-  const reason = upstreamStatus === 402 ? 'AI credits exhausted'
-    : upstreamStatus === 429 ? 'AI is busy right now'
-    : upstreamStatus === 598 ? 'AI timed out'
+  // 2) Gemini — only reached once Workers AI is exhausted or unconfigured.
+  const geminiKey = env.GEMINI_API_KEY || '';
+  if (geminiKey && msLeft() > MIN_ATTEMPT_MS) {
+    const model = env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+    try {
+      const r = await withTimeout(
+        fetch(`${GEMINI_HOST}/${encodeURIComponent(model)}:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
+          body: JSON.stringify(toGeminiBody(messages))
+        }),
+        Math.min(ATTEMPT_TIMEOUT_MS, msLeft())
+      );
+      if (r.ok) {
+        const text = extractGeminiText(await r.json());
+        if (text) return jsonRes({ text, provider: 'gemini' });
+        failures.push({ provider: 'gemini', error: 'empty response' });
+      } else {
+        let detail = '';
+        try { detail = ((await r.json())?.error?.message || '').slice(0, 200); } catch (e) { /* body not JSON */ }
+        failures.push({ provider: 'gemini', status: r.status, error: detail });
+      }
+    } catch (e) {
+      failures.push({ provider: 'gemini', error: String((e && e.message) || e).slice(0, 200) });
+    }
+  } else if (!geminiKey) {
+    failures.push({ provider: 'gemini', error: 'GEMINI_API_KEY not set' });
+  }
+
+  const blob = JSON.stringify(failures).toLowerCase();
+  const reason = !env.AI && !geminiKey ? 'AI not configured on this deployment'
+    : /quota|limit|exhaust|neuron|429|resource_exhausted/.test(blob) ? 'Daily free AI limit reached — it resets tomorrow'
+    : /timeout/.test(blob) ? 'AI timed out'
     : 'AI temporarily unavailable';
-  console.error('coach: all providers failed', { upstreamStatus, ms: Date.now() - startedAt });
-  return jsonRes({ error: 'Upstream AI unavailable', reason, upstreamStatus }, 503);
+
+  console.error('coach: all providers failed', { failures, ms: Date.now() - startedAt });
+  return jsonRes({ error: 'Upstream AI unavailable', reason, failures }, 503);
 }
 
 export async function onRequest(context) {

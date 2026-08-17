@@ -5,7 +5,9 @@
 FragLy is a single-file Valorant stats tracker (`index.html`, ~2700 lines).
 No build tools, no npm, no framework — pure vanilla JS/CSS/HTML.
 Data from HenrikDev API (`api.henrikdev.xyz/valorant`), baked API key in source.
-AI coach uses Pollinations.ai (keyless, no user key needed).
+AI coach is keyless for the player: the browser only calls `/api/coach`, which proxies
+to Cloudflare Workers AI (free, 10k Neurons/day, resets 00:00 UTC) then Gemini's free
+tier. Never call a model directly from the browser.
 PNG export via html2canvas@1.4.1.
 
 ## Key Files
