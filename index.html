@@ -6808,90 +6808,148 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#compare'&&!root.c
      CROSSHAIR DATABASE  (isolated module, prefix xh-)
 ════════════════════════════════════════ -->
 <style>
-.nav-xhair{cursor:pointer;color:#7CE7E7!important;border-color:rgba(75,189,255,.4)!important;background:rgba(75,189,255,.08)!important;font-weight:600;}
-.nav-xhair:hover{background:rgba(75,189,255,.18)!important;box-shadow:0 0 18px rgba(75,189,255,.3);}
+.nav-xhair{cursor:pointer;color:#E9D5FF!important;border-color:rgba(168,85,247,.45)!important;background:rgba(168,85,247,.1)!important;font-weight:600;}
+.nav-xhair:hover{background:rgba(168,85,247,.2)!important;box-shadow:0 0 18px rgba(168,85,247,.32);}
 
 #xhairs{position:fixed;inset:0;z-index:907;display:none;font-family:var(--body);color:var(--txt);
   background:radial-gradient(120% 90% at 50% -10%,#0e0e1f 0%,#080812 55%,#050509 100%);overflow-y:auto;overflow-x:hidden;}
 #xhairs.open{display:block;}
 #xhairs *{box-sizing:border-box;}
-.xh-wrap{max-width:1100px;margin:0 auto;padding:64px 18px 80px;}
+/* Brand aurora — the same violet→magenta→gold wash the rest of FragLy uses, so the
+   module stops reading as a separate cyan-themed app bolted onto the site. */
+#xhairs::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(50% 38% at 12% 0%,rgba(139,92,246,.16),transparent 70%),
+             radial-gradient(46% 34% at 88% 6%,rgba(236,72,153,.13),transparent 72%),
+             radial-gradient(60% 40% at 50% 100%,rgba(251,146,60,.06),transparent 70%);}
+.xh-wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:56px 20px 90px;}
 .xh-x{position:fixed;top:18px;right:20px;z-index:30;width:42px;height:42px;border-radius:10px;border:1px solid rgba(168,85,247,.22);
   background:rgba(12,12,28,.85);color:#c9c2dc;font-size:1.2rem;cursor:pointer;transition:.18s;}
 .xh-x:hover{color:#fff;border-color:var(--red);box-shadow:0 0 16px rgba(168,85,247,.3);}
-.xh-eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:5px;color:var(--red);opacity:.85;text-align:center;margin-bottom:6px;text-transform:uppercase;}
-.xh-title{font-family:var(--dp);font-weight:900;text-align:center;font-size:clamp(2.4rem,7vw,4.4rem);line-height:.95;letter-spacing:3px;margin:6px 0;
-  background:linear-gradient(180deg,#fff,#F472B6);-webkit-background-clip:text;background-clip:text;color:transparent;}
-.xh-sub{text-align:center;color:var(--muted2);font-size:.9rem;max-width:540px;margin:0 auto 26px;line-height:1.6;}
-.xh-search{position:relative;max-width:560px;margin:0 auto 14px;}
-.xh-search input{width:100%;padding:13px 16px 13px 42px;border-radius:var(--r2);border:1px solid var(--bdr);background:var(--surf);color:var(--txt);font-family:var(--body);font-size:.9rem;outline:none;transition:.2s;}
-.xh-search input:focus{border-color:rgba(75,189,255,.5);box-shadow:0 0 0 3px rgba(75,189,255,.12);}
-.xh-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:17px;height:17px;fill:var(--muted2);}
-.xh-cats{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:18px;}
-.xh-cat{font-family:var(--mono);font-size:.64rem;letter-spacing:1px;padding:8px 14px;border-radius:20px;border:1px solid var(--bdr);background:var(--surf);color:var(--muted2);cursor:pointer;transition:.2s;text-transform:uppercase;}
-.xh-cat:hover{color:var(--txt);border-color:rgba(75,189,255,.4);}
-.xh-cat.on{color:#7CE7E7;border-color:rgba(75,189,255,.5);background:rgba(75,189,255,.1);}
-.xh-count{text-align:center;font-family:var(--mono);font-size:.66rem;letter-spacing:1px;color:var(--muted2);margin-bottom:16px;}
-.xh-count b{color:#7CE7E7;}
-.xh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
-.xh-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s,box-shadow .2s,transform .2s var(--ease);}
-.xh-card:hover{border-color:rgba(75,189,255,.4);box-shadow:0 14px 36px rgba(0,0,0,.4);transform:translateY(-3px);}
-.xh-prev{position:relative;aspect-ratio:1/1;background:linear-gradient(135deg,#23232f,#15151f 60%,#0d0d15);display:flex;align-items:center;justify-content:center;}
-.xh-prev canvas{width:100%;height:100%;display:block;}
-.xh-body{padding:12px 13px 13px;display:flex;flex-direction:column;gap:8px;flex:1;}
-.xh-name{font-family:var(--dp);font-weight:600;font-size:1rem;color:var(--txt);line-height:1.2;}
-.xh-by{font-family:var(--mono);font-size:.58rem;letter-spacing:.8px;color:var(--muted2);text-transform:uppercase;}
-.xh-code{font-family:var(--mono);font-size:.6rem;color:var(--muted2);background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r3);padding:7px 9px;word-break:break-all;line-height:1.4;max-height:46px;overflow:hidden;}
-.xh-copy{margin-top:auto;width:100%;padding:10px;border-radius:var(--r3);border:1px solid rgba(75,189,255,.35);background:rgba(75,189,255,.1);color:#7CE7E7;font-family:var(--mono);font-size:.66rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:.2s;}
-.xh-copy:hover{background:#4BBDFF;color:#06121c;border-color:#4BBDFF;}
-.xh-copy.done{background:var(--green);color:#04130b;border-color:var(--green);}
-.xh-empty{display:none;text-align:center;padding:60px 20px;}
+.xh-eyebrow{font-family:var(--mono);font-size:.62rem;letter-spacing:6px;color:#C4B5FD;opacity:.9;text-align:center;margin-bottom:10px;text-transform:uppercase;}
+.xh-title{font-family:var(--dp);font-weight:900;text-align:center;font-size:clamp(2.6rem,8vw,5rem);line-height:.92;letter-spacing:4px;margin:2px 0 4px;
+  background:linear-gradient(100deg,#fff 8%,#E9D5FF 32%,#F472B6 62%,#FDBA74 95%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 8px 34px rgba(168,85,247,.28));}
+.xh-sub{text-align:center;color:var(--muted2);font-size:.9rem;max-width:560px;margin:0 auto 18px;line-height:1.65;}
+.xh-sub kbd{font-family:var(--mono);font-size:.78rem;background:rgba(255,255,255,.06);border:1px solid var(--bdr);border-radius:5px;padding:1px 6px;color:#E9D5FF;}
+/* Hero stat strip — real counts, computed from the list at render time. */
+.xh-stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:26px;}
+.xh-stat{display:flex;align-items:baseline;gap:7px;padding:7px 14px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.035);backdrop-filter:blur(8px);}
+.xh-stat b{font-family:var(--dp);font-size:1.05rem;font-weight:800;color:#fff;line-height:1;}
+.xh-stat span{font-family:var(--mono);font-size:.56rem;letter-spacing:1.6px;color:var(--muted2);text-transform:uppercase;}
+
+/* Sticky glass control rail — search + filters stay reachable through a 200-card scroll. */
+.xh-rail{position:sticky;top:0;z-index:12;margin:0 -20px 20px;padding:14px 20px 12px;
+  background:linear-gradient(180deg,rgba(8,8,18,.94) 60%,rgba(8,8,18,0));backdrop-filter:blur(14px);}
+.xh-search{position:relative;max-width:600px;margin:0 auto 12px;}
+.xh-search input{width:100%;padding:14px 16px 14px 44px;border-radius:999px;border:1px solid var(--bdr);
+  background:rgba(255,255,255,.045);color:var(--txt);font-family:var(--body);font-size:.9rem;outline:none;transition:.2s;}
+.xh-search input::placeholder{color:#6E6B90;}
+.xh-search input:focus{border-color:rgba(168,85,247,.55);background:rgba(168,85,247,.07);box-shadow:0 0 0 4px rgba(168,85,247,.13);}
+.xh-search svg{position:absolute;left:17px;top:50%;transform:translateY(-50%);width:16px;height:16px;fill:#8A87AE;}
+.xh-cats{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;}
+.xh-cat{font-family:var(--mono);font-size:.6rem;letter-spacing:1.4px;padding:8px 15px;border-radius:999px;border:1px solid var(--bdr);
+  background:rgba(255,255,255,.03);color:var(--muted2);cursor:pointer;transition:.18s;text-transform:uppercase;white-space:nowrap;}
+.xh-cat:hover{color:var(--txt);border-color:rgba(168,85,247,.42);background:rgba(168,85,247,.08);}
+.xh-cat.on{color:#fff;border-color:transparent;background:linear-gradient(100deg,var(--violet),var(--mag));box-shadow:0 6px 20px rgba(168,85,247,.32);}
+.xh-cat i{font-style:normal;opacity:.6;margin-left:5px;}
+.xh-count{text-align:center;font-family:var(--mono);font-size:.62rem;letter-spacing:1.6px;color:var(--muted2);margin-bottom:18px;text-transform:uppercase;}
+.xh-count b{color:#E9D5FF;}
+.xh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:16px;}
+.xh-card{position:relative;background:linear-gradient(165deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+  border:1px solid var(--bdr);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;
+  transition:box-shadow .25s,transform .25s var(--ease);}
+.xh-card::before{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;opacity:0;transition:opacity .25s;
+  background:linear-gradient(135deg,var(--violet),var(--mag) 55%,var(--gold));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;}
+.xh-card:hover::before{opacity:1;}
+.xh-card:hover{box-shadow:0 20px 46px rgba(0,0,0,.5),0 0 34px rgba(168,85,247,.14);transform:translateY(-4px);}
+/* Mid-tone stage, not near-black: the DB contains both white and pure-black crosshairs
+   (ZmjjKK runs 000000) and a dark tile makes the black ones invisible. The vignette keeps
+   it from looking flat while staying light enough for either to read. */
+.xh-prev{position:relative;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120% 120% at 50% 40%,#4a4a5c 0%,#33333f 42%,#22222c 100%);}
+.xh-prev::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(78% 78% at 50% 50%,transparent 40%,rgba(0,0,0,.34) 100%);}
+.xh-prev canvas{width:100%;height:100%;display:block;position:relative;z-index:1;}
+.xh-tagrow{position:absolute;top:9px;left:9px;right:9px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.xh-badge{font-family:var(--mono);font-size:.5rem;letter-spacing:1.2px;text-transform:uppercase;padding:4px 8px;border-radius:999px;
+  background:rgba(6,6,14,.72);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.12);color:#CFCBE6;}
+.xh-badge.pro{color:#FDBA74;border-color:rgba(251,146,60,.45);background:rgba(251,146,60,.16);}
+.xh-badge.fun{color:#F9A8D4;border-color:rgba(236,72,153,.4);background:rgba(236,72,153,.15);}
+.xh-swatch{width:16px;height:16px;border-radius:5px;border:1px solid rgba(255,255,255,.35);box-shadow:0 2px 8px rgba(0,0,0,.5);flex:0 0 auto;}
+.xh-body{padding:13px 14px 14px;display:flex;flex-direction:column;gap:9px;flex:1;}
+.xh-name{font-family:var(--dp);font-weight:700;font-size:1.12rem;color:var(--txt);line-height:1.15;letter-spacing:.3px;}
+.xh-by{font-family:var(--mono);font-size:.55rem;letter-spacing:1.5px;color:#8A87AE;text-transform:uppercase;margin-top:-4px;}
+.xh-code{font-family:var(--mono);font-size:.58rem;color:#9895BC;background:rgba(0,0,0,.32);border:1px solid var(--bdr);border-radius:8px;
+  padding:8px 10px;word-break:break-all;line-height:1.45;max-height:44px;overflow:hidden;position:relative;}
+.xh-code::after{content:'';position:absolute;left:0;right:0;bottom:0;height:16px;background:linear-gradient(180deg,transparent,rgba(11,12,16,.9));}
+.xh-copy{margin-top:auto;width:100%;padding:11px;border-radius:9px;border:1px solid transparent;
+  background:linear-gradient(100deg,var(--violet),var(--mag));color:#fff;font-family:var(--mono);font-size:.64rem;
+  letter-spacing:1.6px;text-transform:uppercase;cursor:pointer;transition:.2s;font-weight:600;}
+.xh-copy:hover{box-shadow:0 8px 22px rgba(168,85,247,.4);transform:translateY(-1px);}
+.xh-copy.done{background:var(--green);color:#04130b;box-shadow:none;transform:none;}
+.xh-empty{display:none;text-align:center;padding:70px 20px;}
 .xh-empty.show{display:block;}
-.xh-empty-ic{font-size:2.2rem;margin-bottom:12px;opacity:.6;}
-.xh-empty h3{font-family:var(--dp);font-size:1.3rem;color:var(--txt);margin-bottom:6px;}
+.xh-empty-ic{font-size:2.4rem;margin-bottom:12px;opacity:.55;}
+.xh-empty h3{font-family:var(--dp);font-size:1.4rem;color:var(--txt);margin-bottom:6px;}
 .xh-empty p{color:var(--muted2);font-size:.85rem;}
-.xh-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:20px;}
-.xh-tab{font-family:var(--dp);font-weight:600;font-size:.85rem;letter-spacing:.5px;padding:10px 22px;border-radius:30px;border:1px solid var(--bdr);background:var(--surf);color:var(--muted2);cursor:pointer;transition:.2s;}
-.xh-tab:hover{color:var(--txt);border-color:rgba(75,189,255,.4);}
-.xh-tab.on{color:#7CE7E7;border-color:rgba(75,189,255,.5);background:rgba(75,189,255,.1);}
+.xh-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:22px;}
+.xh-tab{font-family:var(--dp);font-weight:700;font-size:.92rem;letter-spacing:.6px;padding:11px 26px;border-radius:999px;border:1px solid var(--bdr);
+  background:rgba(255,255,255,.03);color:var(--muted2);cursor:pointer;transition:.2s;}
+.xh-tab:hover{color:var(--txt);border-color:rgba(168,85,247,.42);}
+.xh-tab.on{color:#fff;border-color:transparent;background:linear-gradient(100deg,var(--violet),var(--mag));box-shadow:0 8px 24px rgba(168,85,247,.32);}
 /* builder */
 .xb-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start;}
 .xb-stage{position:relative;background:#0a0a14;border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;aspect-ratio:1/1;}
 .xb-stage canvas{position:absolute;inset:0;width:100%;height:100%;}
 .xb-bgbar{position:absolute;top:10px;left:10px;z-index:3;display:flex;gap:6px;}
 .xb-bg{font-family:var(--mono);font-size:.56rem;letter-spacing:1px;padding:5px 10px;border-radius:14px;border:1px solid var(--bdr);background:rgba(12,12,28,.7);color:var(--muted2);cursor:pointer;text-transform:uppercase;}
-.xb-bg.on{color:#7CE7E7;border-color:rgba(75,189,255,.5);background:rgba(75,189,255,.12);}
+.xb-bg.on{color:#E9D5FF;border-color:rgba(168,85,247,.55);background:rgba(168,85,247,.14);}
 .xb-controls{display:flex;flex-direction:column;gap:14px;}
 .xb-row{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r2);padding:13px 14px;}
 .xb-rh{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
 .xb-rh label{font-family:var(--dp);font-weight:600;font-size:.9rem;color:var(--txt);letter-spacing:.3px;}
 .xb-toggle{position:relative;width:38px;height:21px;border-radius:20px;background:var(--bdr);border:none;cursor:pointer;transition:.2s;flex:0 0 auto;}
-.xb-toggle.on{background:#4BBDFF;}
+.xb-toggle.on{background:linear-gradient(100deg,var(--violet),var(--mag));}
 .xb-toggle::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.2s;}
 .xb-toggle.on::after{transform:translateX(17px);}
 .xb-sliders{display:grid;gap:7px;margin-top:9px;}
 .xb-sliders.off{display:none;}
 .xb-sl{display:grid;grid-template-columns:64px 1fr 30px;align-items:center;gap:8px;}
 .xb-sl span{font-family:var(--mono);font-size:.6rem;letter-spacing:.5px;color:var(--muted2);text-transform:uppercase;}
-.xb-sl input[type=range]{width:100%;accent-color:#4BBDFF;}
-.xb-sl b{font-family:var(--mono);font-size:.64rem;color:#7CE7E7;text-align:right;}
+.xb-sl input[type=range]{width:100%;accent-color:#A855F7;}
+.xb-sl b{font-family:var(--mono);font-size:.64rem;color:#E9D5FF;text-align:right;}
 .xb-color{display:flex;align-items:center;gap:10px;}
 .xb-color input[type=color]{width:42px;height:30px;border:1px solid var(--bdr);border-radius:8px;background:none;cursor:pointer;padding:0;}
 .xb-color code{font-family:var(--mono);font-size:.72rem;color:var(--muted2);}
 .xb-out{margin-top:16px;}
-.xb-code{font-family:var(--mono);font-size:.74rem;color:#7CE7E7;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r2);padding:13px 15px;word-break:break-all;line-height:1.5;}
+.xb-code{font-family:var(--mono);font-size:.74rem;color:#E9D5FF;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r2);padding:13px 15px;word-break:break-all;line-height:1.5;}
 .xb-actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
 .xb-btn{flex:1;min-width:120px;padding:12px;border-radius:var(--r2);border:1px solid var(--bdr);background:var(--surf);color:var(--txt);font-family:var(--mono);font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:.2s;}
-.xb-btn:hover{border-color:rgba(75,189,255,.4);}
-.xb-btn.primary{background:#4BBDFF;color:#06121c;border-color:#4BBDFF;font-weight:700;}
+.xb-btn:hover{border-color:rgba(168,85,247,.45);}
+.xb-btn.primary{background:linear-gradient(100deg,var(--violet),var(--mag));color:#fff;border-color:transparent;font-weight:700;}
 .xb-btn.done{background:var(--green);color:#04130b;border-color:var(--green);}
 .xh-edit{margin-top:6px;width:100%;padding:7px;border-radius:var(--r3);border:1px solid var(--bdr);background:transparent;color:var(--muted2);font-family:var(--mono);font-size:.6rem;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:.2s;}
-.xh-edit:hover{color:#7CE7E7;border-color:rgba(75,189,255,.4);}
+.xh-edit:hover{color:#E9D5FF;border-color:rgba(168,85,247,.45);}
 @media(max-width:640px){.xb-grid{grid-template-columns:1fr;}.xb-stage{max-width:320px;margin:0 auto;width:100%;}}
 .xh-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--green);color:#04130b;font-family:var(--mono);font-size:.72rem;letter-spacing:1px;padding:11px 20px;border-radius:30px;pointer-events:none;transition:.25s;z-index:40;font-weight:600;}
 .xh-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-@media(max-width:560px){.xh-wrap{padding:58px 12px 60px;}.xh-grid{grid-template-columns:1fr 1fr;gap:12px;}.xh-name{font-size:.9rem;}}
-@media(max-width:380px){.xh-grid{grid-template-columns:1fr;}}
+@media(max-width:560px){
+  .xh-wrap{padding:52px 12px 70px;}
+  .xh-rail{margin:0 -12px 16px;padding:12px 12px 10px;}
+  .xh-grid{grid-template-columns:1fr 1fr;gap:11px;}
+  .xh-name{font-size:.95rem;}
+  .xh-body{padding:10px 11px 11px;gap:7px;}
+  .xh-code{font-size:.52rem;max-height:38px;padding:6px 8px;}
+  .xh-copy{padding:12px 9px;font-size:.58rem;letter-spacing:1.2px;}
+  .xh-edit{padding:10px 7px;}
+  .xh-stats{gap:7px;}.xh-stat{padding:6px 11px;}
+  .xh-cat{padding:7px 12px;font-size:.55rem;}
+  .xh-tab{padding:10px 20px;font-size:.85rem;}
+}
+/* Below ~370px two columns squeeze the code pill into unreadable slivers. */
+@media(max-width:370px){.xh-grid{grid-template-columns:1fr;}}
 </style>
 
 <div id="xhairs" aria-hidden="true">
@@ -6899,7 +6957,8 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#compare'&&!root.c
   <div class="xh-wrap">
     <p class="xh-eyebrow">FRAGLY // CROSSHAIR DATABASE</p>
     <h1 class="xh-title">CROSSHAIRS</h1>
-    <p class="xh-sub">Browse 200+ pro &amp; fun crosshairs, or build your own — then copy the code into Valorant (Settings → Crosshair → Import Profile Code).</p>
+    <p class="xh-sub">Every preview below is rendered from the real code — colour, opacity and line length included. Copy one into <kbd>Settings → Crosshair → Import Profile Code</kbd>, or build your own.</p>
+    <div class="xh-stats" id="xhStats"></div>
 
     <div class="xh-tabs">
       <button class="xh-tab on" id="xhTabDb" onclick="xhView('db')">🗂 Database</button>
@@ -6907,11 +6966,13 @@ window.addEventListener('hashchange',()=>{if(location.hash==='#compare'&&!root.c
     </div>
 
     <div id="xhDbView">
-      <div class="xh-search">
-        <svg viewBox="0 0 24 24"><path d="M21 20l-5.6-5.6a7 7 0 1 0-1.4 1.4L20 21zM5 10a5 5 0 1 1 10 0 5 5 0 0 1-10 0z"/></svg>
-        <input type="text" id="xhQ" placeholder="Search — TenZ, aspas, ScreaM, dot, cyan…" autocomplete="off" spellcheck="false">
+      <div class="xh-rail">
+        <div class="xh-search">
+          <svg viewBox="0 0 24 24"><path d="M21 20l-5.6-5.6a7 7 0 1 0-1.4 1.4L20 21zM5 10a5 5 0 1 1 10 0 5 5 0 0 1-10 0z"/></svg>
+          <input type="text" id="xhQ" placeholder="Search — TenZ, aspas, ScreaM, dot, cyan…" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="xh-cats" id="xhCats"></div>
       </div>
-      <div class="xh-cats" id="xhCats"></div>
       <div class="xh-count" id="xhCount"></div>
       <div class="xh-grid" id="xhGrid"></div>
       <div class="xh-empty" id="xhEmpty"><div class="xh-empty-ic">🔍</div><h3>No crosshair found.</h3><p>Try a different keyword or category.</p></div>
@@ -6952,8 +7013,14 @@ const DPR=Math.min(window.devicePixelRatio||1,2);
 
 /* ---- real, verbatim pro/streamer crosshair codes (copy imports as-is in Valorant) ----
    Add more: just append {n:'Name',c:'CODE'} — preview is parsed from the code. */
-const CATS=['All','Dot','Cross','Outer','Custom Color'];
-const PRESET={'0':'#FFFFFF','1':'#22FF22','2':'#BFFF00','3':'#33FF99','4':'#00FFC8','5':'#00FFFF','6':'#FFFF00','7':'#FF2DA0'};
+const CATS=['All','Pro','Fun','Dot','Cross','Outer','Custom Color'];
+/* Valorant's real preset palette in code order (c;0 … c;7):
+   White / Green / Yellow Green / Green Yellow / Yellow / Cyan / Pink / Red.
+   The old table had 3,4,6,7 shifted — yellow crosshairs (c;4) rendered teal and red
+   ones (c;7) rendered pink, so 43 of the entries below previewed the wrong colour.
+   c;8 means "custom", and ONLY then does u;<hex> apply — in game a u; alongside any
+   other c; is silently ignored, which is why 11 entries here looked wrong on import. */
+const PRESET={'0':'#FFFFFF','1':'#00FF00','2':'#7FFF00','3':'#DFFF00','4':'#FFFF00','5':'#00FFFF','6':'#FF00FF','7':'#FF0000'};
 const D=[
   {n:'AAAAY',c:'0;P;h;0;0t;1;0l;4;0o;0;0a;1;0f;0;1b;0'},
   {n:'Afajer',c:'0;s;1;P;c;5;o;1;d;1;z;3;0b;0;1b;0;S;s;0.628;o;1'},
@@ -6980,7 +7047,7 @@ const D=[
   {n:'Demon1',c:'0;P;o;1;0t;1;0l;3;0o;2;0a;1;0f;0;1b;0'},
   {n:'Demon1 (2)',c:'0;s;1;P;o;1;d;1;m;1;0b;0;1b;0'},
   {n:'Dep',c:'0;s;1;P;o;0.1;f;0;s;0;0t;1;0l;2;0o;1;0a;1;0f;0;1b;0'},
-  {n:'Derke',c:'0;s;1;P;u;FFA500FF;o;1;d;1;f;0;s;0;0b;0;1t;0;1l;1;1o;0;1a;1;1m;0;1f;0;S;o;1'},
+  {n:'Derke',c:'0;s;1;P;c;8;u;FFA500FF;o;1;d;1;f;0;s;0;0b;0;1t;0;1l;1;1o;0;1a;1;1m;0;1f;0;S;o;1'},
   {n:'Derrek',c:'0;s;1;P;c;1;o;1;0t;1;0l;3;0a;1;0f;0;1b;0;S;s;0.652'},
   {n:'dimasick',c:'0;P;c;5;o;1;d;1;z;3;0t;1;0l;1;0o;1;0a;1;0f;0;1b;0'},
   {n:'Ethan',c:'0;P;h;0;0l;4;0o;0;0a;1;0f;0;1b;0'},
@@ -7028,7 +7095,7 @@ const D=[
   {n:'ScreaM',c:'0;s;1;P;c;5;o;1;d;1;z;3;f;0;0t;6;0l;0;0a;1;0f;0;1b;0;S;c;6;s;0.949;o;1'},
   {n:'ShahZam',c:'0;P;c;1;o;1;f;0;0l;5;0a;0.5;0f;0;1b;0'},
   {n:'Shao',c:'0;P;c;7;h;0;f;0;m;1;0l;4;0o;0;0a;1;0f;0;1b;0'},
-  {n:'Shroud',c:'0;P;u;FFFFCCFF;h;0;f;0;0l;5;0v;5;0o;0;0a;1;0f;0;1m;0;1f;0'},
+  {n:'Shroud',c:'0;P;c;8;u;FFFFCCFF;h;0;f;0;0l;5;0v;5;0o;0;0a;1;0f;0;1m;0;1f;0'},
   {n:'Sinatraa',c:'0;s;1;P;c;5;o;1;0t;1;0l;3;0a;1;0f;0;1b;0;S;c;5;s;1.178'},
   {n:'SkRossi',c:'0;s;1;P;c;8;u;C0C0C0FF;o;1;d;1;b;1;0b;0;1l;0;1a;0;S;c;0;o;1'},
   {n:'Smoggy',c:'0;s;1;P;c;2;o;1;d;1;f;0;0b;0;1b;0;S;c;0;o;1'},
@@ -7036,7 +7103,7 @@ const D=[
   {n:'Stax',c:'0;P;c;4;h;0;f;0;s;0;0l;4;0o;2;0a;1;0f;0;1b;0'},
   {n:'stellar',c:'0;P;c;4;u;001331FF;h;0;0l;3;0v;3;0o;2;0a;1;0f;0;1b;0'},  {n:'Suygetsu',c:'0;P;c;5;h;0;d;1;f;0;s;0;0l;1;0o;1;0a;1;0f;0;1b;0'},
   {n:'Tacolilla',c:'0;s;1;P;h;0;0l;4;0o;0;0a;1;0f;0;1b;0;S;c;5;s;0.75'},
-  {n:'Tarik',c:'0;P;u;FFFFCCFF;o;1;d;1;f;0;0b;0;1b;0'},  {n:'TenZ',c:'0;s;1;P;c;5;h;0;m;1;0l;4;0o;2;0a;1;0f;0;1b;0;S;c;4;o;1'},
+  {n:'Tarik',c:'0;P;c;8;u;FFFFCCFF;o;1;d;1;f;0;0b;0;1b;0'},  {n:'TenZ',c:'0;s;1;P;c;5;h;0;m;1;0l;4;0o;2;0a;1;0f;0;1b;0;S;c;4;o;1'},
   {n:'TenZ (2)',c:'0;s;1;P;c;5;h;0;0l;5;0v;0;0g;1;0a;1;0f;0;1l;0;1v;4;1g;1;1o;2;1a;1;1m;0;1f;0;S;c;5;o;1'},  {n:'TZH',c:'0;P;h;0;0l;5;0o;0;0f;0;1b;0'},
   {n:'Valkyrae',c:'0;P;c;7;h;0;d;1;z;4;f;0;0b;0;1b;0'},
   {n:'Victor',c:'0;P;h;0;f;0;0l;4;0a;1;0f;0;1b;0'},
@@ -7047,7 +7114,7 @@ const D=[
   {n:'Zellsis',c:'0;P;c;4;h;0;m;1;0a;1.000;0l;4;0o;2;0f;0;1b;0;1m;0;1f;0'},
   {n:'Zeppa',c:'0;P;c;5;o;1;0t;1;0l;2;0o;2;0a;1;0f;0;1b;0'},
   {n:'Zest',c:'0;s;1;P;c;1;o;1;f;0;0l;4;0a;1;0f;0;1b;0;S;c;1;o;1'},
-  {n:'ZmjjKK',c:'0;p;0;P;u;000000FF;o;1;d;1;z;1;f;0;s;0;0t;0;0l;4;0v;2;0o;0;0a;1;0f;0;1b;0'},
+  {n:'ZmjjKK',c:'0;p;0;P;c;8;u;000000FF;o;1;d;1;z;1;f;0;s;0;0t;0;0l;4;0v;2;0o;0;0a;1;0f;0;1b;0'},
   {n:'Zyppan',c:'0;s;1;P;h;0;0l;4;0o;0;0a;1;0f;0;1t;1;1l;0;1o;0;1m;0;1f;0'},
   /* ---- FragLy custom & funny crosshairs (valid grammar, import-ready) ---- */
   {n:'Absolute Unit',c:'0;P;c;0;o;1;0t;6;0l;18;0o;5;0a;1;0f;0;1b;0'},
@@ -7074,7 +7141,7 @@ const D=[
   {n:'Mega Mind',c:'0;P;c;8;u;9D00FFFF;o;1;d;1;z;5;a;1;0t;4;0l;12;0o;5;0a;1;0f;0;1b;0'},
   {n:'Tiny Tim',c:'0;P;c;0;o;1;0t;1;0l;2;0o;1;0a;1;0f;0;1b;0'},
   {n:'The Plus One',c:'0;P;c;0;o;1;0t;3;0l;6;0o;0;0a;1;0f;0;1b;0'},
-  {n:'Big Red Button',c:'0;P;c;8;u;FF0000FF;o;1;d;1;z;7;a;1;0b;0;1b;0'},
+  {n:'Big Red Button',c:'0;P;c;8;u;FF0000FF;o;1;d;1;z;6;a;1;0b;0;1b;0'},
   {n:'Neon Nightmare',c:'0;P;c;8;u;BFFF00FF;o;1;0t;5;0l;13;0o;6;0a;1;0f;0;1b;0'},
   {n:'Smol Bean',c:'0;P;c;8;u;98FF98FF;o;1;d;1;z;1;a;1;0t;1;0l;2;0o;1;0a;1;0f;0;1b;0'},
   {n:'Chonky',c:'0;P;c;0;o;1;0t;9;0l;6;0o;3;0a;1;0f;0;1b;0'},
@@ -7135,7 +7202,7 @@ const D=[
   {n:'Big Sneeze',c:'0;P;c;0;o;1;0t;6;0l;3;0o;14;0a;1;0f;0;1b;0'},
   {n:'Caffeine Shakes',c:'0;P;c;8;u;6F4E37FF;o;1;0t;2;0l;5;0o;7;0a;1;0f;0;1b;0'},
   {n:'Steady Hands',c:'0;P;c;1;o;1;0t;1;0l;4;0o;2;0a;1;0f;0;1b;0'},
-  {n:'The Bonk',c:'0;P;c;8;u;FF0000FF;o;1;d;1;z;8;a;1;0b;0;1b;0'},
+  {n:'The Bonk',c:'0;P;c;8;u;FF0000FF;o;1;d;1;z;6;a;1;0t;10;0l;2;0o;0;0a;1;0f;0;1b;0'},
   {n:'Wholesome 100',c:'0;P;c;8;u;FFB6C1FF;o;1;d;1;z;3;a;1;0t;2;0l;5;0o;3;0a;1;0f;0;1b;0'},
   {n:'Touch Grass',c:'0;P;c;8;u;7CFC00FF;o;1;0t;3;0l;10;0o;3;0a;1;0f;0;1b;0'},
   {n:'Sussy Dot',c:'0;P;c;8;u;FF3030FF;o;1;d;1;z;4;a;1;0b;0;1b;0'},
@@ -7158,64 +7225,116 @@ function parse(code){
   for(let j=i+1;j<t.length;j++){const k=t[j];if(k==='A'||k==='S')break;const v=t[j+1];if(v===undefined)break;kv[k]=v;j++;}
   return kv;
 }
+/* Valorant's own defaults, so an omitted key renders the way the game renders it.
+   Getting these right matters: e.g. outer lines default to opacity .35 and inner to .8,
+   so a code that never mentions them is NOT full-brightness. */
 function settingsFor(code){
-  const kv=parse(code),num=(k,d)=>(kv[k]!=null&&kv[k]!=='')?parseFloat(kv[k]):d;
-  const iL=num('0l',6),iT=num('0t',2),iO=num('0o',3),oL=num('1l',0),oT=num('1t',2),oO=num('1o',10);
+  const kv=parse(code);
+  const num=(k,d)=>{const v=kv[k];if(v==null||v==='')return d;const n=parseFloat(v);return isNaN(n)?d:n;};
+  const bool=(k,d)=>{const v=kv[k];return v==null?d:v!=='0';};
+  // u; only counts when c;8 — matches the game, which overwrites the custom colour
+  // with the preset whenever c is anything else.
+  const custom=kv.c==='8'&&/^[0-9a-fA-F]{6}/.test(kv.u||'');
+  const color=custom?('#'+String(kv.u).slice(0,6)):(PRESET[kv.c==null?'0':kv.c]||PRESET['0']);
+  function lines(p,dLen,dOff,dAlpha){
+    const len=num(p+'l',dLen);
+    // g;1 = "length is not linked", i.e. the vertical arms use v; otherwise they match l.
+    const vert=bool(p+'g',false)?num(p+'v',len):len;
+    const a=num(p+'a',dAlpha);
+    return{on:bool(p+'b',true)&&a>0&&(len>0||vert>0),len,vert,thick:Math.max(num(p+'t',2),0),off:num(p+'o',dOff),a};
+  }
+  const dotA=num('a',1);
   return{
-    color: kv.u?('#'+String(kv.u).slice(0,6)):(PRESET[kv.c]||PRESET['0']),
-    outline: kv.h!=='0',
-    dot:{on:kv.d==='1',size:num('z',1)},
-    inner:{on:kv['0b']!=='0'&&iL>0,len:iL,thick:Math.max(iT,1),off:iO},
-    outer:{on:(kv['1b']==='1')||(kv['1b']!=='0'&&oL>0),len:oL,thick:Math.max(oT,1),off:oO},
-    custom:!!kv.u
+    color,custom,
+    outline:{on:bool('h',true),a:num('o',.5),t:num('t',1)},
+    dot:{on:bool('d',false)&&dotA>0,size:num('z',2),a:dotA},
+    inner:lines('0',6,3,.8),
+    outer:lines('1',2,10,.35)
   };
 }
 function kindOf(s){const k=[];if(s.dot.on)k.push('Dot');if(s.inner.on)k.push('Cross');if(s.outer.on)k.push('Outer');if(s.custom)k.push('Custom Color');if(!k.length)k.push('Cross');return k;}
-D.forEach(d=>{d._s=settingsFor(d.c);d._k=kindOf(d._s);});
+/* Everything from 'Absolute Unit' onward is FragLy's own invented set, not a real
+   player's crosshair — the split drives the Pro/Fun badge so the two are never
+   passed off as each other. */
+const FUN_FROM=D.findIndex(d=>d.n==='Absolute Unit');
+D.forEach((d,i)=>{d._s=settingsFor(d.c);d._k=kindOf(d._s);d._pro=FUN_FROM<0||i<FUN_FROM;});
 
-/* ---- preview renderer (parsed from the real code) ---- */
+/* ---- preview renderer (parsed from the real code) ----
+   Honours per-section opacity, independent vertical length and outline thickness, so a
+   faint crosshair previews faint and a horizontal-only one previews horizontal-only.
+   SC is fixed rather than fit-to-tile on purpose: relative size is the whole point of a
+   crosshair database, so a chunky one has to look chunky next to a small one. 3.4 keeps
+   the widest entry in the set (~28 units from centre) inside a 210px tile. */
+const SC=3.4;
+function paint(ctx,s,cx,cy,scale){
+  function bar(x,y,w,h,alpha){
+    if(w<=0||h<=0||alpha<=0)return;
+    if(s.outline.on&&s.outline.a>0){
+      const o=Math.max(s.outline.t*scale*.5,1);
+      ctx.globalAlpha=Math.min(s.outline.a,1);ctx.fillStyle='#000';
+      ctx.fillRect(x-o,y-o,w+o*2,h+o*2);
+    }
+    ctx.globalAlpha=Math.min(alpha,1);ctx.fillStyle=s.color;ctx.fillRect(x,y,w,h);
+  }
+  function arms(L){
+    const h=L.len*scale,v=L.vert*scale,T=Math.max(L.thick*scale,1),O=L.off*scale;
+    if(h>0){bar(cx+O,cy-T/2,h,T,L.a);bar(cx-O-h,cy-T/2,h,T,L.a);}   // right / left
+    if(v>0){bar(cx-T/2,cy+O,T,v,L.a);bar(cx-T/2,cy-O-v,T,v,L.a);}   // down / up
+  }
+  if(s.inner.on)arms(s.inner);
+  if(s.outer.on)arms(s.outer);
+  if(s.dot.on){const d=Math.max(s.dot.size*scale,2);bar(cx-d/2,cy-d/2,d,d,s.dot.a);}
+  ctx.globalAlpha=1;
+}
 function draw(cv,s){
   const W=cv.clientWidth||200,H=cv.clientHeight||200;
   cv.width=W*DPR;cv.height=H*DPR;
   const ctx=cv.getContext('2d');ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
-  const cx=W/2,cy=H/2,SC=2.0; // scale valorant units -> px
-  function bar(x,y,w,h){
-    if(s.outline){ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(x-1,y-1,w+2,h+2);}
-    ctx.fillStyle=s.color;ctx.fillRect(x,y,w,h);
-  }
-  function arms(len,thick,off){
-    const L=len*SC,T=Math.max(thick*SC,1.5),O=off*SC;
-    bar(cx+O,cy-T/2,L,T); bar(cx-O-L,cy-T/2,L,T);        // right / left
-    bar(cx-T/2,cy+O,T,L); bar(cx-T/2,cy-O-L,T,L);        // down / up
-  }
-  if(s.inner.on)arms(s.inner.len,s.inner.thick,s.inner.off);
-  if(s.outer.on)arms(s.outer.len,s.outer.thick,s.outer.off);
-  if(s.dot.on){const d=Math.max(s.dot.size*SC,2.5);bar(cx-d/2,cy-d/2,d,d);}
+  paint(ctx,s,W/2,H/2,SC);
 }
 
 /* ---- render grid ---- */
 let cat='All',q='';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function matches(d){
+  if(cat==='Pro'&&!d._pro)return false;
+  if(cat==='Fun'&&d._pro)return false;
+  if(cat!=='All'&&cat!=='Pro'&&cat!=='Fun'&&!d._k.includes(cat))return false;
+  if(q){const hay=(d.n+' '+d.c+' '+d._s.color+' '+d._k.join(' ')+(d._pro?' pro':' fun')).toLowerCase();
+    if(!q.split(/\s+/).every(w=>hay.includes(w)))return false;}
+  return true;
+}
 function render(){
   const list=[];
-  D.forEach((d,i)=>{
-    if(cat!=='All'&&!d._k.includes(cat))return;
-    if(q){const hay=(d.n+' '+d.c+' '+d._s.color+' '+d._k.join(' ')).toLowerCase();if(!q.split(/\s+/).every(w=>hay.includes(w)))return;}
-    list.push([d,i]);
-  });
+  D.forEach((d,i)=>{if(matches(d))list.push([d,i]);});
   $('xhGrid').innerHTML=list.map(([d,i])=>`<div class="xh-card">
-      <div class="xh-prev"><canvas data-i="${i}"></canvas></div>
+      <div class="xh-prev">
+        <div class="xh-tagrow">
+          <span class="xh-badge ${d._pro?'pro':'fun'}">${d._pro?'Pro':'Fun'}</span>
+          <span class="xh-swatch" style="background:${esc(d._s.color)}"></span>
+        </div>
+        <canvas data-i="${i}"></canvas>
+      </div>
       <div class="xh-body">
-        <div class="xh-name">${d.n}</div>
+        <div class="xh-name">${esc(d.n)}</div>
         <div class="xh-by">${d._k.join(' · ')}</div>
-        <div class="xh-code">${d.c}</div>
-        <button class="xh-copy" data-code="${d.c}">⧉ Copy Code</button>
+        <div class="xh-code">${esc(d.c)}</div>
+        <button class="xh-copy" data-code="${esc(d.c)}">⧉ Copy Code</button>
         <button class="xh-edit" data-edit="${i}">✎ Edit in Builder</button>
       </div>
     </div>`).join('');
   list.forEach(([d,i])=>{const cv=$('xhGrid').querySelector('canvas[data-i="'+i+'"]');if(cv)draw(cv,d._s);});
-  $('xhCount').innerHTML='<b>'+list.length+'</b> crosshair'+(list.length===1?'':'s');
+  $('xhCount').innerHTML='<b>'+list.length+'</b> crosshair'+(list.length===1?'':'s')
+    +(cat==='All'&&!q?'':' · <b>'+D.length+'</b> total');
   $('xhEmpty').classList.toggle('show',list.length===0);
   $('xhGrid').style.display=list.length===0?'none':'';
+}
+function renderStats(){
+  const el=$('xhStats');if(!el)return;
+  const pro=D.filter(d=>d._pro).length;
+  const stat=(n,l)=>'<div class="xh-stat"><b>'+n+'</b><span>'+l+'</span></div>';
+  el.innerHTML=stat(D.length,'Crosshairs')+stat(pro,'Pro')+stat(D.length-pro,'Fun')
+    +stat(new Set(D.map(d=>d._s.color)).size,'Colours');
 }
 
 function copyCode(code,btn){
@@ -7257,12 +7376,8 @@ function bPreview(){
   const cv=$('xbCanvas');if(!cv)return;
   const W=cv.clientWidth||320,H=cv.clientHeight||320;cv.width=W*DPR;cv.height=H*DPR;
   const ctx=cv.getContext('2d');ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);bgFill(ctx,W,H);
-  const s=settingsFor(buildCode()),cx=W/2,cy=H/2,SC=3.2; // preview = parsed generated code
-  function bar(x,y,w,h){if(s.outline){ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(x-1.5,y-1.5,w+3,h+3);}ctx.fillStyle=s.color;ctx.fillRect(x,y,w,h);}
-  function arms(len,thick,off){const L=len*SC,T=Math.max(thick*SC,1.5),O=off*SC;bar(cx+O,cy-T/2,L,T);bar(cx-O-L,cy-T/2,L,T);bar(cx-T/2,cy+O,T,L);bar(cx-T/2,cy-O-L,T,L);}
-  if(s.inner.on)arms(s.inner.len,s.inner.thick,s.inner.off);
-  if(s.outer.on)arms(s.outer.len,s.outer.thick,s.outer.off);
-  if(s.dot.on){const d=Math.max(s.dot.size*SC,2.5);bar(cx-d/2,cy-d/2,d,d);}
+  // preview = the generated code parsed back, so what you see is what actually imports
+  paint(ctx,settingsFor(buildCode()),W/2,H/2,4.6);
 }
 function bUpdate(){bPreview();$('xbCode').textContent=buildCode();}
 function bControls(){
@@ -7287,10 +7402,12 @@ function bRandom(){
 function editInBuilder(code){
   const s=settingsFor(code);
   B.color=(s.color&&s.color[0]==='#'&&s.color.length>=7)?s.color.slice(0,7).toUpperCase():'#FFFFFF';
-  B.outline=s.outline;B.oOp=1;
-  B.dot=s.dot.on;B.dSize=Math.min(Math.max(Math.round(s.dot.size)||1,1),6);B.dOp=1;
-  B.inner=s.inner.on;B.iLen=Math.min(Math.round(s.inner.len),20);B.iThick=Math.min(Math.max(Math.round(s.inner.thick),1),10);B.iOff=Math.min(Math.round(s.inner.off),20);B.iOp=1;
-  B.outer=s.outer.on;B.oLen=Math.min(Math.round(s.outer.len),20);B.oThick=Math.min(Math.max(Math.round(s.outer.thick),1),10);B.oOff=Math.min(Math.round(s.outer.off),30);B.oOp2=1;
+  const cl=(v,lo,hi)=>Math.min(Math.max(Math.round(v),lo),hi);
+  const op=v=>Math.min(Math.max(Math.round(v*10)/10,0),1);
+  B.outline=s.outline.on;B.oOp=op(s.outline.a);
+  B.dot=s.dot.on;B.dSize=cl(s.dot.size||1,1,6);B.dOp=op(s.dot.a);
+  B.inner=s.inner.on;B.iLen=cl(s.inner.len,0,20);B.iThick=cl(s.inner.thick,1,10);B.iOff=cl(s.inner.off,0,20);B.iOp=op(s.inner.a);
+  B.outer=s.outer.on;B.oLen=cl(s.outer.len,0,20);B.oThick=cl(s.outer.thick,1,10);B.oOff=cl(s.outer.off,0,30);B.oOp2=op(s.outer.a);
   xhView('build');
 }
 window.xhView=function(v){
@@ -7302,11 +7419,17 @@ window.xhView=function(v){
 window.xbBg=function(b){bg=b;document.querySelectorAll('.xb-bg').forEach(x=>x.classList.toggle('on',x.dataset.bg===b));bPreview();};
 
 /* ---- cats + events ---- */
+function catCount(c){
+  if(c==='All')return D.length;
+  if(c==='Pro')return D.filter(d=>d._pro).length;
+  if(c==='Fun')return D.filter(d=>!d._pro).length;
+  return D.filter(d=>d._k.includes(c)).length;
+}
 function buildCats(){
-  $('xhCats').innerHTML=CATS.map(c=>`<button class="xh-cat ${c===cat?'on':''}" data-cat="${c}">${c}</button>`).join('');
+  $('xhCats').innerHTML=CATS.map(c=>`<button class="xh-cat ${c===cat?'on':''}" data-cat="${c}">${c}<i>${catCount(c)}</i></button>`).join('');
 }
 function bind(){
-  buildCats();
+  buildCats();renderStats();
   $('xhCats').addEventListener('click',e=>{const b=e.target.closest('.xh-cat');if(!b)return;cat=b.dataset.cat;buildCats();render();});
   $('xhQ').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();render();});
   $('xhGrid').addEventListener('click',e=>{
