@@ -35,7 +35,16 @@ const CF_MODELS = [
   '@cf/meta/llama-3.1-8b-instruct-fp8',
   '@cf/meta/llama-3.2-1b-instruct'
 ];
-const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+// Same candidate-list treatment as CF_MODELS — Google retires model IDs too, and a
+// dead one here would only surface on the day the Neuron grant runs out, which is the
+// worst possible time to discover it. Lite first: this tier exists to stretch quota.
+// Set GEMINI_MODEL to pin one explicitly.
+const GEMINI_MODELS = [
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3.7-flash',
+  'gemini-3.6-flash'
+];
 
 // A dead/renamed model is worth retrying with a different ID. Anything else —
 // especially a spent Neuron grant — applies to every model, so bail to Gemini.
@@ -147,30 +156,38 @@ export async function onRequestPost(context) {
 
   // 2) Gemini — only reached once Workers AI is exhausted or unconfigured.
   const geminiKey = env.GEMINI_API_KEY || '';
-  if (geminiKey && msLeft() > MIN_ATTEMPT_MS) {
-    const model = env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
-    try {
-      const r = await withTimeout(
-        fetch(`${GEMINI_HOST}/${encodeURIComponent(model)}:generateContent`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
-          body: JSON.stringify(toGeminiBody(messages))
-        }),
-        Math.min(ATTEMPT_TIMEOUT_MS, msLeft())
-      );
-      if (r.ok) {
-        const text = extractGeminiText(await r.json());
-        if (text) return jsonRes({ text, provider: 'gemini' });
-        failures.push({ provider: 'gemini', error: 'empty response' });
-      } else {
+  if (geminiKey) {
+    const body = JSON.stringify(toGeminiBody(messages));
+    const candidates = env.GEMINI_MODEL ? [env.GEMINI_MODEL] : GEMINI_MODELS;
+    for (const model of candidates) {
+      if (msLeft() < MIN_ATTEMPT_MS) break;
+      try {
+        const r = await withTimeout(
+          fetch(`${GEMINI_HOST}/${encodeURIComponent(model)}:generateContent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
+            body
+          }),
+          Math.min(ATTEMPT_TIMEOUT_MS, msLeft())
+        );
+        if (r.ok) {
+          const text = extractGeminiText(await r.json());
+          if (text) return jsonRes({ text, provider: 'gemini', model });
+          failures.push({ provider: 'gemini', model, error: 'empty response' });
+          continue;
+        }
         let detail = '';
         try { detail = ((await r.json())?.error?.message || '').slice(0, 200); } catch (e) { /* body not JSON */ }
-        failures.push({ provider: 'gemini', status: r.status, error: detail });
+        failures.push({ provider: 'gemini', model, status: r.status, error: detail });
+        // 404 = this model ID is gone; try the next. 429/403 = quota or bad key,
+        // which no other model ID will fix.
+        if (r.status !== 404 && !modelUnavailable(detail)) break;
+      } catch (e) {
+        failures.push({ provider: 'gemini', model, error: String((e && e.message) || e).slice(0, 200) });
+        break;
       }
-    } catch (e) {
-      failures.push({ provider: 'gemini', error: String((e && e.message) || e).slice(0, 200) });
     }
-  } else if (!geminiKey) {
+  } else {
     failures.push({ provider: 'gemini', error: 'GEMINI_API_KEY not set' });
   }
 
