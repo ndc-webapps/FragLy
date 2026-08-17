@@ -22,8 +22,26 @@
 // and a hung upstream there was the original cause of the bare 502s users saw.
 
 const GEMINI_HOST = 'https://generativelanguage.googleapis.com/v1beta/models';
-const DEFAULT_CF_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+
+// Cloudflare retires models on a rolling basis — @cf/meta/llama-3.1-8b-instruct was
+// deprecated 2026-05-30 and took the coach down with a 5028. So this is a candidate
+// list, not a single ID: on a "model is gone" error we advance to the next one and
+// the coach keeps working until someone gets round to updating this file.
+// Quality first; Gemini and the local coach backstop the daily quota.
+// Set CF_AI_MODEL to pin one explicitly.
+const CF_MODELS = [
+  '@cf/meta/llama-3.1-8b-instruct-fast',
+  '@cf/meta/llama-3.2-3b-instruct',
+  '@cf/meta/llama-3.1-8b-instruct-fp8',
+  '@cf/meta/llama-3.2-1b-instruct'
+];
 const DEFAULT_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+
+// A dead/renamed model is worth retrying with a different ID. Anything else —
+// especially a spent Neuron grant — applies to every model, so bail to Gemini.
+function modelUnavailable(msg) {
+  return /5028|deprecat|not found|no such model|unknown model|invalid model|does not exist/i.test(msg);
+}
 
 const ATTEMPT_TIMEOUT_MS = 9000;  // per provider
 const TOTAL_BUDGET_MS = 20000;    // whole request — stays under the edge timeout
@@ -104,22 +122,26 @@ export async function onRequestPost(context) {
   const failures = [];
 
   // 1) Workers AI — no key, same edge, daily free grant.
-  if (env.AI && msLeft() > MIN_ATTEMPT_MS) {
-    const model = env.CF_AI_MODEL || DEFAULT_CF_MODEL;
-    try {
-      const data = await withTimeout(
-        env.AI.run(model, { messages, max_tokens: MAX_TOKENS, temperature: TEMPERATURE }),
-        Math.min(ATTEMPT_TIMEOUT_MS, msLeft())
-      );
-      const text = extractCfText(data).trim();
-      if (text) return jsonRes({ text, provider: 'cloudflare-workers-ai' });
-      failures.push({ provider: 'workers-ai', error: 'empty response' });
-    } catch (e) {
-      // Out of Neurons for the day surfaces here as a thrown error, not a status code.
-      const msg = String((e && e.message) || e);
-      failures.push({ provider: 'workers-ai', error: msg.slice(0, 200) });
+  if (env.AI) {
+    const candidates = env.CF_AI_MODEL ? [env.CF_AI_MODEL] : CF_MODELS;
+    for (const model of candidates) {
+      if (msLeft() < MIN_ATTEMPT_MS) break;
+      try {
+        const data = await withTimeout(
+          env.AI.run(model, { messages, max_tokens: MAX_TOKENS, temperature: TEMPERATURE }),
+          Math.min(ATTEMPT_TIMEOUT_MS, msLeft())
+        );
+        const text = extractCfText(data).trim();
+        if (text) return jsonRes({ text, provider: 'cloudflare-workers-ai', model });
+        failures.push({ provider: 'workers-ai', model, error: 'empty response' });
+      } catch (e) {
+        // A spent Neuron grant surfaces here as a thrown error, not a status code.
+        const msg = String((e && e.message) || e);
+        failures.push({ provider: 'workers-ai', model, error: msg.slice(0, 200) });
+        if (!modelUnavailable(msg)) break;   // quota/outage — no other model will help
+      }
     }
-  } else if (!env.AI) {
+  } else {
     failures.push({ provider: 'workers-ai', error: 'AI binding not configured' });
   }
 
