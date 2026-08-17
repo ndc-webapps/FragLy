@@ -959,7 +959,7 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .sc2-score-row{position:relative;z-index:1;display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:14px;}
 .sc2-score-card,.sc2-rank-card{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.09);border-radius:var(--r);background:linear-gradient(150deg,rgba(255,255,255,.06),rgba(255,255,255,.02));padding:18px 20px;}
 .sc2-score-card::before,.sc2-rank-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),var(--gold));opacity:.7;}
-.sc2-score-lbl,.sc2-rank-lbl{font-family:var(--mono);font-size:.54rem;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;}
+.sc2-score-lbl,.sc2-rank-lbl{font-family:var(--mono);font-size:.62rem;letter-spacing:2px;color:#ADA9CE;text-transform:uppercase;}
 .sc2-score-top{display:flex;align-items:flex-end;gap:12px;margin-top:8px;}
 .sc2-score-val{font-family:var(--dp);font-size:3rem;font-weight:900;line-height:.9;color:#fff;}
 .sc2-grade-badge{margin-left:auto;width:42px;height:42px;border-radius:12px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-family:var(--dp);font-size:1.2rem;font-weight:900;color:#fff;flex-shrink:0;}
@@ -975,15 +975,21 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .sc2-pt-card{display:flex;align-items:center;gap:12px;border:1px solid rgba(255,255,255,.08);border-radius:var(--r2);background:rgba(255,255,255,.035);padding:14px 16px;}
 .sc2-pt-ico{width:34px;height:34px;border-radius:10px;background:rgba(75,189,255,.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--blue);}
 .sc2-pt-ico svg{width:17px;height:17px;}
-.sc2-pt-lbl{font-family:var(--mono);font-size:.5rem;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.sc2-pt-lbl{font-family:var(--mono);font-size:.58rem;letter-spacing:1.4px;color:#ADA9CE;text-transform:uppercase;}
 .sc2-pt-val{font-family:var(--dp);font-size:1.15rem;font-weight:800;color:var(--txt);margin-top:2px;}
-.sc2-pt-note{font-family:var(--mono);font-size:.48rem;color:var(--muted2);margin-top:1px;}
+.sc2-pt-note{font-family:var(--mono);font-size:.54rem;color:#9895BC;margin-top:1px;}
 
 
 .share-card .sgrid{position:relative;z-index:1;gap:14px;margin-bottom:0;grid-auto-rows:minmax(0,auto);grid-template-columns:repeat(4,1fr)!important;}
 .share-card .sc{padding:18px 18px 16px;min-height:0;box-shadow:none;border-color:rgba(255,255,255,.09);background:linear-gradient(150deg,rgba(255,255,255,.045),rgba(255,255,255,.015));}
 .share-card .sc-val{font-size:2.5rem;}
-.share-card .sc-sub{min-height:auto;}
+/* Exported PNGs get viewed downscaled (feed tiles, phone screens), so the stat tile
+   labels need more contrast, more weight and less tracking than the live page —
+   var(--muted) at .48rem with 4px letter-spacing was effectively unreadable. */
+.share-card .sc-lbl{font-size:.72rem;letter-spacing:2.4px;color:#D3CFE9;font-weight:600;}
+.share-card .sc-ico{color:#8C88B4;}
+.share-card .sc-sub{min-height:auto;color:#A7A4C8;}
+.share-card .sc-bm{color:#9895BC;letter-spacing:1.6px;}
 
 .share-two-col{display:grid;grid-template-columns:1fr 1.25fr;gap:18px;position:relative;z-index:1;}
 .share-card.story .share-two-col{grid-template-columns:1fr;}
@@ -992,7 +998,7 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .share-sec-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
 .share-sec-title{font-family:var(--dp);font-size:1.35rem;font-weight:800;letter-spacing:4px;text-transform:uppercase;white-space:nowrap;}
 .share-sec-line{flex:1;height:1px;background:linear-gradient(90deg,var(--bdr-hi),transparent);}
-.share-sec-tag{font-family:var(--mono);font-size:.56rem;color:var(--muted);letter-spacing:2px;white-space:nowrap;}
+.share-sec-tag{font-family:var(--mono);font-size:.62rem;color:#A29FC4;letter-spacing:1.8px;white-space:nowrap;}
 .share-card .form-chart-wrap svg{width:100%;height:auto;display:block;}
 .share-card .form-lbl{margin-top:10px;}
 
@@ -1000,7 +1006,7 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .share-foot-col{display:flex;flex-direction:column;gap:8px;}
 .share-foot-col.center{align-items:center;}
 .share-foot-col.right{align-items:flex-end;text-align:right;}
-.share-foot-lbl{font-family:var(--mono);font-size:.52rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.share-foot-lbl{font-family:var(--mono);font-size:.58rem;letter-spacing:1.8px;color:#9C99BE;text-transform:uppercase;}
 .share-foot-social{display:flex;align-items:center;gap:8px;}
 .sc2-soc{width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.5rem;letter-spacing:.5px;color:var(--muted2);}
 .share-foot-date{font-family:var(--dp);font-size:.95rem;font-weight:700;color:var(--txt);}
@@ -1014,12 +1020,14 @@ button.nav-pill:hover{border-color:rgba(168,85,247,.4);color:var(--txt);backgrou
 .share-card.feed .share-sec-title{font-size:1.05rem;letter-spacing:3px;}
 .share-card.feed .sgrid{gap:9px;}
 .share-card.feed .sc{padding:10px 12px 9px;}
-.share-card.feed .sc-val{font-size:1.6rem;}
-.share-card.feed .sc-ico{font-size:.75rem;}
-.share-card.feed .sc-lbl{font-size:.48rem;}
-.share-card.feed .sc-sub{font-size:.46rem;line-height:1.35;}
+.share-card.feed .sc-val{font-size:1.6rem;margin:6px 0 4px;}
+/* The 1200px feed canvas is fixed-height, so the bigger labels are paid for by
+   tightening the tile's dead space (icon gap, value margins) — not by clipping. */
+.share-card.feed .sc-ico{font-size:.75rem;margin-bottom:5px;}
+.share-card.feed .sc-lbl{font-size:.78rem;letter-spacing:2px;}
+.share-card.feed .sc-sub{font-size:.6rem;line-height:1.4;}
 .share-card.feed .sc-footer{margin-top:6px;}
-.share-card.feed .sc-bm{font-size:.42rem;}
+.share-card.feed .sc-bm{font-size:.56rem;}
 .share-card.feed .sc2-avatar,.share-card.feed .sc2-avatar-fb{width:86px;height:86px;}
 .share-card.feed .sc2-name{font-size:1.95rem;}
 .share-card.feed .sc2-score-card,.share-card.feed .sc2-rank-card{padding:13px 15px;}
@@ -3789,7 +3797,13 @@ function normalizeStored(it,selfName,selfTag){
     players:{all_players:[{
       name:meName,tag:meTag,puuid:st.puuid,team:st.team,
       character:agName,
-      assets:{agent:{small:agId?mediaUrl('agents',agId,'displayicon.png'):''}},
+      // stored-matches has no portrait fields, only the agent UUID. Build the same
+      // real valorant-api asset URLs the v3 payload uses so mode-filtered stats keep
+      // the agent art (share-card bleed) instead of falling back to nothing.
+      assets:{agent:{
+        small:agId?mediaUrl('agents',agId,'displayicon.png'):'',
+        full:agId?mediaUrl('agents',agId,'fullportrait.png'):''
+      }},
       stats:{kills:num(st.kills),deaths:num(st.deaths),assists:num(st.assists),
              headshots:num(sh.head),bodyshots:num(sh.body),legshots:num(sh.leg),
              score:num(st.score)},
@@ -4138,7 +4152,19 @@ function sc2AvatarHTML(){
   return `<div class="sc2-avatar-fb">${escapeHtml(fb?.textContent||'?')}</div>`;
 }
 function sc2ArtHTML(){
-  const splash=S.stats?.agentArr?.[0]?.[1]?.splash||'';
+  const top=S.stats?.agentArr?.[0];
+  let splash=top?.[1]?.splash||'';
+  // Some stored-matches entries come back without the agent UUID, so no portrait URL
+  // can be built. Reuse the same agent's real art from the v3 match pull before giving
+  // up — still 100% API data, just sourced from the other real payload.
+  if(!splash&&top){
+    const nm=String(top[0]||'').toLowerCase();
+    for(const m of (S.matches||[])){
+      const p=(m.players?.all_players||[]).find(pl=>String(pl.character||'').toLowerCase()===nm);
+      const alt=p?.assets?.agent?.bust||p?.assets?.agent?.full;
+      if(alt){splash=alt;break;}
+    }
+  }
   if(!splash)return '';
   return `<div class="sc2-artwrap"><img src="${escapeHtml(splash)}" crossorigin="anonymous" alt="" onerror="this.closest('.sc2-artwrap').remove()"></div>`;
 }
